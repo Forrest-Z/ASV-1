@@ -445,8 +445,8 @@ The usual way works for installing:
 
 ```bash
 
-sudo apt-get update
-sudo apt-get install sqlite3 libsqlite3-dev
+sudo apt update
+sudo apt install sqlite3 libsqlite3-dev
 
 ```
 
