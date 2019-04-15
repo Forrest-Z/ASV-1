@@ -55,7 +55,8 @@ int main() {
     }
     // else {
     // db << "SELECT numbers from person where name = ?;" << "sara" >>
-    // [](vector<double> numbers_sara){ for(auto e : numbers_sara) cout << e << '
+    // [](vector<double> numbers_sara){ for(auto e : numbers_sara) cout << e <<
+    // '
     // '; cout << endl;
     //};
     //}
