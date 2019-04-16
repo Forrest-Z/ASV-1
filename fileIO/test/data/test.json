@@ -1,6 +1,17 @@
 {
-  "pi": 3.1416645454545,
-  "happy": true,
+  
+  "vesselname": "CrossOcean",
+  "Pi": 3.14159265358979323846, //  mathematical constant : Pi
+  "control_rate":10,     // control rate (Hz)
+  // directory for database
+  "dbsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/DPdata.db",
+  "logsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/log",
+  // position of each thruster
+
+
+
+
+  "happy": true,     
   "name": "Niels",
   "nothing": null,
   "answer": {
