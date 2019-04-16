@@ -15,7 +15,7 @@ elseif(WIN32)
 endif()
 
 set(CMAKE_BUILD_TYPE "Debug")
-set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
+set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -Wextra -g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 
@@ -23,9 +23,15 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
 # 添加 include 子目录
-INCLUDE_DIRECTORIES ( "/home/scar1et/Coding/ASV/third_party/eigen" )
-set(HEADER_FILES ../include/json.hpp ../include/utilityio.h)
-# add_subdirectory (../include)
+set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
+	"${CMAKE_CURRENT_SOURCE_DIR}/../include"
+	"/usr/include" 
+	 "/home/scar1et/Coding/ASV/third_party/eigen")
+
+set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} "/usr/lib")
+set(HEADER_FILES ${HEADER_FILES} 
+	"${CMAKE_CURRENT_SOURCE_DIR}/../include/json.hpp"                            
+	"${CMAKE_CURRENT_SOURCE_DIR}/../include/utilityio.h")
 
 
 # 查找当前目录下的所有源文件
@@ -33,6 +39,14 @@ set(HEADER_FILES ../include/json.hpp ../include/utilityio.h)
 # aux_source_directory(. DIR_SRCS)
 
 # 指定生成目标
-add_executable (Testutility test.cpp ${HEADER_FILES})
 
+add_executable (testutility testutilityIO.cc ${HEADER_FILES})
+target_include_directories(testutility PRIVATE ${HEADER_DIRECTORY})
 
+add_executable (testjson testjson.cc ${HEADER_FILES})
+target_include_directories(testjson PRIVATE ${HEADER_DIRECTORY})
+
+add_executable (testsqlite functions.cc ${HEADER_FILES})
+target_include_directories(testsqlite PRIVATE ${HEADER_DIRECTORY})
+find_library(SQLITE3_LIBRARY sqlite3 HINTS ${LIBRARY_DIRECTORY})
+target_link_libraries(testsqlite PUBLIC ${SQLITE3_LIBRARY})
