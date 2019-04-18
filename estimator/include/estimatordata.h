@@ -14,21 +14,18 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
-typedef Eigen::Matrix<double, 6, 6> Matrix66d;
-typedef Eigen::Matrix<double, 6, 3> Matrix63d;
-typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
 /********************* constant ***********************************/
 struct cestimator {
-  sample_time;  // sample time of estimator, controller and actuator(unit:
-                // second)
+  double sample_time;  // sample time of estimator, controller and
+                       // actuator(unit: second)
 };
 /********************* real-time ***********************************/
 struct restimator {
-  CTB2G;  // body   --> global
-  Measurement;
-  State;
-  BalphaU;  // estimated thrust
+  Eigen::MatrixXd CTB2G;  // body   --> global
+  Eigen::VectorXd Measurement;
+  Eigen::VectorXd State;
+  Eigen::VectorXd BalphaU;  // estimated thrust
 };
 
 #endif /*_ESTIMATORDATA_H_*/

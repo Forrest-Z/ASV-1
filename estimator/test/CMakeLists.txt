@@ -2,9 +2,8 @@
 cmake_minimum_required (VERSION 3.5)
 
 # 项目信息
-project (testfileio)
+project (testestimator)
 set(CMAKE_CXX_STANDARD 14)
-
 
 # UNIX, WIN32, WINRT, CYGWIN, APPLE are environment 
 # variables as flags set by default system
@@ -14,10 +13,9 @@ elseif(WIN32)
     message("This is a Windows System")
 endif()
 
-set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "Debug") # "Debug" or "Release" mode
 set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -Wextra -g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
-
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -30,19 +28,10 @@ set(HEADER_DIRECTORY ${HEADER_DIRECTORY}
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} "/usr/lib")
 set(HEADER_FILES ${HEADER_FILES} 
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include/json.hpp"                            
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include/utilityio.h")
-
+	"${CMAKE_CURRENT_SOURCE_DIR}/../include/eigenmvnd.hpp"                            
+	"${CMAKE_CURRENT_SOURCE_DIR}/../include/kalmanfilter.h")
 
 # 指定生成目标
 
-add_executable (testutility testutilityIO.cc ${HEADER_FILES})
-target_include_directories(testutility PRIVATE ${HEADER_DIRECTORY})
-
-add_executable (testjson testjson.cc ${HEADER_FILES})
-target_include_directories(testjson PRIVATE ${HEADER_DIRECTORY})
-
-add_executable (testsqlite functions.cc ${HEADER_FILES})
-target_include_directories(testsqlite PRIVATE ${HEADER_DIRECTORY})
-find_library(SQLITE3_LIBRARY sqlite3 HINTS ${LIBRARY_DIRECTORY})
-target_link_libraries(testsqlite PUBLIC ${SQLITE3_LIBRARY})
+add_executable (testkalman testkalman.cc ${HEADER_FILES})
+target_include_directories(testkalman PRIVATE ${HEADER_DIRECTORY})

@@ -9,9 +9,9 @@
 *  Matrix Dimension must be:
 *  x[k] = A * x[k-1] + B * u[k-1] + w[k-1]
 *  z[k] = H * x[k] + v[k]
-*  x: n x 1, state vector
-*  z: m x 1, observer vector
-*  u: l x 1, input vector
+*  x: n x 1
+*  z: m x 1
+*  u: l x 1
 *  A: n x n
 *  B: n x l
 *  H: m x n
@@ -21,7 +21,7 @@
 *  P: n x n
 *  K: n x n
 *
-*  for Dynamic positioning, n=6, m=6, l=3
+*
 *  by Hu.ZH(Mr.SJTU)
 ***********************************************************************
 */
@@ -29,86 +29,134 @@
 #ifndef _KALMANFILTER_H_
 #define _KALMANFILTER_H_
 
+#include <Eigen/Dense>
 #include <fstream>
 #include <iostream>
-#include "estimatordata.h"
 
 class kalmanfilter {
  public:
-  explicit kalmanfilter(const vessel_first &_vessel) {
-    initializekalman(_vessel);
-  }
+  // disable the default constructor
   kalmanfilter() = delete;
-  ~kalmanfilter() {}
+  explicit kalmanfilter(const Eigen::MatrixXd &_A, const Eigen::MatrixXd &_B,
+                        const Eigen::MatrixXd &_H, const Eigen::MatrixXd &_Q,
+                        const Eigen::MatrixXd &_R) noexcept
+      : A(_A),
+        B(_B),
+        H(_H),
+        Q(_Q),
+        R(_R),
+        n(_A.rows()),
+        l(_B.cols()),
+        m(_H.rows()),
+        In(n, n),
+        Im(m, m) {
+    In.setIdentity();
+    Im.setIdentity();
+  }
+
+  ~kalmanfilter() noexcept {}
+
+  /* Set Initial Value */
+  void setInitial(const Eigen::VectorXd &_X0, const Eigen::MatrixXd &_P0) {
+    X0 = _X0;
+    P0 = _P0;
+  }
 
   // perform kalman filter for one step
-  void kalmanonestep(realtimevessel_first &_realtimedata) {
-    updateKalmanA(_realtimedata);
-    predict(_realtimedata);
-    correct(_realtimedata);
+  kalmanfilter &kalmanonestep(const Eigen::MatrixXd &_A,
+                              const Eigen::MatrixXd &_B,
+                              const Eigen::VectorXd &former_U,
+                              const Eigen::VectorXd &_Z) {
+    updatesystem(_A, _B);
+    predict(former_U);
+    correct(_Z);
+    return *this;
   }
 
-  Matrix66d getA() { return A; }
-  Matrix63d getB() { return B; }
+  kalmanfilter &kalmanonestep(const Eigen::MatrixXd &_A,
+                              const Eigen::VectorXd &former_U,
+                              const Eigen::VectorXd &_Z) {
+    updatesystem(_A);
+    predict(former_U);
+    correct(_Z);
+    return *this;
+  }
+  kalmanfilter &kalmanonestep(const Eigen::VectorXd &former_U,
+                              const Eigen::VectorXd &_Z) {
+    predict(former_U);
+    correct(_Z);
+    return *this;
+  }
+
+  Eigen::VectorXd getState() const noexcept { return X; }
+
+  double getMaxEigenP() const {
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(P0);
+    if (eigensolver.info() != Eigen::Success)
+      return 100;
+    else
+      return eigensolver.eigenvalues().maxCoeff();
+  }
 
  private:
   /* Fixed Matrix */
-  Matrix66d A;  // System dynamics matrix
-  Matrix63d B;  // Control matrix
-  Matrix66d H;  // Mesaurement Adaptation matrix
-  Matrix66d Q;  // Process Noise Covariance matrix
-  Matrix66d R;  // Measurement Noise Covariance matrix
+  Eigen::MatrixXd A;  // System dynamics matrix
+  Eigen::MatrixXd B;  // Control matrix
+  Eigen::MatrixXd H;  // Mesaurement Adaptation matrix
+  Eigen::MatrixXd Q;  // Process Noise Covariance matrix
+  Eigen::MatrixXd R;  // Measurement Noise Covariance matrix
 
+  /* Problem Dimension */
+  int n;  // State vector dimension
+  int l;  // Control vector (input) dimension (if there is not input, set to
+          // zero)
+  int m;  // observer vector
+  Eigen::MatrixXd In;  // Identity matrix
+  Eigen::MatrixXd Im;  // Identity matrix
   /* Variable Matrix */
-  Matrix66d P;  // State Covariance
-  Matrix66d K;  // Kalman Gain matrix
+  Eigen::VectorXd X;  //(Current) State vector
+  Eigen::MatrixXd P;  // State Covariance
+  Eigen::MatrixXd K;  // Kalman Gain matrix
+
+  /* Inizial Value */
+  Eigen::VectorXd X0;  // Initial State vector
+  Eigen::MatrixXd P0;  // Initial State Covariance matrix
+
+  /* Do prediction based of physical system (No external input) */
+  void predict(void) {
+    X = A * X0;
+    P = A * P0 * A.transpose() + Q;
+  }
 
   /* Do prediction based of physical system (with external input)
    * U: Control vector
    */
-  void predict(realtimevessel_first &_realtimedata) {
-    _realtimedata.State = A * _realtimedata.State + B * _realtimedata.BalphaU;
-    P = A * P * A.transpose() + Q;
+  void predict(const Eigen::VectorXd &U) {
+    X = A * X0 + B * U;
+    P = A * P0 * A.transpose() + Q;
   }
 
-  /* Correct the prediction, using mesaurement */
-  void correct(realtimevessel_first &_realtimedata) {
-    K = (P * H.transpose()) * (H * P * H.transpose() + R).inverse();
-    // K = (P * H.transpose()) * (H * P * H.transpose() + R).llt().solve(Im);
-    _realtimedata.State = _realtimedata.State + K * (_realtimedata.Measurement -
-                                                     H * _realtimedata.State);
+  /* Correct the prediction, using mesaurement
+   *  Z: mesaure vector
+   */
+  void correct(const Eigen::VectorXd &Z) {
+    // K = (P * H.transpose()) * (H * P * H.transpose() + R).inverse();
+    K = (P * H.transpose()) * (H * P * H.transpose() + R).llt().solve(Im);
+    X = X + K * (Z - H * X);
 
-    P = (Matrix66d::Identity() - K * H) * P;
+    P = (In - K * H) * P;
+
+    X0 = X;
+    P0 = P;
   }
 
-  // initialize parameters in Kalman filter
-  void initializekalman(const vessel_first &_vessel) {
-    // copy the constant data
-    Eigen::Matrix3d Mass(_vessel.Mass);
-    Eigen::Matrix3d Damping(_vessel.Damping);
-
-    // calcualte the A and B in continous equation
-    Matrix63d Bk = Matrix63d::Zero();
-    Matrix66d Ak = Matrix66d::Zero();
-    Eigen::Matrix3d Inv_Mass = Mass.inverse();
-    Ak.topRightCorner(3, 3) = Eigen::Matrix3d::Identity();
-    Ak.bottomRightCorner(3, 3) = -Inv_Mass * Damping;
-    Bk.bottomRows(3) = Inv_Mass;
-
-    // calculate discrete time A, B, and H
-    A = Matrix66d::Identity() + sample_time * Ak;
-    B = sample_time * Bk;
-    H = Matrix66d::Identity();
-    // specify Q, R, P
-    Q = 0.01 * Matrix66d::Identity();
-    R = 0.1 * Matrix66d::Identity();
-    P = 1 * Matrix66d::Identity();
+  /*Set Fixed Matrix(NO INPUT) */
+  void updatesystem(const Eigen::MatrixXd &_A, const Eigen::MatrixXd &_B) {
+    A = _A;
+    B = _B;
   }
-
-  // real time update the Kalman filter matrix using orientation
-  void updateKalmanA(const realtimevessel_first &_realtimedata) {
-    A.topRightCorner(3, 3) = sample_time * _realtimedata.CTB2G;
-  }
+  /*Set Fixed Matrix(NO INPUT) */
+  void updatesystem(const Eigen::MatrixXd &_A) { A = _A; }
 };
 
 #endif /* _KALMANFILTER_H_ */
