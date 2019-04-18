@@ -1,4 +1,7 @@
 build/
+Build/
 Debug/
+debug/
 Release/
+release/
 *.db
