@@ -21,7 +21,9 @@ static void MSKAPI printstr(void *handle, const char str[]) {
 } /* printstr */
 
 int main(int argc, const char *argv[]) {
-  double c[] = {0.0, -1.0, 0.0};
+  double c_[] = {0.0, -1.0, 0.0};
+  double *c;
+  c = c_;
 
   MSKboundkeye bkc[] = {MSK_BK_LO};
   double blc[] = {1.0};

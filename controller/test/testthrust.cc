@@ -14,10 +14,16 @@
 #include "thrustallocation.h"
 
 int main() {
-  thrustallocationdata _thrustallocationdata{3, 3, Eigen::VectorXd::Zero(3)};
+  int m = 3;
+  int n = 3;
+  thrustallocationdata _thrustallocationdata{m, n, Eigen::VectorXd::Zero(m)};
 
   std::vector<tunnelthrusterdata> v_tunnelthrusterdata;
   v_tunnelthrusterdata.reserve(1);
+  v_tunnelthrusterdata.push_back({1, 1, 1, 1, 1, 1, 0, 1});
   std::vector<azimuththrusterdata> v_azimuththrusterdata;
-  v_azimuththrusterdata.reserve(2);
+  v_azimuththrusterdata.reserve(m - 1);
+
+  thrustallocation _thrustallocation(
+      _thrustallocationdata, v_tunnelthrusterdata, v_azimuththrusterdata);
 }
