@@ -14,8 +14,6 @@
 #include "thrustallocation.h"
 
 int main() {
-  const int m = 3;
-  const int n = 3;
   std::vector<int> index_thrusters{1, 2, 2};
 
   int num_tunnel =
@@ -27,8 +25,8 @@ int main() {
   int num_mainrudder =
       std::count(index_thrusters.begin(), index_thrusters.end(), 3);
 
-  thrustallocationdata _thrustallocationdata{
-      m, n, num_tunnel, num_azimuth, num_mainrudder, index_thrusters};
+  thrustallocationdata _thrustallocationdata{num_tunnel, num_azimuth,
+                                             num_mainrudder, index_thrusters};
 
   std::vector<tunnelthrusterdata> v_tunnelthrusterdata;
   v_tunnelthrusterdata.reserve(num_tunnel);
@@ -62,6 +60,6 @@ int main() {
       10       // min_thrust
   });
 
-  thrustallocation<m, n> _thrustallocation(
+  thrustallocation<num_thrusters, num_controlspace> _thrustallocation(
       _thrustallocationdata, v_tunnelthrusterdata, v_azimuththrusterdata);
 }

@@ -26,19 +26,12 @@
 
 #define QP_THREADS_USED 1
 
-template <class T>
-void convertstdvector2mosekarray(const std::vector<T> &_v, T *_c) {
-  // for (std::size_t i = 0; i < _v.size(); ++i)
-  // *(_c + i) = _v[i];
-  *(_c + 2) = 0;
-}
-
 // static void MSKAPI printstr(void *handle, const char str[]) {  //
 // printf("%s", str);  // } /* printstr */
 
 // m: # of all thrusters on the vessel
 // n: # of dimension of control space
-template <int m = 3, int n = 3>
+template <int m, int n = 3>
 class thrustallocation {
  public:
   explicit thrustallocation(
@@ -69,7 +62,8 @@ class thrustallocation {
         b(Eigen::Matrix<double, n, 1>::Zero()),
         delta_alpha(Eigen::Matrix<double, m, 1>::Zero()),
         delta_u(Eigen::Matrix<double, m, 1>::Zero()),
-        derivative_dx(1e-5) {
+        derivative_dx(1e-5),
+        results(Eigen::Matrix<double, 2 * m + n, 1>::Zero()) {
     initializethrusterallocation();
   }
 
@@ -155,48 +149,135 @@ class thrustallocation {
     for (int i = 0; i != num_tunnel; ++i) {
       lx(i) = v_tunnelthrusterdata[i].lx;
       ly(i) = v_tunnelthrusterdata[i].ly;
+
+      Omega(i, i) = 1;
     }
     for (int i = 0; i != num_azimuth; ++i) {
-      lx(num_tunnel + i) = v_azimuththrusterdata[i].lx;
-      ly(num_tunnel + i) = v_azimuththrusterdata[i].ly;
-    }
-    Q.setZero();
+      int index_azimuth = num_tunnel + i;
+      lx(index_azimuth) = v_azimuththrusterdata[i].lx;
+      ly(index_azimuth) = v_azimuththrusterdata[i].ly;
 
-    std::cout << m << std::endl;
-    std::cout << n << std::endl;
-    // Omega.setZero();
-    // Q_deltau.setZero();
-    // g_deltau.setZero();
-    // d_rho.setZero();
-    // B_alpha.setZero();
-    // d_Balpha_u.setZero();
-    // b.setZero();
-    // delta_alpha.setZero();
-    // delta_u.setZero();
-    // results.setZero();
-    // initializeQuadraticObjective();
+      Omega(index_azimuth, index_azimuth) = 20;
+    }
+
+    // quadratic penality matrix for error
+    Q(0, 0) = 1000;
+    Q(1, 1) = 1000;
+    Q(2, 2) = 1000;
+
+    initializemosekvariables();
 
     // calculaterotation(_realtimevessel);
     // // update BalphaU
     // _realtimevessel.BalphaU =
     //     calculateBalphau(_realtimevessel.alpha, _realtimevessel.u);
-    // initializeMosekAPI(_vessel_second);
+    initializeMosekAPI();
   }
 
-  void initializeQuadraticObjective() {
-    Q(0, 0) = 1000;
-    Q(1, 1) = 1000;
-    Q(2, 2) = 1000;
-    Omega(0, 0) = 1;
-    Omega(1, 1) = 20;
-    Omega(2, 2) = 20;
-    qval[3] = Omega(0, 0);
-    qval[4] = Omega(1, 1);
-    qval[5] = Omega(2, 2);
-    qval[6] = Q(0, 0);
-    qval[7] = Q(1, 1);
-    qval[8] = Q(2, 2);
+  void initializemosekvariables() {
+    int _mdouble = 2 * m;
+    int _mquintuple = 6 * m;
+    // assign value to the bounds on variables
+    for (int i = 0; i != _mdouble; ++i) {
+      bkx[i] = MSK_BK_RA;
+      blx[i] = 0.0;
+      bux[i] = 0.0;
+    }
+    for (int j = 0; j != n; ++j) {
+      int index_n = j + _mdouble;
+      bkx[index_n] = MSK_BK_FR;
+      blx[index_n] = -MSK_INFINITY;
+      bux[index_n] = +MSK_INFINITY;
+    }
+
+    // assign value to the linear constraints
+    for (int i = 0; i != _mdouble; ++i) {
+      int _itriple = 3 * i;
+      aptrb[i] = _itriple;
+      aptre[i] = _itriple + 3;
+
+      for (int j = 0; j != 3; ++j) {
+        asub[_itriple + j] = j;
+        aval[_itriple + j] = 0.0;
+      }
+    }
+    for (int j = 0; j != n; ++j) {
+      aptrb[j + _mdouble] = _mquintuple + j;
+      aptre[j + _mdouble] = _mquintuple + j + 1;
+      asub[j + _mquintuple] = j;
+      aval[j + _mquintuple] = 1.0;
+      bkc[j] = MSK_BK_FX;
+      blc[j] = 0;
+      buc[j] = 0;
+    }
+
+    // assign value to the objective
+    for (int i = 0; i != numvar; ++i) {
+      qsubi[i] = i;
+      qsubj[i] = i;
+      g[i] = 0;
+    }
+    for (int i = 0; i != m; ++i) {
+      qval[i] = 0;
+    }
+    for (int i = 0; i != m; ++i) {
+      qval[i + m] = Omega(i, i);
+    }
+    for (int j = 0; j != n; ++j) {
+      qval[j + 2 * m] = Q(j, j);
+    }
   }
+
+  void initializeMosekAPI() {
+    /* Create the mosek environment. */
+    r = MSK_makeenv(&env, NULL);
+    /* Create the optimization task. */
+    r = MSK_maketask(env, num_constraints, numvar, &task);
+    // set up the threads used by mosek
+    r = MSK_putintparam(task, MSK_IPAR_NUM_THREADS, QP_THREADS_USED);
+    // r = MSK_linkfunctotaskstream(task, MSK_STREAM_LOG, NULL, printstr);
+    r = MSK_linkfunctotaskstream(task, MSK_STREAM_LOG, NULL, NULL);
+    // append num_constrainsts empty contraints
+    r = MSK_appendcons(task, num_constraints);
+    // append numvar emtpy variables
+    r = MSK_appendvars(task, numvar);
+  }
+
+  // // calcuate rotation speed of each thruster based on thrust
+  // void calculaterotation(realtimevessel_first &_realtimevessel) {
+  //   int t_rotation = 0;
+  //   // bow thruster
+  //   if (_realtimevessel.alpha(0) < 0) {
+  //     t_rotation = (int)(sqrt(abs(_realtimevessel.u(0)) / Kbar_negative));
+  //     if (t_rotation == 0) {
+  //       _realtimevessel.rotation(0) = -1;  // prevent zero
+  //       _realtimevessel.u(0) = Kbar_negative;
+  //     } else
+  //       _realtimevessel.rotation(0) = -t_rotation;
+
+  //   } else {
+  //     t_rotation = (int)(sqrt(abs(_realtimevessel.u(0)) / Kbar_positive));
+  //     if (t_rotation == 0) {
+  //       _realtimevessel.rotation(0) = 1;  // prevent zero
+  //       _realtimevessel.u(0) = Kbar_positive;
+  //     } else
+  //       _realtimevessel.rotation(0) = t_rotation;
+  //   }
+  //   // azimuth thruster Left
+  //   t_rotation = (int)(sqrt(abs(_realtimevessel.u(1)) / K_left));
+  //   if (t_rotation == 0) {
+  //     _realtimevessel.rotation(1) = 1;
+  //     _realtimevessel.u(1) = K_left;
+  //   } else
+  //     _realtimevessel.rotation(1) = t_rotation;
+  //   // azimuth thruster Right
+  //   t_rotation = (int)(sqrt(abs(_realtimevessel.u(2)) / K_right));
+  //   if (t_rotation == 0) {
+  //     _realtimevessel.rotation(2) = 1;
+  //     _realtimevessel.u(2) = K_right;
+  //   } else
+  //     _realtimevessel.rotation(2) = t_rotation;
+  // }
 };
 
 #endif /* _THRUSTALLOCATION_H_*/

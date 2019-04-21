@@ -17,9 +17,13 @@
 #include <Eigen/Dense>
 #include <vector>
 
+const int num_thrusters = 3;     // m: # of all thrusters on the vessel
+const int num_controlspace = 3;  // n: # of dimension of control space
+
+// real-time data in the controller
+struct controllerRTdata {};
+
 struct thrustallocationdata {
-  const int m;               // # of thrusters
-  const int n;               //
   const int num_tunnel;      // # of tunnel thruster
   const int num_azimuth;     // # of azimuth thruster
   const int num_mainrudder;  // # of main thruster with rudder
