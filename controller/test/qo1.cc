@@ -8,7 +8,7 @@
  */
 
 #include <stdio.h>
-
+#include <vector>
 #include "mosek.h" /* Include the MOSEK definition file. */
 
 #define NUMCON 1 /* Number of constraints.             */
@@ -30,6 +30,9 @@ int main(int argc, const char *argv[]) {
   double buc[] = {+MSK_INFINITY};
 
   MSKboundkeye bkx[] = {MSK_BK_LO, MSK_BK_LO, MSK_BK_LO};
+
+  std::vector<MSKboundkeye> bkx_{MSK_BK_LO, MSK_BK_LO, MSK_BK_LO};
+
   double blx[] = {0.0, 0.0, 0.0};
   double bux[] = {+MSK_INFINITY, +MSK_INFINITY, +MSK_INFINITY};
 

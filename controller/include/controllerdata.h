@@ -15,13 +15,18 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <vector>
 
 struct thrustallocationdata {
-  int m;
-  int n;
-  Eigen::VectorXd index_thrusters;  // types of each thruster
+  const int m;               // # of thrusters
+  const int n;               //
+  const int num_tunnel;      // # of tunnel thruster
+  const int num_azimuth;     // # of azimuth thruster
+  const int num_mainrudder;  // # of main thruster with rudder
+  const std::vector<int> index_thrusters;
 };
 
+// constant data of tunnel thruster, index = 1
 struct tunnelthrusterdata {
   double lx;  // m
   double ly;  // m
@@ -33,6 +38,8 @@ struct tunnelthrusterdata {
   double max_thrust_negative;
 };
 
+// constant data of azimuth thruster, index = 2
+// Azimuth thruster can be used for fixed thruster, with a fixed alpha
 struct azimuththrusterdata {
   double lx;                  // m
   double ly;                  // m
@@ -47,4 +54,18 @@ struct azimuththrusterdata {
   double min_thrust;          // N
 };
 
+// constant data of main propeller with rudder, index = 3
+struct ruddermaindata {
+  double lx;                  // m
+  double ly;                  // m
+  double K;                   //
+  double max_delta_rotation;  // rpm
+  double max_rotation;        // rpm
+  double min_rotation;        // rpm
+  double max_delta_alpha;     // rad
+  double max_alpha;           // rad
+  double min_alpha;           // rad
+  double max_thrust;          // N
+  double min_thrust;          // N
+};
 #endif /* _CONTROLLERDATA_H_ */
