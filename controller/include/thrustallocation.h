@@ -35,6 +35,7 @@ template <int m, int n = 3>
 class thrustallocation {
  public:
   explicit thrustallocation(
+      controllerRTdata &_controllerRTdata,
       const thrustallocationdata &_thrustallocationdata,
       const std::vector<tunnelthrusterdata> &_v_tunnelthrusterdata,
       const std::vector<azimuththrusterdata> &_v_azimuththrusterdata)
@@ -167,10 +168,10 @@ class thrustallocation {
 
     initializemosekvariables();
 
-    // calculaterotation(_realtimevessel);
-    // // update BalphaU
-    // _realtimevessel.BalphaU =
-    //     calculateBalphau(_realtimevessel.alpha, _realtimevessel.u);
+    calculaterotation(_realtimevessel);
+    // update BalphaU
+    _realtimevessel.BalphaU =
+        calculateBalphau(_realtimevessel.alpha, _realtimevessel.u);
     initializeMosekAPI();
   }
 
@@ -243,41 +244,48 @@ class thrustallocation {
     r = MSK_appendvars(task, numvar);
   }
 
-  // // calcuate rotation speed of each thruster based on thrust
-  // void calculaterotation(realtimevessel_first &_realtimevessel) {
-  //   int t_rotation = 0;
-  //   // bow thruster
-  //   if (_realtimevessel.alpha(0) < 0) {
-  //     t_rotation = (int)(sqrt(abs(_realtimevessel.u(0)) / Kbar_negative));
-  //     if (t_rotation == 0) {
-  //       _realtimevessel.rotation(0) = -1;  // prevent zero
-  //       _realtimevessel.u(0) = Kbar_negative;
-  //     } else
-  //       _realtimevessel.rotation(0) = -t_rotation;
+  // calcuate rotation speed of each thruster based on thrust
+  void calculaterotation(realtimevessel_first &_realtimevessel) {
+    int t_rotation = 0;
+    // bow thruster
+    for (int i = 0; i != num_tunnel; ++i) {
+    }
 
-  //   } else {
-  //     t_rotation = (int)(sqrt(abs(_realtimevessel.u(0)) / Kbar_positive));
-  //     if (t_rotation == 0) {
-  //       _realtimevessel.rotation(0) = 1;  // prevent zero
-  //       _realtimevessel.u(0) = Kbar_positive;
-  //     } else
-  //       _realtimevessel.rotation(0) = t_rotation;
-  //   }
-  //   // azimuth thruster Left
-  //   t_rotation = (int)(sqrt(abs(_realtimevessel.u(1)) / K_left));
-  //   if (t_rotation == 0) {
-  //     _realtimevessel.rotation(1) = 1;
-  //     _realtimevessel.u(1) = K_left;
-  //   } else
-  //     _realtimevessel.rotation(1) = t_rotation;
-  //   // azimuth thruster Right
-  //   t_rotation = (int)(sqrt(abs(_realtimevessel.u(2)) / K_right));
-  //   if (t_rotation == 0) {
-  //     _realtimevessel.rotation(2) = 1;
-  //     _realtimevessel.u(2) = K_right;
-  //   } else
-  //     _realtimevessel.rotation(2) = t_rotation;
-  // }
+    if (_realtimevessel.alpha(0) < 0) {
+      t_rotation = (int)(sqrt(abs(_realtimevessel.u(0)) / Kbar_negative));
+      if (t_rotation == 0) {
+        _realtimevessel.rotation(0) = -1;  // prevent zero
+        _realtimevessel.u(0) = Kbar_negative;
+      } else
+        _realtimevessel.rotation(0) = -t_rotation;
+
+    } else {
+      t_rotation = (int)(sqrt(abs(_realtimevessel.u(0)) / Kbar_positive));
+      if (t_rotation == 0) {
+        _realtimevessel.rotation(0) = 1;  // prevent zero
+        _realtimevessel.u(0) = Kbar_positive;
+      } else
+        _realtimevessel.rotation(0) = t_rotation;
+    }
+
+    // azimuth thruster
+    for (int j = 0; j != num_azimuth; ++j) {
+    }
+
+    t_rotation = (int)(sqrt(abs(_realtimevessel.u(1)) / K_left));
+    if (t_rotation == 0) {
+      _realtimevessel.rotation(1) = 1;
+      _realtimevessel.u(1) = K_left;
+    } else
+      _realtimevessel.rotation(1) = t_rotation;
+    // azimuth thruster Right
+    t_rotation = (int)(sqrt(abs(_realtimevessel.u(2)) / K_right));
+    if (t_rotation == 0) {
+      _realtimevessel.rotation(2) = 1;
+      _realtimevessel.u(2) = K_right;
+    } else
+      _realtimevessel.rotation(2) = t_rotation;
+  }
 };
 
 #endif /* _THRUSTALLOCATION_H_*/
