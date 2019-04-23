@@ -15,6 +15,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -35,7 +36,7 @@ template <int m, int n = 3>
 class thrustallocation {
  public:
   explicit thrustallocation(
-      controllerRTdata &_controllerRTdata,
+      controllerRTdata &_RTdata,
       const thrustallocationdata &_thrustallocationdata,
       const std::vector<tunnelthrusterdata> &_v_tunnelthrusterdata,
       const std::vector<azimuththrusterdata> &_v_azimuththrusterdata)
@@ -47,25 +48,25 @@ class thrustallocation {
         index_thrusters(_thrustallocationdata.index_thrusters),
         v_tunnelthrusterdata(_v_tunnelthrusterdata),
         v_azimuththrusterdata(_v_azimuththrusterdata),
-        lx(Eigen::Matrix<double, m, 1>::Zero()),
-        ly(Eigen::Matrix<double, m, 1>::Zero()),
-        upper_delta_alpha(Eigen::Matrix<double, m, 1>::Zero()),
-        lower_delta_alpha(Eigen::Matrix<double, m, 1>::Zero()),
-        upper_delta_u(Eigen::Matrix<double, m, 1>::Zero()),
-        lower_delta_u(Eigen::Matrix<double, m, 1>::Zero()),
-        Q(Eigen::Matrix<double, n, n>::Zero()),
-        Omega(Eigen::Matrix<double, m, m>::Zero()),
-        Q_deltau(Eigen::Matrix<double, m, m>::Zero()),
-        g_deltau(Eigen::Matrix<double, m, 1>::Zero()),
-        d_rho(Eigen::Matrix<double, m, 1>::Zero()),
-        B_alpha(Eigen::Matrix<double, n, m>::Zero()),
-        d_Balpha_u(Eigen::Matrix<double, n, m>::Zero()),
-        b(Eigen::Matrix<double, n, 1>::Zero()),
-        delta_alpha(Eigen::Matrix<double, m, 1>::Zero()),
-        delta_u(Eigen::Matrix<double, m, 1>::Zero()),
+        lx(vectormd::Zero()),
+        ly(vectormd::Zero()),
+        upper_delta_alpha(vectormd::Zero()),
+        lower_delta_alpha(vectormd::Zero()),
+        upper_delta_u(vectormd::Zero()),
+        lower_delta_u(vectormd::Zero()),
+        Q(matrixnnd::Zero()),
+        Omega(matrixmmd::Zero()),
+        Q_deltau(matrixmmd::Zero()),
+        g_deltau(vectormd::Zero()),
+        d_rho(vectormd::Zero()),
+        B_alpha(matrixnmd::Zero()),
+        d_Balpha_u(matrixnmd::Zero()),
+        b(vectornd::Zero()),
+        delta_alpha(vectormd::Zero()),
+        delta_u(vectormd::Zero()),
         derivative_dx(1e-5),
         results(Eigen::Matrix<double, 2 * m + n, 1>::Zero()) {
-    initializethrusterallocation();
+    initializethrusterallocation(_RTdata);
   }
 
   // explicit thrustallocation(
@@ -101,9 +102,9 @@ class thrustallocation {
   Eigen::Matrix<double, m, 1> upper_delta_u;
   Eigen::Matrix<double, m, 1> lower_delta_u;
   // quadratic objective
-  Eigen::Matrix<double, n, n> Q;
-  Eigen::Matrix<double, m, m> Omega;
-  Eigen::Matrix<double, m, m> Q_deltau;
+  matrixnnd Q;
+  matrixmmd Omega;
+  matrixmmd Q_deltau;
   // linear objective
   Eigen::Matrix<double, m, 1> g_deltau;
   Eigen::Matrix<double, m, 1> d_rho;
@@ -146,7 +147,7 @@ class thrustallocation {
   MSKtask_t task = NULL;
   MSKrescodee r;
 
-  void initializethrusterallocation() {
+  void initializethrusterallocation(controllerRTdata &_RTdata) {
     for (int i = 0; i != num_tunnel; ++i) {
       lx(i) = v_tunnelthrusterdata[i].lx;
       ly(i) = v_tunnelthrusterdata[i].ly;
@@ -168,10 +169,9 @@ class thrustallocation {
 
     initializemosekvariables();
 
-    calculaterotation(_realtimevessel);
+    calculaterotation(_RTdata);
     // update BalphaU
-    _realtimevessel.BalphaU =
-        calculateBalphau(_realtimevessel.alpha, _realtimevessel.u);
+    _RTdata.BalphaU = calculateBalphau(_RTdata.alpha, _RTdata.u);
     initializeMosekAPI();
   }
 
@@ -244,47 +244,224 @@ class thrustallocation {
     r = MSK_appendvars(task, numvar);
   }
 
+  // calculate the contraints of tunnel thruster
+  // depend on the desired force in the Y direction or Mz direction
+  void calculateconstrains_tunnelthruster(const controllerRTdata &_RTdata,
+                                          double _desired_Mz) {
+    for (int i = 0; i != num_tunnel; ++i) {
+      int _maxdeltar = v_tunnelthrusterdata[i].max_delta_rotation;
+      double _Kp = v_tunnelthrusterdata[i].K_positive;
+      double _Kn = v_tunnelthrusterdata[i].K_negative;
+      if (0 < _RTdata.rotation(i) && _RTdata.rotation(i) <= _maxdeltar) {
+        // specify the first case
+        if (_desired_Mz > 0) {
+          upper_delta_alpha(i) = 0;
+          lower_delta_alpha(i) = 0;
+          lower_delta_u(i) = -_RTdata.u(i);
+          upper_delta_u(i) =
+              _Kp * std::pow(_RTdata.rotation(i) + _maxdeltar, 2) -
+              _RTdata.u(i);
+        } else {
+          upper_delta_alpha(i) = -M_PI;
+          lower_delta_alpha(i) = -M_PI;
+          lower_delta_u(i) = -_RTdata.u(i);
+          upper_delta_u(i) = _Kn *
+                                 std::pow(_RTdata.rotation(i) - _maxdeltar,
+                                          2)(_RTdata.rotation(i) - _maxdeltar) *
+                                 (_RTdata.rotation(i) - _maxdeltar) -
+                             _RTdata.u(i);
+        }
+
+      } else if (-_maxdeltar <= _RTdata.rotation(i) &&
+                 _RTdata.rotation(i) < 0) {
+        if (_desired_Mz > 0) {
+          // specify the second case
+          upper_delta_alpha(i) = M_PI;
+          lower_delta_alpha(i) = M_PI;
+          lower_delta_u(i) = -_RTdata.u(i);
+          upper_delta_u(i) = _Kp * (_RTdata.rotation(i) + _maxdeltar) *
+                                 (_RTdata.rotation(i) + _maxdeltar) -
+                             _RTdata.u(i);
+        } else {
+          // specify the first case
+          upper_delta_alpha(i) = 0;
+          lower_delta_alpha(i) = 0;
+          lower_delta_u(i) = -_RTdata.u(i);
+          upper_delta_u(i) = _Kn * (_RTdata.rotation(i) - _maxdeltar) *
+                                 (_RTdata.rotation(i) - _maxdeltar) -
+                             _RTdata.u(i);
+        }
+
+      } else if (_RTdata.rotation(i) > _maxdeltar) {
+        lower_delta_alpha(i) = 0;
+        upper_delta_alpha(i) = 0;
+        upper_delta_u(i) = std::min(
+            v_tunnelthrusterdata[i].max_thrust_positive - _RTdata.u(i),
+            _Kp * std::pow(_RTdata.rotation(i) + _maxdeltar, 2) - _RTdata.u(i));
+        lower_delta_u(i) =
+            _Kp * std::pow(_RTdata.rotation(i) - _maxdeltar, 2) - _RTdata.u(i);
+
+      } else {
+        lower_delta_alpha(i) = 0;
+        upper_delta_alpha(i) = 0;
+        upper_delta_u(i) = std::min(
+            _Kn * std::pow(_RTdata.rotation(i) - _maxdeltar, 2) - _RTdata.u(i),
+            v_tunnelthrusterdata[i].max_thrust_negative - _RTdata.u(i));
+        lower_delta_u(i) =
+            _Kn * std::pow(_RTdata.rotation(i) + _maxdeltar, 2) - _RTdata.u(i);
+      }
+    }
+  }
+
+  // calculate the consraints of azimuth thruster
+  void calculateconstrains_azimuth(
+      const realtimevessel_first &_realtimevessel) {
+    // specify constriants on left azimuth
+    /* contraints on the increment of angle */
+    upper_delta_alpha_left =
+        std::min(max_delta_alpha_azimuth,
+                 max_alpha_azimuth_left - _realtimevessel.alpha(1));
+    lower_delta_alpha_left =
+        std::max(-max_delta_alpha_azimuth,
+                 min_alpha_azimuth_left - _realtimevessel.alpha(1));
+    /* contraints on the increment of thrust */
+    double thrust_azimuth_left =
+        K_left * _realtimevessel.rotation(1) * _realtimevessel.rotation(1);
+    upper_delta_u_left =
+        std::min(
+            K_left *
+                (_realtimevessel.rotation(1) + max_delta_rotation_azimuth) *
+                (_realtimevessel.rotation(1) + max_delta_rotation_azimuth),
+            max_thrust_azimuth_left) -
+        thrust_azimuth_left;
+
+    lower_delta_u_left =
+        std::max(
+            K_left *
+                (_realtimevessel.rotation(1) - max_delta_rotation_azimuth) *
+                (_realtimevessel.rotation(1) - max_delta_rotation_azimuth),
+            min_thrust_azimuth_left) -
+        thrust_azimuth_left;
+
+    // specify constraints on right azimuth
+    /* contraints on the increment of angle */
+    upper_delta_alpha_right =
+        std::min(max_delta_alpha_azimuth,
+                 max_alpha_azimuth_right - _realtimevessel.alpha(2));
+    lower_delta_alpha_right =
+        std::max(-max_delta_alpha_azimuth,
+                 min_alpha_azimuth_right - _realtimevessel.alpha(2));
+    /* contraints on the increment of thrust */
+    double thrust_azimuth_right =
+        K_right * _realtimevessel.rotation(2) * _realtimevessel.rotation(2);
+    upper_delta_u_right =
+        std::min(
+            K_right *
+                (_realtimevessel.rotation(2) + max_delta_rotation_azimuth) *
+                (_realtimevessel.rotation(2) + max_delta_rotation_azimuth),
+            max_thrust_azimuth_right) -
+        thrust_azimuth_right;
+
+    lower_delta_u_right =
+        std::max(
+            K_right *
+                (_realtimevessel.rotation(2) - max_delta_rotation_azimuth) *
+                (_realtimevessel.rotation(2) - max_delta_rotation_azimuth),
+            min_thrust_azimuth_right) -
+        thrust_azimuth_right;
+  }
+
   // calcuate rotation speed of each thruster based on thrust
-  void calculaterotation(realtimevessel_first &_realtimevessel) {
-    int t_rotation = 0;
+  void calculaterotation(controllerRTdata &_RTdata) {
     // bow thruster
     for (int i = 0; i != num_tunnel; ++i) {
-    }
+      int t_rotation = 0;
+      if (_RTdata.alpha(i) < 0) {
+        t_rotation = static_cast<int>(
+            sqrt(abs(_RTdata.u(i)) / v_tunnelthrusterdata[i].K_negative));
+        if (t_rotation == 0) {
+          _RTdata.rotation(i) = -1;  // prevent zero
+          _RTdata.u(i) = v_tunnelthrusterdata[i].K_negative;
+        } else
+          _RTdata.rotation(i) = -t_rotation;
 
-    if (_realtimevessel.alpha(0) < 0) {
-      t_rotation = (int)(sqrt(abs(_realtimevessel.u(0)) / Kbar_negative));
-      if (t_rotation == 0) {
-        _realtimevessel.rotation(0) = -1;  // prevent zero
-        _realtimevessel.u(0) = Kbar_negative;
-      } else
-        _realtimevessel.rotation(0) = -t_rotation;
+      } else {
+        t_rotation = static_cast<int>(
+            sqrt(abs(_RTdata.u(i)) / v_tunnelthrusterdata[i].K_positive));
 
-    } else {
-      t_rotation = (int)(sqrt(abs(_realtimevessel.u(0)) / Kbar_positive));
-      if (t_rotation == 0) {
-        _realtimevessel.rotation(0) = 1;  // prevent zero
-        _realtimevessel.u(0) = Kbar_positive;
-      } else
-        _realtimevessel.rotation(0) = t_rotation;
+        if (t_rotation == 0) {
+          _RTdata.rotation(i) = 1;  // prevent zero
+          _RTdata.u(i) = v_tunnelthrusterdata[i].K_positive;
+        } else
+          _RTdata.rotation(i) = t_rotation;
+      }
     }
 
     // azimuth thruster
     for (int j = 0; j != num_azimuth; ++j) {
-    }
+      int t_rotation = 0;
+      int index_azimuth = j + num_tunnel;
 
-    t_rotation = (int)(sqrt(abs(_realtimevessel.u(1)) / K_left));
-    if (t_rotation == 0) {
-      _realtimevessel.rotation(1) = 1;
-      _realtimevessel.u(1) = K_left;
-    } else
-      _realtimevessel.rotation(1) = t_rotation;
-    // azimuth thruster Right
-    t_rotation = (int)(sqrt(abs(_realtimevessel.u(2)) / K_right));
-    if (t_rotation == 0) {
-      _realtimevessel.rotation(2) = 1;
-      _realtimevessel.u(2) = K_right;
-    } else
-      _realtimevessel.rotation(2) = t_rotation;
+      t_rotation = static_cast<int>(
+          sqrt(abs(_RTdata.u(index_azimuth)) / v_azimuththrusterdata[j].K));
+      if (t_rotation == 0) {
+        _RTdata.rotation(index_azimuth) = 1;
+        _RTdata.u(index_azimuth) = v_azimuththrusterdata[j].K;
+      } else
+        _RTdata.rotation(index_azimuth) = t_rotation;
+    }
+  }
+
+  // calculate Balpha as function of alpha
+  matrixnmd calculateBalpha(const vectormd &t_alpha) {
+    matrixnmd _B_alpha = matrixnmd::Zero();
+    double angle = 0;
+    double t_cos = 0;
+    double t_sin = 0;
+    for (int i = 0; i != m; ++i) {
+      angle = t_alpha(i);
+      t_cos = cos(angle);
+      t_sin = sin(angle);
+      _B_alpha(0, i) = t_cos;
+      _B_alpha(1, i) = t_sin;
+      _B_alpha(2, i) = -ly(i) * t_cos + lx(i) * t_sin;
+    }
+    return _B_alpha;
+  }
+  // calculate the rho term in thruster allocation
+  double calculateRhoTerm(const vectormd &t_alpha, double epsilon = 0.01,
+                          double rho = 10) {
+    auto _B_alpha = calculateBalpha(t_alpha);
+    matrixnnd BBT = _B_alpha * _B_alpha.transpose();
+    return rho / (epsilon + BBT.determinant());
+  }
+  // calculate Jacobian using central difference
+  void calculateJocobianRhoTerm(const vectormd &t_alpha) {
+    for (int i = 0; i != m; ++i) {
+      auto alpha_plus = t_alpha;
+      auto alpha_minus = t_alpha;
+      alpha_plus(i) += derivative_dx;
+      alpha_minus(i) -= derivative_dx;
+      d_rho(i) =
+          (calculateRhoTerm(alpha_plus) - calculateRhoTerm(alpha_minus)) /
+          (2 * derivative_dx);
+    }
+  }
+  // calculate the Balpha u term
+  vectornd calculateBalphau(const vectormd &t_alpha, const vectormd &t_u) {
+    return calculateBalpha(t_alpha) * t_u;
+  }
+  // calculate derivative of Balpha times u
+  void calculateJocobianBalphaU(const vectormd &t_alpha, const vectormd &t_u) {
+    for (int i = 0; i != m; ++i) {
+      auto alpha_plus = t_alpha;
+      auto alpha_minus = t_alpha;
+      alpha_plus(i) += derivative_dx;
+      alpha_minus(i) -= derivative_dx;
+      d_Balpha_u.col(i) = (calculateBalphau(alpha_plus, t_u) -
+                           calculateBalphau(alpha_minus, t_u)) /
+                          (2 * derivative_dx);
+    }
   }
 };
 
