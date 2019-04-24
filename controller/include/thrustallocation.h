@@ -64,8 +64,9 @@ class thrustallocation {
         b(vectornd::Zero()),
         delta_alpha(vectormd::Zero()),
         delta_u(vectormd::Zero()),
-        derivative_dx(1e-5),
-        results(Eigen::Matrix<double, 2 * m + n, 1>::Zero()) {
+        derivative_dx(1e-6),
+        results(Eigen::Matrix<double, 2 * m + n, 1>::Zero()),
+        logpath(_thrustallocationdata.logpath) {
     initializethrusterallocation(_RTdata);
   }
 
@@ -75,7 +76,28 @@ class thrustallocation {
   //     const std::vector<azimuththrusterdata> &_v_azimuththrusterdata,
   //     const std::vector<ruddermaindata> &_v_ruddermaindata) {}
   thrustallocation() = delete;
-  ~thrustallocation() {}
+  ~thrustallocation() {
+    MSK_deletetask(&task);
+    MSK_deleteenv(&env);
+  }
+
+  void testf(const controllerRTdata &_RTdata) {
+    updateTAparameters(_RTdata);
+
+    // std::cout << _RTdata.alpha << std::endl;
+    // std::cout << "upper_delta_alpha: " << upper_delta_alpha << std::endl;
+    // std::cout << "lower_delta_alpha: " << lower_delta_alpha << std::endl;
+    // std::cout << "upper_delta_u: " << upper_delta_u << std::endl;
+    // std::cout << "lower_delta_u: " << lower_delta_u << std::endl;
+    // std::cout << "Q: " << Q << std::endl;
+    // std::cout << "Omega: " << Omega << std::endl;
+    // std::cout << "Q_deltau: " << Q_deltau << std::endl;
+    // std::cout << "g_deltau: " << g_deltau << std::endl;
+    // std::cout << "d_rho: " << d_rho << std::endl;
+    // std::cout << "B_alpha: " << B_alpha << std::endl;
+    // std::cout << "d_Balpha_u: " << d_Balpha_u << std::endl;
+    // std::cout << "b: " << b << std::endl;
+  }
 
  private:
   const int num_tunnel;
@@ -94,29 +116,29 @@ class thrustallocation {
   std::vector<ruddermaindata> v_ruddermaindata;
 
   // location of each thruster
-  Eigen::Matrix<double, m, 1> lx;
-  Eigen::Matrix<double, m, 1> ly;
+  vectormd lx;
+  vectormd ly;
   // real time constraints of each thruster
-  Eigen::Matrix<double, m, 1> upper_delta_alpha;
-  Eigen::Matrix<double, m, 1> lower_delta_alpha;
-  Eigen::Matrix<double, m, 1> upper_delta_u;
-  Eigen::Matrix<double, m, 1> lower_delta_u;
+  vectormd upper_delta_alpha;
+  vectormd lower_delta_alpha;
+  vectormd upper_delta_u;
+  vectormd lower_delta_u;
   // quadratic objective
   matrixnnd Q;
   matrixmmd Omega;
   matrixmmd Q_deltau;
   // linear objective
-  Eigen::Matrix<double, m, 1> g_deltau;
-  Eigen::Matrix<double, m, 1> d_rho;
+  vectormd g_deltau;
+  vectormd d_rho;
 
   // real time constraint matrix in QP (equality constraint)
-  Eigen::Matrix<double, n, m> B_alpha;
-  Eigen::Matrix<double, n, m> d_Balpha_u;  // Jocobian matrix of Balpha times u
-  Eigen::Matrix<double, n, 1> b;
+  matrixnmd B_alpha;
+  matrixnmd d_Balpha_u;  // Jocobian matrix of Balpha times u
+  vectornd b;
 
   // real time physical variable in thruster allocation
-  Eigen::Matrix<double, m, 1> delta_alpha;  // rad
-  Eigen::Matrix<double, m, 1> delta_u;      // N
+  vectormd delta_alpha;  // rad
+  vectormd delta_u;      // N
   // linearized parameters
   double derivative_dx;  // step size of the derivative
 
@@ -143,6 +165,9 @@ class thrustallocation {
   // array to store the optimization results
   Eigen::Matrix<double, 2 * m + n, 1> results;
 
+  // log file
+  std::string logpath;
+  // mosek environment
   MSKenv_t env = NULL;
   MSKtask_t task = NULL;
   MSKrescodee r;
@@ -158,7 +183,6 @@ class thrustallocation {
       int index_azimuth = num_tunnel + i;
       lx(index_azimuth) = v_azimuththrusterdata[i].lx;
       ly(index_azimuth) = v_azimuththrusterdata[i].ly;
-
       Omega(index_azimuth, index_azimuth) = 20;
     }
 
@@ -246,8 +270,8 @@ class thrustallocation {
 
   // calculate the contraints of tunnel thruster
   // depend on the desired force in the Y direction or Mz direction
-  void calculateconstrains_tunnelthruster(const controllerRTdata &_RTdata,
-                                          double _desired_Mz) {
+  void calculateconstrains_tunnel(const controllerRTdata &_RTdata,
+                                  double _desired_Mz) {
     for (int i = 0; i != num_tunnel; ++i) {
       int _maxdeltar = v_tunnelthrusterdata[i].max_delta_rotation;
       double _Kp = v_tunnelthrusterdata[i].K_positive;
@@ -265,11 +289,9 @@ class thrustallocation {
           upper_delta_alpha(i) = -M_PI;
           lower_delta_alpha(i) = -M_PI;
           lower_delta_u(i) = -_RTdata.u(i);
-          upper_delta_u(i) = _Kn *
-                                 std::pow(_RTdata.rotation(i) - _maxdeltar,
-                                          2)(_RTdata.rotation(i) - _maxdeltar) *
-                                 (_RTdata.rotation(i) - _maxdeltar) -
-                             _RTdata.u(i);
+          upper_delta_u(i) =
+              _Kn * std::pow(_RTdata.rotation(i) - _maxdeltar, 2) -
+              _RTdata.u(i);
         }
 
       } else if (-_maxdeltar <= _RTdata.rotation(i) &&
@@ -279,17 +301,17 @@ class thrustallocation {
           upper_delta_alpha(i) = M_PI;
           lower_delta_alpha(i) = M_PI;
           lower_delta_u(i) = -_RTdata.u(i);
-          upper_delta_u(i) = _Kp * (_RTdata.rotation(i) + _maxdeltar) *
-                                 (_RTdata.rotation(i) + _maxdeltar) -
-                             _RTdata.u(i);
+          upper_delta_u(i) =
+              _Kp * std::pow(_RTdata.rotation(i) + _maxdeltar, 2) -
+              _RTdata.u(i);
         } else {
           // specify the first case
           upper_delta_alpha(i) = 0;
           lower_delta_alpha(i) = 0;
           lower_delta_u(i) = -_RTdata.u(i);
-          upper_delta_u(i) = _Kn * (_RTdata.rotation(i) - _maxdeltar) *
-                                 (_RTdata.rotation(i) - _maxdeltar) -
-                             _RTdata.u(i);
+          upper_delta_u(i) =
+              _Kn * std::pow(_RTdata.rotation(i) - _maxdeltar, 2) -
+              _RTdata.u(i);
         }
 
       } else if (_RTdata.rotation(i) > _maxdeltar) {
@@ -314,61 +336,32 @@ class thrustallocation {
   }
 
   // calculate the consraints of azimuth thruster
-  void calculateconstrains_azimuth(
-      const realtimevessel_first &_realtimevessel) {
-    // specify constriants on left azimuth
-    /* contraints on the increment of angle */
-    upper_delta_alpha_left =
-        std::min(max_delta_alpha_azimuth,
-                 max_alpha_azimuth_left - _realtimevessel.alpha(1));
-    lower_delta_alpha_left =
-        std::max(-max_delta_alpha_azimuth,
-                 min_alpha_azimuth_left - _realtimevessel.alpha(1));
-    /* contraints on the increment of thrust */
-    double thrust_azimuth_left =
-        K_left * _realtimevessel.rotation(1) * _realtimevessel.rotation(1);
-    upper_delta_u_left =
-        std::min(
-            K_left *
-                (_realtimevessel.rotation(1) + max_delta_rotation_azimuth) *
-                (_realtimevessel.rotation(1) + max_delta_rotation_azimuth),
-            max_thrust_azimuth_left) -
-        thrust_azimuth_left;
+  void calculateconstrains_azimuth(const controllerRTdata &_RTdata) {
+    for (int j = 0; j != num_azimuth; ++j) {
+      int index_azimuth = j + num_tunnel;
+      /* contraints on the increment of angle */
+      upper_delta_alpha(index_azimuth) = std::min(
+          v_azimuththrusterdata[j].max_delta_alpha,
+          v_azimuththrusterdata[j].max_alpha - _RTdata.alpha(index_azimuth));
+      lower_delta_alpha(index_azimuth) = std::max(
+          -v_azimuththrusterdata[j].max_delta_alpha,
+          v_azimuththrusterdata[j].min_alpha - _RTdata.alpha(index_azimuth));
+      /* contraints on the increment of thrust */
+      double K = v_azimuththrusterdata[j].K;
+      int _maxdeltar = v_azimuththrusterdata[j].max_delta_rotation;
+      double _thrust = K * std::pow(_RTdata.rotation(index_azimuth), 2);
+      upper_delta_u(index_azimuth) =
+          std::min(
+              v_azimuththrusterdata[j].max_thrust,
+              K * std::pow(_RTdata.rotation(index_azimuth) + _maxdeltar, 2)) -
+          _thrust;
 
-    lower_delta_u_left =
-        std::max(
-            K_left *
-                (_realtimevessel.rotation(1) - max_delta_rotation_azimuth) *
-                (_realtimevessel.rotation(1) - max_delta_rotation_azimuth),
-            min_thrust_azimuth_left) -
-        thrust_azimuth_left;
-
-    // specify constraints on right azimuth
-    /* contraints on the increment of angle */
-    upper_delta_alpha_right =
-        std::min(max_delta_alpha_azimuth,
-                 max_alpha_azimuth_right - _realtimevessel.alpha(2));
-    lower_delta_alpha_right =
-        std::max(-max_delta_alpha_azimuth,
-                 min_alpha_azimuth_right - _realtimevessel.alpha(2));
-    /* contraints on the increment of thrust */
-    double thrust_azimuth_right =
-        K_right * _realtimevessel.rotation(2) * _realtimevessel.rotation(2);
-    upper_delta_u_right =
-        std::min(
-            K_right *
-                (_realtimevessel.rotation(2) + max_delta_rotation_azimuth) *
-                (_realtimevessel.rotation(2) + max_delta_rotation_azimuth),
-            max_thrust_azimuth_right) -
-        thrust_azimuth_right;
-
-    lower_delta_u_right =
-        std::max(
-            K_right *
-                (_realtimevessel.rotation(2) - max_delta_rotation_azimuth) *
-                (_realtimevessel.rotation(2) - max_delta_rotation_azimuth),
-            min_thrust_azimuth_right) -
-        thrust_azimuth_right;
+      lower_delta_u(index_azimuth) =
+          std::max(
+              K * std::pow(_RTdata.rotation(index_azimuth) - _maxdeltar, 2),
+              v_azimuththrusterdata[j].min_thrust) -
+          _thrust;
+    }
   }
 
   // calcuate rotation speed of each thruster based on thrust
@@ -429,7 +422,7 @@ class thrustallocation {
     return _B_alpha;
   }
   // calculate the rho term in thruster allocation
-  double calculateRhoTerm(const vectormd &t_alpha, double epsilon = 0.01,
+  double calculateRhoTerm(const vectormd &t_alpha, double epsilon = 0.1,
                           double rho = 10) {
     auto _B_alpha = calculateBalpha(t_alpha);
     matrixnnd BBT = _B_alpha * _B_alpha.transpose();
@@ -461,6 +454,160 @@ class thrustallocation {
       d_Balpha_u.col(i) = (calculateBalphau(alpha_plus, t_u) -
                            calculateBalphau(alpha_minus, t_u)) /
                           (2 * derivative_dx);
+    }
+  }
+  // calculate g_deltau and Q_deltau
+  void calculateDeltauQ(const vectormd &t_u) {
+    vectormd d_utemp = vectormd::Zero();
+    d_utemp = t_u.cwiseSqrt();
+    g_deltau = 1.5 * d_utemp;
+    vectormd Q_temp = vectormd::Zero();
+    Q_temp = 0.75 * d_utemp.cwiseInverse();
+    Q_deltau = Q_temp.asDiagonal();
+  }
+  // calculate the BalphaU and b
+  void calculateb(const vectornd &_tau, const vectornd &_BalphaU) {
+    b = _tau - _BalphaU;
+  }
+
+  // update parameters in thruster allocation for each time step
+  void updateTAparameters(const controllerRTdata &_RTdata) {
+    B_alpha = calculateBalpha(_RTdata.alpha);
+    calculateJocobianRhoTerm(_RTdata.alpha);
+    calculateJocobianBalphaU(_RTdata.alpha, _RTdata.u);
+    calculateDeltauQ(_RTdata.u);
+    calculateb(_RTdata.tau, _RTdata.BalphaU);
+    calculateconstrains_tunnel(_RTdata, _RTdata.tau(2));
+    calculateconstrains_azimuth(_RTdata);
+  }
+  // update parameters in QP for each time step
+  void updateMosekparameters() {
+    // update A values
+    for (int i = 0; i != m; ++i) {
+      for (int j = 0; j != n; ++j) {
+        aval[n * i + j] = B_alpha(j, i);
+        aval[n * (i + m) + j] = d_Balpha_u(j, i);
+      }
+    }
+
+    // update linear constraints
+    for (int i = 0; i != num_constraints; ++i) {
+      blc[i] = b(i);
+      buc[i] = b(i);
+    }
+
+    for (int i = 0; i != m; ++i) {
+      // update variable constraints
+      blx[i] = lower_delta_u(i);
+      bux[i] = upper_delta_u(i);
+      blx[m + i] = lower_delta_alpha(i);
+      bux[m + i] = upper_delta_alpha(i);
+      // update objective g and Q
+      g[i] = g_deltau(i);
+      g[i + m] = d_rho(i);
+      qval[i] = Q_deltau(i, i);
+    }
+  }
+  // solve QP using Mosek solver
+  void onestepmosek(FILE *t_file) {
+    MSKint32t i, j;
+    double t_results[numvar];
+    results.setZero();
+    if (r == MSK_RES_OK) {
+      for (j = 0; j < numvar; ++j) {
+        /* Set the linear term g_j in the objective.*/
+        r = MSK_putcj(task, j, g[j]);
+
+        /* Set the bounds on variable j.
+         blx[j] <= x_j <= bux[j] */
+        r = MSK_putvarbound(task, j, /* Index of variable.*/
+                            bkx[j],  /* Bound key.*/
+                            blx[j],  /* Numerical value of lower bound.*/
+                            bux[j]); /* Numerical value of upper bound.*/
+
+        /* Input column j of A */
+        r = MSK_putacol(
+            task, j,             /* Variable (column) index.*/
+            aptre[j] - aptrb[j], /* Number of non-zeros in column j.*/
+            asub + aptrb[j],     /* Pointer to row indexes of column j.*/
+            aval + aptrb[j]);    /* Pointer to Values of column j.*/
+      }
+
+      /* Set the bounds on constraints.
+         for i=1, ...,NUMCON : blc[i] <= constraint i <= buc[i] */
+      for (i = 0; i < num_constraints; ++i)
+        r = MSK_putconbound(task, i, /* Index of constraint.*/
+                            bkc[i],  /* Bound key.*/
+                            blc[i],  /* Numerical value of lower bound.*/
+                            buc[i]); /* Numerical value of upper bound.*/
+
+      /* Input the Q for the objective. */
+      r = MSK_putqobj(task, numvar, qsubi, qsubj, qval);
+
+      if (r == MSK_RES_OK) {
+        MSKrescodee trmcode;
+
+        /* Run optimizer */
+        r = MSK_optimizetrm(task, &trmcode);
+
+        /* Print a summary containing information
+           about the solution for debugging purposes*/
+        // MSK_solutionsummary(task, MSK_STREAM_MSG);
+
+        if (r == MSK_RES_OK) {
+          MSKsolstae solsta;
+          MSK_getsolsta(task, MSK_SOL_ITR, &solsta);
+
+          switch (solsta) {
+            case MSK_SOL_STA_OPTIMAL:
+            case MSK_SOL_STA_NEAR_OPTIMAL: {
+              /* Request the interior solution. */
+              MSK_getxx(task, MSK_SOL_ITR, t_results);
+              for (int k = 0; k != numvar; ++k) results(k) = t_results[k];
+              break;
+            }
+
+            case MSK_SOL_STA_DUAL_INFEAS_CER:
+            case MSK_SOL_STA_PRIM_INFEAS_CER:
+            case MSK_SOL_STA_NEAR_DUAL_INFEAS_CER:
+            case MSK_SOL_STA_NEAR_PRIM_INFEAS_CER: {
+              t_file = fopen(logpath.c_str(), "a+");
+              fprintf(t_file,
+                      "Primal or dual infeasibility certificate found.\n");
+              fclose(t_file);
+              break;
+            }
+            case MSK_SOL_STA_UNKNOWN: {
+              t_file = fopen(logpath.c_str(), "a+");
+              fprintf(t_file,
+                      "The status of the solution could not be "
+                      "determined.\n");
+              fclose(t_file);
+              break;
+            }
+            default: {
+              t_file = fopen(logpath.c_str(), "a+");
+              fprintf(t_file, "Other solution status.");
+              fclose(t_file);
+              break;
+            }
+          }
+        } else {
+          t_file = fopen(logpath.c_str(), "a+");
+          fprintf(t_file, "Error while optimizing.\n");
+          fclose(t_file);
+        }
+      }
+      if (r != MSK_RES_OK) {
+        /* In case of an error print error code and description. */
+        char symname[MSK_MAX_STR_LEN];
+        char desc[MSK_MAX_STR_LEN];
+        t_file = fopen(logpath.c_str(), "a+");
+        fprintf(t_file, "An error occurred while optimizing.\n");
+        MSK_getcodedesc(r, symname, desc);
+        fprintf(t_file, "Error %s - '%s'\n", symname, desc);
+        fclose(t_file);
+      }
     }
   }
 };

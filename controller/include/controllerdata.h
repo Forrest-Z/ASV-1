@@ -32,6 +32,8 @@ using matrixnnd = Eigen::Matrix<double, num_controlspace, num_controlspace>;
 
 // real-time data in the controller
 struct controllerRTdata {
+  vectornd tau;  // Fx, Fy, Mz (desired force) in the body coordinate
+
   vectornd BalphaU;    // Fx, Fy, Mz (estimated generalized force) in the
                        // body-fixed coordinates
   vectormd u;          // N, estimated thrust of all propellers
@@ -45,6 +47,7 @@ struct thrustallocationdata {
   const int num_azimuth;     // # of azimuth thruster
   const int num_mainrudder;  // # of main thruster with rudder
   const std::vector<int> index_thrusters;
+  const std::string logpath;  // directory for log file
 };
 
 // constant data of tunnel thruster, index = 1
