@@ -26,9 +26,6 @@ using vectornd = Eigen::Matrix<double, num_controlspace, 1>;
 using matrixnmd = Eigen::Matrix<double, num_controlspace, num_thrusters>;
 using matrixmmd = Eigen::Matrix<double, num_thrusters, num_thrusters>;
 using matrixnnd = Eigen::Matrix<double, num_controlspace, num_controlspace>;
-// typedef Eigen::Matrix<double, num_thrusters, 1> vectormd;
-// typedef Eigen::Matrix<int, num_thrusters, 1> vectormi;
-// typedef Eigen::Matrix<int, num_controlspace, 1> vectornd;
 
 // real-time data in the controller
 struct controllerRTdata {

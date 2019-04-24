@@ -8,7 +8,6 @@
 ***********************************************************************
 */
 
-// #include "../include/utilityio.h"
 #include "utilityio.h"
 
 int main() {
@@ -36,4 +35,7 @@ int main() {
   // unit test for converting std vector to Eigen3 Matrix
   Eigen::MatrixXd vec2mat = _utilityio.convertstdvector2EigenMat(mat2vec, 3, 4);
   std::cout << vec2mat << std::endl;
+
+  // unit test for writing Eigen matrix to csv file
+  _utilityio.write2csvfile("../data/csvfile.csv", vec2mat);
 }

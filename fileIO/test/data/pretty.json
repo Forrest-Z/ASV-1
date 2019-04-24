@@ -40,9 +40,6 @@
         ]
     },
     "Pi": 3.141592653589793,
-    "answer": {
-        "everything": 42
-    },
     "control_rate": 10,
     "controller_mode": "FullyActuated",
     "dbsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/DPdata.db",
@@ -66,7 +63,6 @@
         2
     ],
     "logsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/log",
-    "name": "Niels",
     "nothing": null,
     "object": {
         "currency": "USD",

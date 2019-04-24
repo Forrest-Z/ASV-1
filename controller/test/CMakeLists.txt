@@ -44,13 +44,13 @@ set(HEADER_FILES ${HEADER_FILES}
 
 # 指定生成目标
 
-add_executable (testmosek qo1.cc ${HEADER_FILES})
+add_executable (testmosek qo1.cc)
 target_include_directories(testmosek PRIVATE ${HEADER_DIRECTORY})
 find_library(MOSEK8_LIBRARY mosek64 HINTS ${LIBRARY_DIRECTORY})
 target_link_libraries(testmosek PUBLIC ${MOSEK8_LIBRARY})
 
 
-add_executable (testthrust testthrust.cc ${HEADER_FILES})
+add_executable (testthrust testthrust.cc)
 target_include_directories(testthrust PRIVATE ${HEADER_DIRECTORY})
 find_library(MOSEK8_LIBRARY mosek64 HINTS ${LIBRARY_DIRECTORY})
 target_link_libraries(testthrust PUBLIC ${MOSEK8_LIBRARY})

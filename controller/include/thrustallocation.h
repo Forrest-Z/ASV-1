@@ -81,23 +81,32 @@ class thrustallocation {
     MSK_deleteenv(&env);
   }
 
-  void testf(const controllerRTdata &_RTdata) {
+  // perform the thrust allocation using QP solver (one step)
+  void onestepthrusterallocation(controllerRTdata &_RTdata,
+                                 FILE *t_file = stdout) {
     updateTAparameters(_RTdata);
-
-    // std::cout << _RTdata.alpha << std::endl;
-    // std::cout << "upper_delta_alpha: " << upper_delta_alpha << std::endl;
-    // std::cout << "lower_delta_alpha: " << lower_delta_alpha << std::endl;
-    // std::cout << "upper_delta_u: " << upper_delta_u << std::endl;
-    // std::cout << "lower_delta_u: " << lower_delta_u << std::endl;
-    // std::cout << "Q: " << Q << std::endl;
-    // std::cout << "Omega: " << Omega << std::endl;
-    // std::cout << "Q_deltau: " << Q_deltau << std::endl;
-    // std::cout << "g_deltau: " << g_deltau << std::endl;
-    // std::cout << "d_rho: " << d_rho << std::endl;
-    // std::cout << "B_alpha: " << B_alpha << std::endl;
-    // std::cout << "d_Balpha_u: " << d_Balpha_u << std::endl;
-    // std::cout << "b: " << b << std::endl;
+    updateMosekparameters();
+    onestepmosek(t_file);
+    updateNextstep(_RTdata);
   }
+
+  vectormd getlx() const { return lx; }
+  vectormd getly() const { return ly; }
+  vectormd getupper_delta_alpha() const { return upper_delta_alpha; }
+  vectormd getlower_delta_alpha() const { return lower_delta_alpha; }
+  vectormd getupper_delta_u() const { return upper_delta_u; }
+  vectormd getlower_delta_u() const { return lower_delta_u; }
+  matrixnnd getQ() const { return Q; }
+  matrixmmd getOmega() const { return Omega; }
+  matrixmmd getQ_deltau() const { return Q_deltau; }
+  vectormd getg_deltau() const { return g_deltau; }
+  vectormd getd_rho() const { return d_rho; }
+  matrixnmd getB_alpha() const { return B_alpha; }
+  matrixnmd getd_Balpha_u() const { return d_Balpha_u; }
+  vectornd getb() const { return b; }
+  vectormd getdelta_alpha() const { return delta_alpha; }
+  vectormd getdelta_u() const { return delta_u; }
+  Eigen::Matrix<double, 2 * m + n, 1> getresults() const { return results; }
 
  private:
   const int num_tunnel;
@@ -362,6 +371,33 @@ class thrustallocation {
               v_azimuththrusterdata[j].min_thrust) -
           _thrust;
     }
+  }
+
+  // calculate vessel parameters at the next time step
+  void updateNextstep(controllerRTdata &_RTdata) {
+    // calculate delta variable using Mosek results
+    delta_u = results.head(m);
+    delta_alpha = results.segment(m, m);
+    // update alpha and u
+    updateAlphaandU(_RTdata.u, _RTdata.alpha);
+    // convert the double alpha(rad) to int alpha(deg)
+    convertalpharadian2int(_RTdata.alpha, _RTdata.alpha_deg);
+    // update rotation speed
+    calculaterotation(_RTdata);
+    // update BalphaU
+    _RTdata.BalphaU = calculateBalphau(_RTdata.alpha, _RTdata.u);
+  }
+
+  // update alpha and u using computed delta_alpha and delta_u
+  void updateAlphaandU(vectormd &_u, vectormd &_alpha) {
+    _u += delta_u;
+    _alpha += delta_alpha;
+  }
+  // convert the radian to deg, and round to integer
+  void convertalpharadian2int(const vectormd &_alpha, vectormi &_alpha_deg) {
+    // round to int (deg)
+    for (int i = 0; i != m; ++i)
+      _alpha_deg(i) = static_cast<int>(_alpha(i) * 180 / M_PI);
   }
 
   // calcuate rotation speed of each thruster based on thrust

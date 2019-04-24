@@ -13,6 +13,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -40,6 +41,25 @@ class utilityio {
   std::vector<double> convertEigenVec2stdvector(const Eigen::VectorXd &_vec) {
     std::vector<double> vec(_vec.data(), _vec.data() + _vec.size());
     return vec;
+  }
+
+  // write Eigen matrix into csv file (double)
+  void write2csvfile(const std::string &name, const Eigen::MatrixXd &matrix) {
+    const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision,
+                                           Eigen::DontAlignCols, ", ", "\n");
+    std::ofstream file(name.c_str());
+    if (file.is_open()) {
+      file << matrix.format(CSVFormat);
+    }
+  }
+  // write Eigen matrix into csv file (int)
+  void write2csvfile(const std::string &name, const Eigen::MatrixXi &matrix) {
+    const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision,
+                                           Eigen::DontAlignCols, ", ", "\n");
+    std::ofstream file(name.c_str());
+    if (file.is_open()) {
+      file << matrix.format(CSVFormat);
+    }
   }
 };
 
