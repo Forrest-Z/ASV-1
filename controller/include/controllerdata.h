@@ -17,26 +17,21 @@
 #include <Eigen/Dense>
 #include <vector>
 
-const int num_thrusters = 4;     // m: # of all thrusters on the vessel
-const int num_controlspace = 3;  // n: # of dimension of control space
-
-using vectormd = Eigen::Matrix<double, num_thrusters, 1>;
-using vectormi = Eigen::Matrix<int, num_thrusters, 1>;
-using vectornd = Eigen::Matrix<double, num_controlspace, 1>;
-using matrixnmd = Eigen::Matrix<double, num_controlspace, num_thrusters>;
-using matrixmmd = Eigen::Matrix<double, num_thrusters, num_thrusters>;
-using matrixnnd = Eigen::Matrix<double, num_controlspace, num_controlspace>;
-
 // real-time data in the controller
+template <int m, int n = 3>
 struct controllerRTdata {
-  vectornd tau;  // Fx, Fy, Mz (desired force) in the body coordinate
-
-  vectornd BalphaU;    // Fx, Fy, Mz (estimated generalized force) in the
-                       // body-fixed coordinates
-  vectormd u;          // N, estimated thrust of all propellers
-  vectormi rotation;   // rpm, rotation of all propellers
-  vectormd alpha;      // rad, angle of all propellers
-  vectormi alpha_deg;  // deg, angle of all propellers
+  // Fx, Fy, Mz (desired force) in the body coordinate
+  Eigen::Matrix<double, n, 1> tau;
+  // Fx, Fy, Mz (estimated generalized force) in the body-fixed coordinates
+  Eigen::Matrix<double, n, 1> BalphaU;
+  // N, estimated thrust of all propellers
+  Eigen::Matrix<double, m, 1> u;
+  // rpm, rotation of all propellers
+  Eigen::Matrix<int, m, 1> rotation;
+  // rad, angle of all propellers
+  Eigen::Matrix<double, m, 1> alpha;
+  // deg, angle of all propellers
+  Eigen::Matrix<int, m, 1> alpha_deg;
 };
 
 struct thrustallocationdata {

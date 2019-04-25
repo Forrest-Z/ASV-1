@@ -34,9 +34,16 @@
 // n: # of dimension of control space
 template <int m, int n = 3>
 class thrustallocation {
+  using vectormd = Eigen::Matrix<double, m, 1>;
+  using vectormi = Eigen::Matrix<int, m, 1>;
+  using vectornd = Eigen::Matrix<double, n, 1>;
+  using matrixnmd = Eigen::Matrix<double, n, m>;
+  using matrixmmd = Eigen::Matrix<double, m, m>;
+  using matrixnnd = Eigen::Matrix<double, n, n>;
+
  public:
   explicit thrustallocation(
-      controllerRTdata &_RTdata,
+      controllerRTdata<m, n> &_RTdata,
       const thrustallocationdata &_thrustallocationdata,
       const std::vector<tunnelthrusterdata> &_v_tunnelthrusterdata,
       const std::vector<azimuththrusterdata> &_v_azimuththrusterdata)
@@ -82,8 +89,8 @@ class thrustallocation {
   }
 
   // perform the thrust allocation using QP solver (one step)
-  void onestepthrusterallocation(controllerRTdata &_RTdata,
-                                 FILE *t_file = stdout) {
+  void onestepthrustallocation(controllerRTdata<m, n> &_RTdata,
+                               FILE *t_file = stdout) {
     updateTAparameters(_RTdata);
     updateMosekparameters();
     onestepmosek(t_file);
@@ -181,7 +188,7 @@ class thrustallocation {
   MSKtask_t task = NULL;
   MSKrescodee r;
 
-  void initializethrusterallocation(controllerRTdata &_RTdata) {
+  void initializethrusterallocation(controllerRTdata<m, n> &_RTdata) {
     for (int i = 0; i != num_tunnel; ++i) {
       lx(i) = v_tunnelthrusterdata[i].lx;
       ly(i) = v_tunnelthrusterdata[i].ly;
@@ -279,7 +286,7 @@ class thrustallocation {
 
   // calculate the contraints of tunnel thruster
   // depend on the desired force in the Y direction or Mz direction
-  void calculateconstrains_tunnel(const controllerRTdata &_RTdata,
+  void calculateconstrains_tunnel(const controllerRTdata<m, n> &_RTdata,
                                   double _desired_Mz) {
     for (int i = 0; i != num_tunnel; ++i) {
       int _maxdeltar = v_tunnelthrusterdata[i].max_delta_rotation;
@@ -345,7 +352,7 @@ class thrustallocation {
   }
 
   // calculate the consraints of azimuth thruster
-  void calculateconstrains_azimuth(const controllerRTdata &_RTdata) {
+  void calculateconstrains_azimuth(const controllerRTdata<m, n> &_RTdata) {
     for (int j = 0; j != num_azimuth; ++j) {
       int index_azimuth = j + num_tunnel;
       /* contraints on the increment of angle */
@@ -374,7 +381,7 @@ class thrustallocation {
   }
 
   // calculate vessel parameters at the next time step
-  void updateNextstep(controllerRTdata &_RTdata) {
+  void updateNextstep(controllerRTdata<m, n> &_RTdata) {
     // calculate delta variable using Mosek results
     delta_u = results.head(m);
     delta_alpha = results.segment(m, m);
@@ -401,7 +408,7 @@ class thrustallocation {
   }
 
   // calcuate rotation speed of each thruster based on thrust
-  void calculaterotation(controllerRTdata &_RTdata) {
+  void calculaterotation(controllerRTdata<m, n> &_RTdata) {
     // bow thruster
     for (int i = 0; i != num_tunnel; ++i) {
       int t_rotation = 0;
@@ -507,7 +514,7 @@ class thrustallocation {
   }
 
   // update parameters in thruster allocation for each time step
-  void updateTAparameters(const controllerRTdata &_RTdata) {
+  void updateTAparameters(const controllerRTdata<m, n> &_RTdata) {
     B_alpha = calculateBalpha(_RTdata.alpha);
     calculateJocobianRhoTerm(_RTdata.alpha);
     calculateJocobianBalphaU(_RTdata.alpha, _RTdata.u);
