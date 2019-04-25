@@ -22,9 +22,8 @@
 #include <vector>
 #include "controllerdata.h"
 #include "mosek.h" /* Include the MOSEK definition file. */
-// #include "realtimedata.h"
-// #include "timecounter.hpp"
 
+// # of thread used by mosek
 #define QP_THREADS_USED 1
 
 // static void MSKAPI printstr(void *handle, const char str[]) {  //

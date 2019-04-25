@@ -1,9 +1,7 @@
 /*
 *******************************************************************************
 * controllerdata.h:
-* function for control allocation based on Quadratic programming, using
-* Mosek solver API. Normally, thrust alloation is used in the fully-actuated
-* control system
+* define the data struct used in the controller
 * This header file can be read by C++ compilers
 *
 * by Hu.ZH(CrossOcean.ai)
