@@ -4,4 +4,6 @@ Debug/
 debug/
 Release/
 release/
+.csv
+.txt
 *.db
