@@ -90,6 +90,7 @@ class kalmanfilter {
 
   Eigen::VectorXd getState() const noexcept { return X; }
 
+  // calculate the max eigenvalue of P
   double getMaxEigenP() const {
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(P0);
     if (eigensolver.info() != Eigen::Success)

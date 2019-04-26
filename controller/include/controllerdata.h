@@ -82,4 +82,15 @@ struct ruddermaindata {
   double max_thrust;          // N
   double min_thrust;          // N
 };
+
+// quasi-static data of pid controller
+struct pidcontrollerdata {
+  double p;
+  double I;
+  double D;
+  const double allowed_error;
+  const int integral_length;
+  const double max_output;
+  const double min_output;
+}
 #endif /* _CONTROLLERDATA_H_ */
