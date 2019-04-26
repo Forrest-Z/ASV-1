@@ -89,7 +89,6 @@ struct pidcontrollerdata {
   double I;
   double D;
   const double allowed_error;
-  const int integral_length;
   const double max_output;
   const double min_output;
 }

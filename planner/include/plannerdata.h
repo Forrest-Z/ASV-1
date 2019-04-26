@@ -17,7 +17,8 @@
 
 // real time data in planner
 struct plannerRTdata {
-  Eigen::Vector3d setpoint;
+  Eigen::Vector3d setpoint;       // x, y, theta in the global coordinate
+  Eigen::Vector3d setpoint_body;  // x, y, theta in the body-fixed coordinate
 };
 
 #endif /*_PLANNERDATA_H_*/

@@ -17,31 +17,35 @@
 #include "controllerdata.h"
 
 // n: # of dimension of control space
-template <int n = 3>
+template <int L, int n = 3>
 class pidcontroller {
   using vectornd = Eigen::Matrix<double, n, 1>;
+  using matrixnld = Eigen::Matrix<double, n, L>;
   using matrixpid = Eigen::Matrix<double, 3, n>;
 
  public:
-  explicit pidcontroller(const vessel_first &_vessel,
-                         const std::vector<pidcontrollerdata> &_vcontrollerdata)
-      : pids(matrixpid::Zero()), v_pidcontrollerdata(_vcontrollerdata) {
+  explicit pidcontroller(const std::vector<pidcontrollerdata> &_vcontrollerdata)
+      : pids(matrixpid::Zero()),
+        IntegralMatrix(matrixnld::Zero()),
+        v_pidcontrollerdata(_vcontrollerdata) {
     setPIDmatrix(_vcontrollerdata);
   }
   pidcontroller() = delete;
   ~pidcontroller() {}
   // calculate the desired force using PID controller
-  void calculategeneralizeforce(realtimevessel_first &_realtimedata) {
-    // convert setpoint from global to body coordinate
-    setsetpoints(_realtimedata);
+  vectornd calculategeneralizeforce(const Eigen::Vector3d &setpoints_body,
+                                    const Eigen::Vector3d &_State4control,
+                                    vectornd &_desiredforce) {
+    vectornd _desiredforce = vectornd::Zero();
     // calculate error
-    position_error = setpoints_body - _realtimedata.State4control.head(3);
+    Eigen::Vector3d position_error = setpoints_body - _State4control;
     if (compareerror(position_error)) {
       _realtimedata.tau.setZero();
-    } else {  // proportional term
+    } else {
+      // proportional term
       Eigen::Vector3d Pout = matrix_P * position_error;
       // integral term
-      updateIntegralMatrix(position_error);
+      vectornd position_error_integral = updateIntegralMatrix(position_error);
       Eigen::Vector3d Iout = matrix_I * position_error_integral;
       // derivative term
       Eigen::Vector3d Dout = -matrix_D * _realtimedata.State4control.tail(3);
@@ -63,6 +67,7 @@ class pidcontroller {
 
  private:
   matrixpid pids;
+  matrixnld error_integralmatrix;  // I
   std::vector<pidcontrollerdata> v_pidcontrollerdata;
 
   void initializepidcontroller() {}
@@ -79,6 +84,15 @@ class pidcontroller {
       _desiredforce(i) = restrictdesiredforce(
           _desiredforce(i), v_pidcontrollerdata[i].min_output,
           v_pidcontrollerdata[i].max_output);
+  }
+  // calculate the Integral error with moving window
+  vectornd updateIntegralMatrix(const vectornd &_error, double sample_time) {
+    matrixnld t_integralmatrix = matrixnld::Zero();
+    int index = L - 1;
+    t_integralmatrix.leftCols(index) = error_integralmatrix.rightCols(index);
+    t_integralmatrix.col(index) = sample_time * _error;
+    error_integralmatrix = t_integralmatrix;
+    return error_integralmatrix.rowwise().sum();
   }
 };
 

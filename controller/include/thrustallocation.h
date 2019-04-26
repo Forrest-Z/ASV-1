@@ -96,6 +96,17 @@ class thrustallocation {
     updateNextstep(_RTdata);
   }
 
+  // modify penality for each error (heading-only controller)
+  void setQ() {
+    Q(0, 0) = 100;
+    Q(1, 1) = 100;
+    Q(2, 2) = 2000;
+  }
+  // modify penality for each error (automatic controller)
+  void resetQ() {
+    for (int i = 0; i != n; ++i) Q(i, i) = 1000;
+  }
+  //
   vectormd getlx() const { return lx; }
   vectormd getly() const { return ly; }
   vectormd getupper_delta_alpha() const { return upper_delta_alpha; }
@@ -202,9 +213,7 @@ class thrustallocation {
     }
 
     // quadratic penality matrix for error
-    Q(0, 0) = 1000;
-    Q(1, 1) = 1000;
-    Q(2, 2) = 1000;
+    resetQ();
 
     initializemosekvariables();
 
