@@ -9,9 +9,9 @@
 *  Matrix Dimension must be:
 *  x[k] = A * x[k-1] + B * u[k-1] + w[k-1]
 *  z[k] = H * x[k] + v[k]
-*  x: n x 1
-*  z: m x 1
-*  u: l x 1
+*  x: n x 1, state vector
+*  z: m x 1, observer vector
+*  u: l x 1, input vector
 *  A: n x n
 *  B: n x l
 *  H: m x n
@@ -21,8 +21,7 @@
 *  P: n x n
 *  K: n x n
 *
-*
-*  by Hu.ZH(Mr.SJTU)
+*  by Hu.ZH(CrossOcean.ai)
 ***********************************************************************
 */
 
