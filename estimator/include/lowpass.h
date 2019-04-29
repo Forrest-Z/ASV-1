@@ -91,19 +91,35 @@ class lowpass {
     return average_roll.mean();
   }
   double movingaverage_yaw_velocity(double _vtheta) {
-    double movingaverage_roll(double _roll) {
-      // pop_front
-      VectorARoll t_average_roll = VectorARoll::Zero();
-      t_average_roll.head(numroll - 1) = average_roll.tail(numroll - 1);
-      // push back
-      t_average_roll(numroll - 1) = _roll;
-      average_roll = t_average_roll;
-      // calculate the mean value
-      return average_roll.mean();
-    }
+    // pop_front
+    VectorAYawV t_average_yawv = VectorAYawV::Zero();
+    t_average_yawv.head(numyawv - 1) = average_yawv.tail(numyawv - 1);
+    // push back
+    t_average_yawv(numyawv - 1) = _vtheta;
+    average_yawv = t_average_yawv;
+    // calculate the mean value
+    return average_yawv.mean();
   }
-  double movingaverage_surge_velocity(double _vx);
-  double movingaverage_sway_velocity(double _vy);
+  double movingaverage_surge_velocity(double _vx) {
+    // pop_front
+    VectorASurgeV t_average_surgev = VectorASurgeV::Zero();
+    t_average_surgev.head(numsurgev - 1) = average_surgev.tail(numsurgev - 1);
+    // push back
+    t_average_surgev(numsurgev - 1) = _vx;
+    average_surgev = t_average_surgev;
+    // calculate the mean value
+    return average_surgev.mean();
+  }
+  double movingaverage_sway_velocity(double _vy) {
+    // pop_front
+    VectorASwayV t_average_swayv = VectorASwayV::Zero();
+    t_average_swayv.head(numswayv - 1) = average_swayv.tail(numswayv - 1);
+    // push back
+    t_average_swayv(numswayv - 1) = _vy;
+    average_swayv = t_average_swayv;
+    // calculate the mean value
+    return average_swayv.mean();
+  }
 };
 
 #endif /* _DATAPROCESS_H_ */
