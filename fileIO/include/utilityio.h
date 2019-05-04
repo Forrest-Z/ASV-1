@@ -49,6 +49,12 @@ class utilityio {
                                            Eigen::DontAlignCols, ", ", "\n");
     std::ofstream file(name.c_str());
     if (file.is_open()) {
+      // header in csv
+      int num_cols = matrix.cols();
+      for (int i = 0; i != (num_cols - 1); ++i)
+        file << "column " << i + 1 << ", ";
+      file << "column " << num_cols << std::endl;
+      // data
       file << matrix.format(CSVFormat);
     }
   }
@@ -58,6 +64,12 @@ class utilityio {
                                            Eigen::DontAlignCols, ", ", "\n");
     std::ofstream file(name.c_str());
     if (file.is_open()) {
+      // header in csv
+      int num_cols = matrix.cols();
+      for (int i = 0; i != (num_cols - 1); ++i)
+        file << "column " << i + 1 << ", ";
+      file << "column " << num_cols << std::endl;
+      // data
       file << matrix.format(CSVFormat);
     }
   }

@@ -48,3 +48,7 @@ add_executable (testsqlite functions.cc)
 target_include_directories(testsqlite PRIVATE ${HEADER_DIRECTORY})
 find_library(SQLITE3_LIBRARY sqlite3 HINTS ${LIBRARY_DIRECTORY})
 target_link_libraries(testsqlite PUBLIC ${SQLITE3_LIBRARY})
+
+
+add_executable (testcsv testcsv.cc)
+target_include_directories(testcsv PRIVATE ${HEADER_DIRECTORY})
