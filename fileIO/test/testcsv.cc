@@ -1,7 +1,7 @@
 /*
 ***********************************************************************
-* testjson.cpp:
-* Utility test for the JSON
+* testcsv.cc:
+* Utility test for the CSV file parser
 * This header file can be read by C++ compilers
 *
 * by Hu.ZH(CrossOcean.ai)

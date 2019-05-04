@@ -1,7 +1,6 @@
 /*
 ***********************************************************************
-* lowpass.h: data processing including outlier removal,
-* low pass filtering, etc
+* lowpass.h: low pass filtering
 * This header file can be read by C++ compilers
 *
 *
@@ -14,17 +13,13 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include "vesseldata.h"
 
 template <int num_lowpass>
 class lowpass {
   using vectorlp = Eigen::Matrix<double, num_lowpass, 1>;
 
  public:
-  explicit lowpass(const vessel &_vessel) : averagevector(vectorlp::Zero()) {
-    initializekalman(_vessel);
-  }
-  lowpass() = delete;
+  lowpass() : averagevector(vectorlp::Zero()) {}
   ~lowpass() {}
 
   double movingaverage(double _newstep) {
@@ -42,4 +37,4 @@ class lowpass {
   vectorlp averagevector;
 };
 
-#endif /* _DATAPROCESS_H_ */
+#endif /* _LOWPASS_H_ */
