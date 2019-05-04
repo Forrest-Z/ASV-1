@@ -102,6 +102,16 @@ void test2d() {
   write2csvfile("../data/EigenP.csv", PEigen);
 }
 
+void test3d() {
+  estimatordata _estimatordata{0.1};
+  estimatorRTdata _estimatorRTdata {
+    Eigen::Matrix3d::Identity(),              // CTB2G
+        Eigen::Matrix3d::Identity(),          // CTG2B
+        Eigen::Matrix<double, 6, 1>::Zero(),  // measurement
+        State;
+  };
+}
+
 int main() {
   test2d();
   return 0;

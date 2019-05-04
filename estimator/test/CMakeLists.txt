@@ -21,17 +21,19 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
 # 添加 include 子目录
+set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
+
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
 	"${CMAKE_CURRENT_SOURCE_DIR}/../include"
 	"/usr/include" 
-	 "/home/scar1et/Coding/ASV/third_party/eigen")
+	"${PROJECT_DIRECTORY}/fileIO/include"
+	"${PROJECT_DIRECTORY}/property/include"
+	"${PROJECT_DIRECTORY}/third_party/eigen"
+	"/opt/mosek/8/tools/platform/linux64x86/h")
+
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} "/usr/lib")
-set(HEADER_FILES ${HEADER_FILES} 
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include/eigenmvnd.hpp"                            
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include/kalmanfilter.h")
-
 # 指定生成目标
 
-add_executable (testkalman testkalman.cc ${HEADER_FILES})
+add_executable (testkalman testkalman.cc)
 target_include_directories(testkalman PRIVATE ${HEADER_DIRECTORY})
