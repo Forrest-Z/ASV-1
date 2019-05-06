@@ -55,9 +55,8 @@ class gpsimu {
   }
   gpsimu() = delete;
   ~gpsimu() {}
-
+  // read serial data and transform to UTM
   gpsimu& gpsonestep() {
-    //
     std::string t_serial_buffer("gps error");
     t_serial_buffer = GPS_serial.readline(200);
 

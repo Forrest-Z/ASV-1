@@ -12,8 +12,8 @@
 #ifndef _GPSDATA_H_
 #define _GPSDATA_H_
 
-// #include <Eigen/Core>
-// #include <Eigen/Dense>
+#include <Eigen/Core>
+#include <Eigen/Dense>
 
 // enum gpsstatus {
 //   initialization = 0,       // 初始化
@@ -30,7 +30,7 @@ struct gpsRTdata {
   /**** GPFPD *****/
   int date;          // GPS week
   double time;       // GPS time (second)
-  double heading;    // 航向角 0 ~ 359.99
+  double heading;    // 航向角 0 ~ 359.99, 以真北为参考基准
   double pitch;      // 俯仰角 -90 ~ 90
   double roll;       // 横滚角 -180 ~ 180
   double latitude;   // 纬度 -90 ~ 90
@@ -48,4 +48,5 @@ struct gpsRTdata {
   double UTM_x;  // 投影的 x (m)
   double UTM_y;  // 投影的 y (m)
 };
+
 #endif /* _GPSDATA_H_ */

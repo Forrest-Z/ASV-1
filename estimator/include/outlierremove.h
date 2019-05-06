@@ -3,7 +3,6 @@
 * outlierremove.h: outlier removal
 * This header file can be read by C++ compilers
 *
-*
 *  by Hu.ZH(CrossOcean.ai)
 ***********************************************************************
 */
@@ -26,14 +25,13 @@ class outlierremove {
   outlierremove() = delete;
   ~outlierremove() {}
 
+  void setlastvalue(double _lastvalue) { double last_value = _lastvalue; }
   double removeoutlier(double _newvalue) {
     double delta = _newvalue - last_value;
     if ((delta_min < delta) && (delta < delta_max)) {
       last_value = _newvalue;
-      return _newvalue;
-    } else {
-      return last_value;
     }
+    return last_value;
   }
 
  private:

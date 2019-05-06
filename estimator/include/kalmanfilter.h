@@ -177,7 +177,8 @@ class kalmanfilterv {
   // disable the default constructor
   kalmanfilterv() = delete;
   explicit kalmanfilterv(const vessel &_vessel,
-                         const estimatordata &_estimatordata) noexcept
+                         const estimatordata &_estimatordata,
+                         const vectornd &_state) noexcept
       : A(matrixnnd::Zero()),
         B(matrixnld::Zero()),
         H(matrixmnd::Identity()),
@@ -185,7 +186,7 @@ class kalmanfilterv {
         R(matrixmmd::Identity()),
         P(matrixnnd::Identity()),
         K(matrixnnd::Zero()),
-        X(vectornd::Zero()),
+        X(_state),
         sample_time(_estimatordata.sample_time) {
     initializekalman(_vessel);
   }
