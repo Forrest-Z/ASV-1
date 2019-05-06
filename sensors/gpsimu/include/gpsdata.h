@@ -26,7 +26,8 @@
 // };
 
 // real-time data from the gps/imu sensors
-struct gpsRTdata {   // GPFPD
+struct gpsRTdata {
+  /**** GPFPD *****/
   int date;          // GPS week
   double time;       // GPS time (second)
   double heading;    // 航向角 0 ~ 359.99
@@ -41,12 +42,10 @@ struct gpsRTdata {   // GPFPD
   double base_line;  // 基线长度 (m)
   int NSV1;          // # of satellites from antenna 1
   int NSV2;          // # of satellites from antenna 2
-  char status1;      // status
-  char status2;      // status
-  //
-  char check;
+  char status;       // status
+  char check[3];     // check
+  /**** UTM projection   ****/
   double UTM_x;  // 投影的 x (m)
   double UTM_y;  // 投影的 y (m)
-  // UINT check;
 };
 #endif /* _GPSDATA_H_ */

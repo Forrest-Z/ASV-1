@@ -39,7 +39,10 @@ int main() {
                 << gps_data.base_line << std::endl;
       std::cout << "NSV1:      " << gps_data.NSV1 << std::endl;
       std::cout << "NSV2:      " << gps_data.NSV2 << std::endl;
-      switch (gps_data.status2) {
+      printf("status: %c\n", gps_data.status);
+      printf("check: %s\n", gps_data.check);
+
+      switch (gps_data.status) {
         case '0':
           std::cout << "Satus:     GPS初始化" << std::endl;
           break;

@@ -6,7 +6,7 @@
  *using GeographicLib to transfer to UTM
  *the header file can be read by C++ compilers
  *
- *by Zhenqiu Fu
+ *by Zhenqiu Fu (SJTU)
  *************************************************
  */
 
@@ -66,24 +66,24 @@ class gpsimu {
       serial_buffer = t_serial_buffer.substr(pos);
       sscanf(
           serial_buffer.c_str(),
-          "$GPFPD,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%d,%d,%s%s*",
-          &(gps_data.date),        // date
-          &(gps_data.time),        // time
-          &(gps_data.heading),     // heading
-          &(gps_data.pitch),       // pitch
-          &(gps_data.roll),        // roll
-          &(gps_data.latitude),    // latitude
-          &(gps_data.longitude),   // longitude
-          &(gps_data.altitude),    // altitude
-          &(gps_data.Ve),          // speed_of_east
-          &(gps_data.Vn),          // speed_of_north
-          &(gps_data.Vu),          // speed_of_sky
-          &(gps_data.base_line),   // basin_line
-          &(gps_data.NSV1),        // the_satellite_number_of_first
-          &(gps_data.NSV2),        // the_satellite_number_of_second
-          &(gps_data.status1),     // GPS_status1
-          &(gps_data.status2)      // GPS_status2
-          /*&(gps_data.check)*/);  // CHECK
+          "$GPFPD,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%d,%d,0%s%s",
+          &(gps_data.date),       // date
+          &(gps_data.time),       // time
+          &(gps_data.heading),    // heading
+          &(gps_data.pitch),      // pitch
+          &(gps_data.roll),       // roll
+          &(gps_data.latitude),   // latitude
+          &(gps_data.longitude),  // longitude
+          &(gps_data.altitude),   // altitude
+          &(gps_data.Ve),         // speed_of_east
+          &(gps_data.Vn),         // speed_of_north
+          &(gps_data.Vu),         // speed_of_sky
+          &(gps_data.base_line),  // basin_line
+          &(gps_data.NSV1),       // the_satellite_number_of_first
+          &(gps_data.NSV2),       // the_satellite_number_of_second
+          &(gps_data.status),     // GPS_status
+          gps_data.check          // check
+      );
       Forward(gps_data.latitude, gps_data.longitude, gps_data.UTM_x,
               gps_data.UTM_y);
     } else
