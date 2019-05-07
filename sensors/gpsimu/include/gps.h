@@ -10,8 +10,8 @@
  *************************************************
  */
 
-#ifndef __GPS_H__
-#define __GPS_H__
+#ifndef _GPS_H_
+#define _GPS_H_
 
 #include <string.h>
 #include <GeographicLib/TransverseMercator.hpp>
@@ -28,14 +28,6 @@
 #else
 #include <unistd.h>
 #endif
-
-void my_sleep(unsigned long milliseconds) {
-#ifdef _WIN32
-  Sleep(milliseconds);  // 100 ms
-#else
-  usleep(milliseconds * 1000);  // 100 ms
-#endif
-}
 
 class gpsimu {
  public:

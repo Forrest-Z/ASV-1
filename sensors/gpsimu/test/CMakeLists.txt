@@ -23,7 +23,7 @@ set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY}
    )
     
 # 指定生成目标
-add_executable (testGPS testGPS.cpp)
+add_executable (testGPS testGPS.cc)
 target_include_directories(testGPS PRIVATE ${HEADER_DIRECTORY})
 find_library(SERIAL_LIBRARY serial ${LIBRARY_DIRECTORY})
 target_link_libraries(testGPS ${SERIAL_LIBRARY})

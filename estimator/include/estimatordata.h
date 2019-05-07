@@ -30,9 +30,9 @@ struct estimatorRTdata {
   // data wroten by Kalman
   Eigen::Matrix<double, 6, 1> State;
   /********************* error *********************************************/
-  // x(surge: m), y(sway: m), yaw(theta: rad), u, v, r
-  // in the body-fixed coordinate
-  Eigen::Matrix<double, 3, 1> error;
+  Eigen::Matrix<double, 3, 1> p_error;  // error in surge, sway and heading
+  Eigen::Matrix<double, 3, 1>
+      v_error;  // velocity error in surge, sway and heading
 
   Eigen::Matrix<double, 3, 1> BalphaU;  // estimated thrust
 
@@ -41,8 +41,8 @@ struct estimatorRTdata {
 
 /********************* constant ***********************************/
 struct estimatordata {
-  double sample_time;  // sample time of estimator, controller and
-                       // actuator(unit: second)
+  double sample_time;  // sample time of estimator((unit: second)),
+  bool kalman_use;     //
 };
 
 #endif /*_ESTIMATORDATA_H_*/

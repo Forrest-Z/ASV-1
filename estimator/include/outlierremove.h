@@ -24,7 +24,7 @@ class outlierremove {
   outlierremove() = delete;
   ~outlierremove() {}
 
-  void setlastvalue(double _lastvalue) { double last_value = _lastvalue; }
+  void setlastvalue(double _lastvalue) { last_value = _lastvalue; }
   double removeoutlier(double _newvalue) {
     double delta = _newvalue - last_value;
     if ((delta_min < delta) && (delta < delta_max)) {

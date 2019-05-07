@@ -12,6 +12,11 @@
 #ifndef _CONTROLLER_H_
 #define _CONTROLLER_H_
 
-class controller {};
+class controller {
+ public:
+  // pd controller for velocity control
+
+ private:
+};
 
 #endif /*_CONTROLLER_H_*/

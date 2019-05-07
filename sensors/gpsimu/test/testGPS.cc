@@ -1,4 +1,16 @@
+/*
+*******************************************************************************
+* testGPS.cc:
+* unit test for serial communication and UTM projection for GPS/IMU
+* This header file can be read by C++ compilers
+*
+* by Hu.ZH(CrossOcean.ai)
+*******************************************************************************
+*/
+
+#include <chrono>
 #include <cstdio>
+#include <thread>
 #include "gps.h"
 using std::setprecision;
 int main() {
@@ -68,7 +80,7 @@ int main() {
           std::cout << "Satus:     状态未知" << std::endl;
       }
       std::cout << std::endl;
-      my_sleep(100);
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
   } catch (std::exception& e) {

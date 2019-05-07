@@ -22,6 +22,11 @@ class lowpass {
   lowpass() : averagevector(vectorlp::Zero()) {}
   ~lowpass() {}
 
+  // assign the same value to all elements of "averagevector"
+  void setaveragevector(double _initialvalue) {
+    averagevector = vectorlp::Constant(_initialvalue);
+  }
+  // low pass filtering using moving average method
   double movingaverage(double _newstep) {
     // pop_front
     vectorlp t_average = vectorlp::Zero();

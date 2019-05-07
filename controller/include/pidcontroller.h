@@ -48,7 +48,7 @@ class pidcontroller {
         _desiredforce(i) =
             pids(0, i) * _error(i)                     // proportional term
             + pids(1, i) * position_error_integral(i)  // integral term
-            - pids(2, i) * _derror(i);                 // derivative term
+            + pids(2, i) * _derror(i);                 // derivative term
     }
     // add the wind compensation
     _desiredforce += _feedforward;

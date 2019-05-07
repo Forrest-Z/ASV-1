@@ -15,48 +15,71 @@
 
 class estimator {
  public:
-  explicit estimator(const vessel& _vessel, double _sample_time, bool _kalman)
-      : roll_outlierremove(_vessel.roll_v(1), _vessel.roll_v(0), _sample_time),
+  explicit estimator(const vessel& _vessel, const estimatordata& _estimatordata)
+      : roll_outlierremove(_vessel.roll_v(1), _vessel.roll_v(0),
+                           _estimatordata.sample_time),
         surgev_outlierremove(_vessel.x_thrust(1) / _vessel.Mass(0, 0),
                              _vessel.x_thrust(0) / _vessel.Mass(0, 0),
-                             _sample_time),
+                             _estimatordata.sample_time),
         swayv_outlierremove(_vessel.y_thrust(1) / _vessel.Mass(1, 1),
                             _vessel.y_thrust(0) / _vessel.Mass(1, 1),
-                            _sample_time),
-        _kalmanfilterv(_vessel, _sample_time),
+                            _estimatordata.sample_time),
+        _kalmanfilterv(_vessel, _estimatordata.sample_time),
         former_heading(0),
-        sample_time(_sample_time),
-        kalman_use(_kalman) {}
+        sample_time(_estimatordata.sample_time),
+        kalman_use(_estimatordata.kalman_use) {}
   ~estimator() {}
 
-  void setvalue(estimatorRTdata& _RTdata) {
-    //
-    preprocesssensordata(_RTdata);
-
-    State << _x, _y, _heading, 0, 0, 0;
-    _kalmanfilterv.setState(State);
-    roll_outlierremove.setlastvalue(_roll);
-    former_heading = ;
-    // assume that the initial velocities are all zero
+  // setvalue after the initialization
+  void setvalue(estimatorRTdata& _RTdata, double gps_x, double gps_y,
+                double gps_z, double gps_roll, double gps_pitch,
+                double gps_heading, double gps_Ve, double gps_Vn) {
+    // heading rate
+    former_heading = gps_heading * M_PI / 180;
+    // outlier removal
+    roll_outlierremove.setlastvalue(gps_roll);
     surgev_outlierremove.setlastvalue(0);
     swayv_outlierremove.setlastvalue(0);
-    yawv_outlierremove.setlastvalue(0);
+    // low pass
+    x_lowpass.setaveragevector(gps_x);
+    y_lowpass.setaveragevector(gps_y);
+    heading_lowpass.setaveragevector(former_heading);
+    roll_lowpass.setaveragevector(gps_roll * M_PI / 180);
+
+    // measurement, position_6dof
+    preprocesssGPSdata(_RTdata, gps_x, gps_y, gps_z, gps_roll, gps_pitch,
+                       gps_heading, gps_Ve, gps_Vn);
+    _RTdata.State = _RTdata.Measurement;
+    // Kalman filtering
+    _kalmanfilterv.setState(_RTdata.State);
   }
   // read sensor data and perform state estimation
   void estimatestate(estimatorRTdata& _RTdata, double gps_x, double gps_y,
                      double gps_z, double gps_roll, double gps_pitch,
-                     double gps_heading, double gps_Ve, double gps_Vn) {
+                     double gps_heading, double gps_Ve, double gps_Vn,
+                     double _desiredheading) {
     preprocesssGPSdata(_RTdata, gps_x, gps_y, gps_z, gps_roll, gps_pitch,
                        gps_heading, gps_Ve, gps_Vn);
+
+    // calculate the coordinate transform matrix
+    calculateCoordinateTransform(_RTdata.CTG2B, _RTdata.CTB2G,
+                                 _RTdata.Measurement(2), _desiredheading);
     if (kalman_use)
       _RTdata.State =
           _kalmanfilterv.kalmanonestep(_RTdata).getState();  // kalman filtering
     else
-      _RTdata.State = _RTdata.measuremment;  // use low-pass filtering only
+      _RTdata.State = _RTdata.Measurement;  // use low-pass filtering only
   }
-
+  // realtime calculation of position and velocity errors
   void estimateerror(estimatorRTdata& _RTdata,
-                     const Eigen::Matrix<double, 6, 1>& _setpoints) {}
+                     const Eigen::Vector3d& _setpoints,
+                     const Eigen::Vector3d& _vsetpoints) {
+    Eigen::Vector3d _perror = Eigen::Vector3d::Zero();
+    for (int i = 0; i != 2; ++i) _perror(i) = _setpoints(i) - _RTdata.State(i);
+    _perror(2) = shortestheading(_setpoints(2) - _RTdata.State(2));
+    _RTdata.p_error = _RTdata.CTG2B * _perror;
+    _RTdata.v_error = _vsetpoints - _RTdata.State.tail(3);
+  }
 
  private:
   // variable for low passing
@@ -72,7 +95,7 @@ class estimator {
   outlierremove surgev_outlierremove;
   outlierremove swayv_outlierremove;
 
-  kalmanfilterv _kalmanfilterv;
+  kalmanfilterv<> _kalmanfilterv;
 
   double former_heading;  // heading rate estimation
   double sample_time;
@@ -80,19 +103,19 @@ class estimator {
   bool kalman_use;  // use kalman filtering or not:
   // calculate the real time coordinate transform matrix
   void calculateCoordinateTransform(Eigen::Matrix3d& _CTG2B,
-                                    Eigen::Matrix3d& _CTB2G,
-                                    double realtime_orientation,
-                                    double desired_orientation) {
+                                    Eigen::Matrix3d& _CTB2G, double _rtheading,
+                                    double desired_heading) {
     double cvalue = 0.0;
     double svalue = 0.0;
-    if (abs(realtime_orientation - desired_orientation) < M_PI / 36) {
+
+    if (abs(shortestheading(_rtheading - desired_heading)) < M_PI / 36) {
       // use the fixed setpoint orientation to prevent measurement noise
-      cvalue = std::cos(desired_orientation);
-      svalue = std::sin(desired_orientation);
+      cvalue = std::cos(desired_heading);
+      svalue = std::sin(desired_heading);
     } else {
       // if larger than 5 deg, we use the realtime orientation
-      cvalue = std::cos(realtime_orientation);
-      svalue = std::sin(realtime_orientation);
+      cvalue = std::cos(_rtheading);
+      svalue = std::sin(_rtheading);
     }
 
     _CTG2B(0, 0) = cvalue;
@@ -119,19 +142,19 @@ class estimator {
     double _gps_Ve = surgev_outlierremove.removeoutlier(gps_Ve);
     double _gps_Vn = swayv_outlierremove.removeoutlier(gps_Vn);
     // update raw measured data from GPS/IMU sensors
-    _RTdata.measuremment(0) = x_lowpass.movingaverage(_gps_x);
-    _RTdata.measuremment(1) = y_lowpass.movingaverage(_gps_y);
-    _RTdata.measuremment(2) = heading_lowpass.movingaverage(_gps_heading);
-    _RTdata.measuremment(3) = surgev_lowpass.movingaverage(_gps_Ve);
-    _RTdata.measuremment(4) = swayv_lowpass.movingaverage(_gps_Vn);
-    _RTdata.measuremment(5) = yawv_lowpass.movingaverage(calheadingrate(
-        _RTdata.measuremment(2)));  // we have to estimate the heading rate
-    _RTdata.motiondata_6dof(0) = _RTdata.measuremment(0);
-    _RTdata.motiondata_6dof(1) = _RTdata.measuremment(1);
+    _RTdata.Measurement(0) = x_lowpass.movingaverage(_gps_x);
+    _RTdata.Measurement(1) = y_lowpass.movingaverage(_gps_y);
+    _RTdata.Measurement(2) = heading_lowpass.movingaverage(_gps_heading);
+    _RTdata.Measurement(3) = surgev_lowpass.movingaverage(_gps_Ve);
+    _RTdata.Measurement(4) = swayv_lowpass.movingaverage(_gps_Vn);
+    _RTdata.Measurement(5) = yawv_lowpass.movingaverage(calheadingrate(
+        _RTdata.Measurement(2)));  // we have to estimate the heading rate
+    _RTdata.motiondata_6dof(0) = _RTdata.Measurement(0);
+    _RTdata.motiondata_6dof(1) = _RTdata.Measurement(1);
     _RTdata.motiondata_6dof(2) = _gps_z;
     _RTdata.motiondata_6dof(3) = roll_lowpass.movingaverage(_gps_roll);
     _RTdata.motiondata_6dof(4) = _gps_pitch;
-    _RTdata.motiondata_6dof(5) = _RTdata.measuremment(2);
+    _RTdata.motiondata_6dof(5) = _RTdata.Measurement(2);
   }
   // find the shortest way to rotate
   double shortestheading(double _deltaheading) {
