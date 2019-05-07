@@ -29,6 +29,7 @@ class timecounter {
   long int timeelapsed() {
     boost::posix_time::ptime t_now(T_BOOST_CLOCK::local_time());
     boost::posix_time::time_duration t_elapsed = t_now - t_start;
+    t_start = t_now;
     return t_elapsed.total_milliseconds();
   }
   ~timecounter() {}

@@ -30,6 +30,8 @@
 #endif
 
 class gpsimu {
+  friend std::ostream& operator<<(std::ostream&, const gpsimu&);
+
  public:
   explicit gpsimu(int _zone,            // the UTM zone
                   bool _northp,         // hemisphere,
@@ -121,5 +123,70 @@ class gpsimu {
     _tm.Reverse(_lon0, x, y, lat, lon);
   }
 };
+
+std::ostream& operator<<(std::ostream& os, const gpsimu& _gps) {
+  // buffer = _gpsimu.getserialbuffer();
+  os << "buffer=    " << _gps.serial_buffer;
+  os << "date:      " << _gps.gps_data.date << std::endl;
+  os << "time:      " << std::fixed << std::setprecision(4)
+     << _gps.gps_data.time << std::endl;
+  os << "heading:   " << std::fixed << std::setprecision(3)
+     << _gps.gps_data.heading << std::endl;
+  os << "pitch:     " << std::fixed << std::setprecision(3)
+     << _gps.gps_data.pitch << std::endl;
+  os << "roll:      " << std::fixed << std::setprecision(3)
+     << _gps.gps_data.roll << std::endl;
+  os << "latitud:   " << std::fixed << std::setprecision(7)
+     << _gps.gps_data.latitude << std::endl;
+  os << "longitude: " << std::fixed << std::setprecision(7)
+     << _gps.gps_data.longitude << std::endl;
+  os << "UTM_x:     " << std::fixed << std::setprecision(7)
+     << _gps.gps_data.UTM_x << std::endl;
+  os << "UTM_y:     " << std::fixed << std::setprecision(7)
+     << _gps.gps_data.UTM_y << std::endl;
+  os << "altitude:  " << std::fixed << std::setprecision(2)
+     << _gps.gps_data.altitude << std::endl;
+  os << "speed_v:   " << std::fixed << std::setprecision(3) << _gps.gps_data.Ve
+     << std::endl;
+  os << "speed_u:   " << std::fixed << std::setprecision(3) << _gps.gps_data.Vn
+     << std::endl;
+  os << "speed_n:   " << std::fixed << std::setprecision(3) << _gps.gps_data.Vu
+     << std::endl;
+  os << "basinLine  " << std::fixed << std::setprecision(3)
+     << _gps.gps_data.base_line << std::endl;
+  os << "NSV1:      " << _gps.gps_data.NSV1 << std::endl;
+  os << "NSV2:      " << _gps.gps_data.NSV2 << std::endl;
+  printf("status: %c\n", _gps.gps_data.status);
+  printf("check: %s\n", _gps.gps_data.check);
+
+  switch (_gps.gps_data.status) {
+    case '0':
+      os << "Satus:     GPS初始化" << std::endl;
+      break;
+    case '1':
+      os << "Satus:     粗对准" << std::endl;
+      break;
+    case '2':
+      os << "Satus:     精对准" << std::endl;
+      break;
+    case '3':
+      os << "Satus:     GPS定位" << std::endl;
+      break;
+    case '4':
+      os << "Satus:     GPS定向" << std::endl;
+      break;
+    case '5':
+      os << "Satus:     GPS RTK" << std::endl;
+      break;
+    case 'B':
+      os << "Satus:     差分定向" << std::endl;
+      break;
+    default:
+      os << "Satus:     状态未知" << std::endl;
+  }
+  os << std::endl;
+
+  return os;
+}
 
 #endif

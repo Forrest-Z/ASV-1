@@ -21,6 +21,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 #GeographicLib库
 find_package (GeographicLib 1.49 REQUIRED)
+# thread 库
+find_package(Threads REQUIRED)
 
 # 添加 include 子目录
 set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
@@ -29,6 +31,7 @@ set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
 	"${PROJECT_DIRECTORY}/sensors/gpsimu/include"
 	"${PROJECT_DIRECTORY}/estimator/include"
+	"${PROJECT_DIRECTORY}/timer/include"
 	"${PROJECT_DIRECTORY}/fileIO/include"
 	"${PROJECT_DIRECTORY}/property/include"
 	"${PROJECT_DIRECTORY}/third_party/eigen"
@@ -46,3 +49,4 @@ target_include_directories(testbiling PRIVATE ${HEADER_DIRECTORY})
 find_library(SERIAL_LIBRARY serial ${LIBRARY_DIRECTORY})
 target_link_libraries(testbiling ${SERIAL_LIBRARY})
 target_link_libraries(testbiling ${GeographicLib_LIBRARIES})
+target_link_libraries(testbiling ${CMAKE_THREAD_LIBS_INIT})

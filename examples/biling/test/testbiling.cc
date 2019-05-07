@@ -9,4 +9,7 @@
 
 #include "threadloop.h"
 
-int main() { threadloop _threadloop; }
+int main() {
+  threadloop _threadloop;
+  _threadloop.testthread();
+}
