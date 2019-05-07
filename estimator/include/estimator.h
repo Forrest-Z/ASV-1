@@ -15,46 +15,69 @@
 
 class estimator {
  public:
-  explicit estimator(const vessel& _vessel, double sample_time),
-      surge_outlierremove(_vessel.surge_v(1), _vessel.surge_v(0), sample_time),
-      sway_outlierremove(_vessel.sway_v(1), _vessel.sway_v(0), sample_time),
-      yaw_outlierremove(_vessel.yaw_v(1), _vessel.yaw_v(0), sample_time),
-      roll_outlierremove(_vessel.roll_v(1), _vessel.roll_v(0), sample_time),
-      surgev_outlierremove(_vessel.x_thrust(1) / _vessel.Mass(0, 0),
-                           _vessel.x_thrust(0) / _vessel.Mass(0, 0),
-                           sample_time),
-      swayv_outlierremove(_vessel.sway_v(1), _vessel.sway_v(0), sample_time), {}
+  explicit estimator(const vessel& _vessel, double _sample_time, bool _kalman)
+      : roll_outlierremove(_vessel.roll_v(1), _vessel.roll_v(0), _sample_time),
+        surgev_outlierremove(_vessel.x_thrust(1) / _vessel.Mass(0, 0),
+                             _vessel.x_thrust(0) / _vessel.Mass(0, 0),
+                             _sample_time),
+        swayv_outlierremove(_vessel.y_thrust(1) / _vessel.Mass(1, 1),
+                            _vessel.y_thrust(0) / _vessel.Mass(1, 1),
+                            _sample_time),
+        _kalmanfilterv(_vessel, _sample_time),
+        former_heading(0),
+        sample_time(_sample_time),
+        kalman_use(_kalman) {}
   ~estimator() {}
 
-  void estimatoronestep(estimatorRTdata& _RTdata) {
+  void setvalue(estimatorRTdata& _RTdata) {
+    //
     preprocesssensordata(_RTdata);
-    // outliour remove
-    double t_surge = surge_outlierremove.removeoutlier(_RTdata.measuremment(0));
-    double t_sway = sway_outlierremove.removeoutlier(_RTdata.measuremment(1));
 
-    // low pass filtering
-    surge_lowpass.movingaverage();
+    State << _x, _y, _heading, 0, 0, 0;
+    _kalmanfilterv.setState(State);
+    roll_outlierremove.setlastvalue(_roll);
+    former_heading = ;
+    // assume that the initial velocities are all zero
+    surgev_outlierremove.setlastvalue(0);
+    swayv_outlierremove.setlastvalue(0);
+    yawv_outlierremove.setlastvalue(0);
   }
+  // read sensor data and perform state estimation
+  void estimatestate(estimatorRTdata& _RTdata, double gps_x, double gps_y,
+                     double gps_z, double gps_roll, double gps_pitch,
+                     double gps_heading, double gps_Ve, double gps_Vn) {
+    preprocesssGPSdata(_RTdata, gps_x, gps_y, gps_z, gps_roll, gps_pitch,
+                       gps_heading, gps_Ve, gps_Vn);
+    if (kalman_use)
+      _RTdata.State =
+          _kalmanfilterv.kalmanonestep(_RTdata).getState();  // kalman filtering
+    else
+      _RTdata.State = _RTdata.measuremment;  // use low-pass filtering only
+  }
+
+  void estimateerror(estimatorRTdata& _RTdata,
+                     const Eigen::Matrix<double, 6, 1>& _setpoints) {}
 
  private:
   // variable for low passing
-  lowpass<5> surge_lowpass;
-  lowpass<5> sway_lowpass;
-  lowpass<10> yaw_lowpass;
+  lowpass<5> x_lowpass;
+  lowpass<5> y_lowpass;
+  lowpass<10> heading_lowpass;
   lowpass<10> roll_lowpass;
   lowpass<5> surgev_lowpass;
   lowpass<5> swayv_lowpass;
   lowpass<5> yawv_lowpass;
   // variable for outlier removal
-  outlierremove surge_outlierremove;
-  outlierremove sway_outlierremove;
-  outlierremove yaw_outlierremove;
   outlierremove roll_outlierremove;
   outlierremove surgev_outlierremove;
   outlierremove swayv_outlierremove;
-  outlierremove yawv_outlierremove;
 
-  kalmanfilterv<> _kalmanfilterv;
+  kalmanfilterv _kalmanfilterv;
+
+  double former_heading;  // heading rate estimation
+  double sample_time;
+
+  bool kalman_use;  // use kalman filtering or not:
   // calculate the real time coordinate transform matrix
   void calculateCoordinateTransform(Eigen::Matrix3d& _CTG2B,
                                     Eigen::Matrix3d& _CTB2G,
@@ -82,14 +105,33 @@ class estimator {
     _CTB2G(1, 0) = svalue;
   }
 
-  // change direction, convert rad to deg or ....
-  void preprocesssensordata(estimatorRTdata& _RTdata) {
-    _RTdata.measuremment(0) *= -1;  // surge, change the direction
-
-    _RTdata.motiondata_6dof(3) *= (M_PI / 180);  // roll: deg -> rad
-    _RTdata.motiondata_6dof(4) *= (M_PI / 180);  // pitch: deg -> rad
-    _RTdata.measuremment(2) *= (M_PI / 180);     // yaw: deg -> rad
-    _RTdata.motiondata_6dof(5) *= (M_PI / 180);  // yaw: deg -> rad
+  // outlier removal, unit converstion, low pass filtering
+  void preprocesssGPSdata(estimatorRTdata& _RTdata, double gps_x, double gps_y,
+                          double gps_z, double gps_roll, double gps_pitch,
+                          double gps_heading, double gps_Ve, double gps_Vn) {
+    // change direction, convert rad to deg, outlier removal or ....
+    double _gps_x = gps_x;
+    double _gps_y = gps_y;
+    double _gps_z = -gps_z;
+    double _gps_roll = roll_outlierremove.removeoutlier(gps_roll * M_PI / 180);
+    double _gps_pitch = gps_pitch * M_PI / 180;
+    double _gps_heading = gps_heading * M_PI / 180;
+    double _gps_Ve = surgev_outlierremove.removeoutlier(gps_Ve);
+    double _gps_Vn = swayv_outlierremove.removeoutlier(gps_Vn);
+    // update raw measured data from GPS/IMU sensors
+    _RTdata.measuremment(0) = x_lowpass.movingaverage(_gps_x);
+    _RTdata.measuremment(1) = y_lowpass.movingaverage(_gps_y);
+    _RTdata.measuremment(2) = heading_lowpass.movingaverage(_gps_heading);
+    _RTdata.measuremment(3) = surgev_lowpass.movingaverage(_gps_Ve);
+    _RTdata.measuremment(4) = swayv_lowpass.movingaverage(_gps_Vn);
+    _RTdata.measuremment(5) = yawv_lowpass.movingaverage(calheadingrate(
+        _RTdata.measuremment(2)));  // we have to estimate the heading rate
+    _RTdata.motiondata_6dof(0) = _RTdata.measuremment(0);
+    _RTdata.motiondata_6dof(1) = _RTdata.measuremment(1);
+    _RTdata.motiondata_6dof(2) = _gps_z;
+    _RTdata.motiondata_6dof(3) = roll_lowpass.movingaverage(_gps_roll);
+    _RTdata.motiondata_6dof(4) = _gps_pitch;
+    _RTdata.motiondata_6dof(5) = _RTdata.measuremment(2);
   }
   // find the shortest way to rotate
   double shortestheading(double _deltaheading) {
@@ -101,6 +143,12 @@ class estimator {
     else
       deltaheading = _deltaheading;
     return deltaheading;
+  }
+  // calculate the heading rate
+  double calheadingrate(double _newvalue) {
+    double delta_yaw = shortestheading(_newvalue - former_heading);
+    former_heading = _newvalue;
+    return delta_yaw / sample_time;
   }
 };
 

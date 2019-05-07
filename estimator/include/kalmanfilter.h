@@ -176,9 +176,7 @@ class kalmanfilterv {
  public:
   // disable the default constructor
   kalmanfilterv() = delete;
-  explicit kalmanfilterv(const vessel &_vessel,
-                         const estimatordata &_estimatordata,
-                         const vectornd &_state) noexcept
+  explicit kalmanfilterv(const vessel &_vessel, double _sample_time) noexcept
       : A(matrixnnd::Zero()),
         B(matrixnld::Zero()),
         H(matrixmnd::Identity()),
@@ -186,8 +184,8 @@ class kalmanfilterv {
         R(matrixmmd::Identity()),
         P(matrixnnd::Identity()),
         K(matrixnnd::Zero()),
-        X(_state),
-        sample_time(_estimatordata.sample_time) {
+        X(vectornd::Zero()),
+        sample_time(_sample_time) {
     initializekalman(_vessel);
   }
 
@@ -201,6 +199,8 @@ class kalmanfilterv {
     return *this;
   }
 
+  // After intialization of sensors, we can specify value to state
+  void setState(const vectornd &_state) { X = _state; }
   vectornd getState() const noexcept { return X; }
 
   // calculate the max eigenvalue of P

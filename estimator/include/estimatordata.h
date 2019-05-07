@@ -29,6 +29,11 @@ struct estimatorRTdata {
   // x(surge: m), y(sway: m), yaw(theta: rad), u, v, r
   // data wroten by Kalman
   Eigen::Matrix<double, 6, 1> State;
+  /********************* error *********************************************/
+  // x(surge: m), y(sway: m), yaw(theta: rad), u, v, r
+  // in the body-fixed coordinate
+  Eigen::Matrix<double, 3, 1> error;
+
   Eigen::Matrix<double, 3, 1> BalphaU;  // estimated thrust
 
   Eigen::Matrix<double, 6, 1> motiondata_6dof;

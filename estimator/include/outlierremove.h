@@ -12,6 +12,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <cmath>
 
 class outlierremove {
  public:
@@ -19,9 +20,7 @@ class outlierremove {
                          double initial_value = 0)
       : delta_max(vmax * sample_time),
         delta_min(vmin * sample_time),
-        last_value(initial_value) {
-    initializekalman(_vessel);
-  }
+        last_value(initial_value) {}
   outlierremove() = delete;
   ~outlierremove() {}
 
