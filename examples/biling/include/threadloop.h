@@ -17,14 +17,23 @@
 
 #include <chrono>
 #include <thread>
+#include "database.h"
+#include "easylogging++.h"
 #include "estimator.h"
 #include "gps.h"
 #include "timecounter.h"
 
+const int m = 3;
+const int n = 3;
+
 class threadloop {
  public:
   threadloop()
-      : _estimator(_vessel, _estimatordata), _gpsimu(51, true, 115200) {}
+      : _estimator(_vessel, _estimatordata),
+        _gpsimu(51, true, 115200),
+        _sqlitetest("dbtest.db") {
+    intializethreadloop();
+  }
   ~threadloop() {}
 
   void testthread() {
@@ -71,28 +80,31 @@ class threadloop {
   };
   // real time GPS/IMU data
   gpsRTdata gps_data{
-      0,  // date
-      0,  // time
-      0,  // heading
-      0,  // pitch
-      0,  // roll
-      0,  // latitude
-      0,  // longitude
-      0,  // altitude
-      0,  // Ve
-      0,  // Vn
-      0,  // Vu
-      0,  // base_line
-      0,  // NSV1
-      0,  // NSV2
-      0,  // status
-      0,  // check
-      0,  // UTM_x
-      0   // UTM_y
+      0,                // date
+      0,                // time
+      0,                // heading
+      0,                // pitch
+      0,                // roll
+      0,                // latitude
+      0,                // longitude
+      0,                // altitude
+      0,                // Ve
+      0,                // Vn
+      0,                // Vu
+      0,                // base_line
+      0,                // NSV1
+      0,                // NSV2
+      'a',              // status
+      {'a', 'b', '0'},  // check
+      0,                // UTM_x
+      0                 // UTM_y
   };
 
   estimator _estimator;
   gpsimu _gpsimu;
+  database<m, n> _sqlitetest;
+
+  void intializethreadloop() { _sqlitetest.initializetables(); }
 
   // GPS/IMU
   void gpsimuloop() {
@@ -111,7 +123,7 @@ class threadloop {
       }
 
     } catch (std::exception& e) {
-      std::cerr << "Unhandled Exception: " << e.what() << std::endl;
+      CLOG(ERROR, "GPS serial") << e.what();
     }
   }
 

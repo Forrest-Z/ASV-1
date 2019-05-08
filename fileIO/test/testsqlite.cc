@@ -18,7 +18,7 @@ int main() {
 
   LOG(INFO) << "The program has started!";
 
-  database<n, n> _sqlitetest("dbtest.db");
+  database<m, n> _sqlitetest("dbtest.db");
   _sqlitetest.initializetables();
   // real time GPS/IMU data
   gpsRTdata gps_data{
