@@ -2,7 +2,7 @@
 cmake_minimum_required (VERSION 3.5)
 
 # 项目信息
-project (testfileio)
+project (testlogging)
 set(CMAKE_CXX_STANDARD 14)
 
 
@@ -21,6 +21,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+# thread 库
+find_package(Threads REQUIRED)
 
 # 添加 include 子目录
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
@@ -29,26 +31,13 @@ set(HEADER_DIRECTORY ${HEADER_DIRECTORY}
 	 "/home/scar1et/Coding/ASV/third_party/eigen")
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} "/usr/lib")
-set(HEADER_FILES ${HEADER_FILES} 
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include/json.hpp"                            
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include/utilityio.h")
+set(SOURCE_FILES ${SOURCE_FILES} 
+	"${CMAKE_CURRENT_SOURCE_DIR}/../src/easylogging++.cc"                            
+	"${CMAKE_CURRENT_SOURCE_DIR}/test.cpp")
 
 
 # 指定生成目标
-
-add_executable (testutility testutilityIO.cc)
-target_include_directories(testutility PRIVATE ${HEADER_DIRECTORY})
-
-# add_executable (testjson testjson.cc ${HEADER_FILES})
-add_executable (testjson testjson.cc)
-target_include_directories(testjson PRIVATE ${HEADER_DIRECTORY})
-
 # add_executable (testsqlite functions.cc ${HEADER_FILES})
-add_executable (testsqlite functions.cc)
-target_include_directories(testsqlite PRIVATE ${HEADER_DIRECTORY})
-find_library(SQLITE3_LIBRARY sqlite3 HINTS ${LIBRARY_DIRECTORY})
-target_link_libraries(testsqlite PUBLIC ${SQLITE3_LIBRARY})
-
-
-add_executable (testcsv testcsv.cc)
-target_include_directories(testcsv PRIVATE ${HEADER_DIRECTORY})
+add_executable (testlog ${SOURCE_FILES})
+target_include_directories(testlog PRIVATE ${HEADER_DIRECTORY})
+target_link_libraries(testlog ${CMAKE_THREAD_LIBS_INIT})

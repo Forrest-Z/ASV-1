@@ -70,17 +70,17 @@ struct azimuththrusterdata {
 
 // constant data of main propeller with rudder, index = 3
 struct ruddermaindata {
-  double lx;                  // m
-  double ly;                  // m
-  double K;                   //
-  double max_delta_rotation;  // rpm
-  double max_rotation;        // rpm
-  double min_rotation;        // rpm
-  double max_delta_alpha;     // rad
-  double max_alpha;           // rad
-  double min_alpha;           // rad
-  double max_thrust;          // N
-  double min_thrust;          // N
+  const double lx;                  // m
+  const double ly;                  // m
+  const double K;                   //
+  const double max_delta_rotation;  // rpm
+  const double max_rotation;        // rpm
+  const double min_rotation;        // rpm
+  const double max_delta_alpha;     // rad
+  const double max_alpha;           // rad
+  const double min_alpha;           // rad
+  const double max_thrust;          // N
+  const double min_thrust;          // N
 };
 
 // quasi-static data of pid controller
