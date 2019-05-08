@@ -22,16 +22,27 @@ set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
+# thread 库
+find_package(Threads REQUIRED)
+
+
 # 添加 include 子目录
+set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
+
+
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include"
-	"/usr/include" 
-	 "/home/scar1et/Coding/ASV/third_party/eigen")
+	"${PROJECT_DIRECTORY}/sensors/gpsimu/include"
+	"${PROJECT_DIRECTORY}/controller/include"
+	"${PROJECT_DIRECTORY}/estimator/include"
+	"${PROJECT_DIRECTORY}/planner/include"
+	"${PROJECT_DIRECTORY}/timer/include"
+	"${PROJECT_DIRECTORY}/fileIO/include"
+	"${PROJECT_DIRECTORY}/property/include"
+	"${PROJECT_DIRECTORY}/logging/include"
+	"${PROJECT_DIRECTORY}/third_party/eigen"
+	"/usr/include" )
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} "/usr/lib")
-set(HEADER_FILES ${HEADER_FILES} 
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include/json.hpp"                            
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include/utilityio.h")
 
 
 # 指定生成目标
@@ -43,12 +54,16 @@ target_include_directories(testutility PRIVATE ${HEADER_DIRECTORY})
 add_executable (testjson testjson.cc)
 target_include_directories(testjson PRIVATE ${HEADER_DIRECTORY})
 
-# add_executable (testsqlite functions.cc ${HEADER_FILES})
-add_executable (testsqlite functions.cc)
+
+set(SOURCE_FILES ${SOURCE_FILES} 
+	"${PROJECT_DIRECTORY}/logging/src/easylogging++.cc"                            
+	"${CMAKE_CURRENT_SOURCE_DIR}/testsqlite.cc")
+add_executable (testsqlite ${SOURCE_FILES})
 target_include_directories(testsqlite PRIVATE ${HEADER_DIRECTORY})
 find_library(SQLITE3_LIBRARY sqlite3 HINTS ${LIBRARY_DIRECTORY})
 target_link_libraries(testsqlite PUBLIC ${SQLITE3_LIBRARY})
-
+target_link_libraries(testsqlite PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable (testcsv testcsv.cc)
 target_include_directories(testcsv PRIVATE ${HEADER_DIRECTORY})
+
