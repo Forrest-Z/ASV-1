@@ -30,7 +30,7 @@ enum WINDCOMPENSATION {
 struct controllerdata {
   double sample_time;  // sample time of controller((unit: second)),
   CONTROLMODE controlmode;
-  WINDCOMPENSATION windcompensation;
+  WINDCOMPENSATION windstatus;
 };
 
 // real-time data in the controller
@@ -51,9 +51,10 @@ struct controllerRTdata {
 };
 
 // real time wind compensation
+template <int n = 3>
 struct windestimation {
   // Fx, Fy, Mz (wind force) in the body coordinate
-  Eigen::Matrix<double, 3, 1> load;
+  Eigen::Matrix<double, n, 1> load;
   // wind direction and speed in body
   Eigen::Matrix<double, 2, 1> wind_body;  // direction, speed
   // wind direction and speed in global

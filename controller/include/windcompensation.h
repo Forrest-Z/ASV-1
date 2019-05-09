@@ -13,22 +13,38 @@
 
 #include "controllerdata.h"
 
+template <int n = 3>
 class windcompensation {
+  using vectornd = Eigen::Matrix<double, n, 1>;
+
  public:
-  windcompensation() {}
+  windcompensation()
+      : load(vectornd::Zero()),
+        wind_body(Eigen::Vector2d::Zero()),
+        wind_global(Eigen::Vector2d::Zero()) {}
+
+  windcompensation& computewindload(const Eigen::Vector2d& _wind_body) {
+    wind_body = _wind_body;
+
+    load(0) = wind_body(0) * 0;
+    load(1) = wind_body(0) * 0;
+    load(2) = wind_body(0) * 0;
+    return *this;
+  }
+
   // TODO
-  Eigen::Vector2d convertbwind2global(const Eigen::Vector2d &_windbody,
+  Eigen::Vector2d convertbwind2global(const Eigen::Vector2d& _windbody,
                                       double v_heading, double v_speed) {
     Eigen::Vector2d wind_global = Eigen::Vector2d::Zero();
     return wind_global;
   }
 
   // TODO
-  Eigen::Vector3d getwindload() { return load; }
+  vectornd getwindload() const { return load; }
 
  private:
   // Fx, Fy, Mz (wind force) in the body coordinate
-  Eigen::Vector3d load;
+  vectornd load;
   // wind direction and speed in body
   Eigen::Vector2d wind_body;  // direction, speed
   // wind direction and speed in global

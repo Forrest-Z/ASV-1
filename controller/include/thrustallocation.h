@@ -93,7 +93,7 @@ class thrustallocation {
   }
 
   // modify penality for each error (heading-only controller)
-  void setQ(controlmode _cm) {
+  void setQ(CONTROLMODE _cm) {
     switch (_cm) {
       case MANUAL:
         for (int i = 0; i != n; ++i) Q(i, i) = 1000;
