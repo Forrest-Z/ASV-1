@@ -17,6 +17,7 @@
 #include "controllerdata.h"
 
 // n: # of dimension of control space
+// L: # of integral length of PID controller
 template <int L, int n = 3>
 class pidcontroller {
   using vectornd = Eigen::Matrix<double, n, 1>;

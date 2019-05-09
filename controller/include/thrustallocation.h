@@ -21,13 +21,11 @@
 #include <string>
 #include <vector>
 #include "controllerdata.h"
+#include "easylogging++.h"
 #include "mosek.h" /* Include the MOSEK definition file. */
 
 // # of thread used by mosek
 #define QP_THREADS_USED 1
-
-// static void MSKAPI printstr(void *handle, const char str[]) {  //
-// printf("%s", str);  // } /* printstr */
 
 // m: # of all thrusters on the vessel
 // n: # of dimension of control space
@@ -71,8 +69,7 @@ class thrustallocation {
         delta_alpha(vectormd::Zero()),
         delta_u(vectormd::Zero()),
         derivative_dx(1e-6),
-        results(Eigen::Matrix<double, 2 * m + n, 1>::Zero()),
-        logpath(_thrustallocationdata.logpath) {
+        results(Eigen::Matrix<double, 2 * m + n, 1>::Zero()) {
     initializethrusterallocation(_RTdata);
   }
 
@@ -88,19 +85,30 @@ class thrustallocation {
   }
 
   // perform the thrust allocation using QP solver (one step)
-  void onestepthrustallocation(controllerRTdata<m, n> &_RTdata,
-                               FILE *t_file = stdout) {
+  void onestepthrustallocation(controllerRTdata<m, n> &_RTdata) {
     updateTAparameters(_RTdata);
     updateMosekparameters();
-    onestepmosek(t_file);
+    onestepmosek();
     updateNextstep(_RTdata);
   }
 
   // modify penality for each error (heading-only controller)
-  void setQ() {
-    Q(0, 0) = 100;
-    Q(1, 1) = 100;
-    Q(2, 2) = 2000;
+  void setQ(controlmode _cm) {
+    switch (_cm) {
+      case MANUAL:
+        for (int i = 0; i != n; ++i) Q(i, i) = 1000;
+        break;
+      case HEADINGONLY:
+        Q(0, 0) = 100;
+        Q(1, 1) = 100;
+        Q(2, 2) = 2000;
+        break;
+      case AUTOMATIC:
+        for (int i = 0; i != n; ++i) Q(i, i) = 1000;
+        break;
+      default:
+        break;
+    }
   }
   // modify penality for each error (automatic controller)
   void resetQ() {
@@ -191,8 +199,6 @@ class thrustallocation {
   // array to store the optimization results
   Eigen::Matrix<double, 2 * m + n, 1> results;
 
-  // log file
-  std::string logpath;
   // mosek environment
   MSKenv_t env = NULL;
   MSKtask_t task = NULL;
@@ -213,7 +219,7 @@ class thrustallocation {
     }
 
     // quadratic penality matrix for error
-    resetQ();
+    setQ(MANUAL);
 
     initializemosekvariables();
 
@@ -560,7 +566,7 @@ class thrustallocation {
     }
   }
   // solve QP using Mosek solver
-  void onestepmosek(FILE *t_file) {
+  void onestepmosek() {
     MSKint32t i, j;
     double t_results[numvar];
     results.setZero();
@@ -622,42 +628,33 @@ class thrustallocation {
             case MSK_SOL_STA_PRIM_INFEAS_CER:
             case MSK_SOL_STA_NEAR_DUAL_INFEAS_CER:
             case MSK_SOL_STA_NEAR_PRIM_INFEAS_CER: {
-              t_file = fopen(logpath.c_str(), "a+");
-              fprintf(t_file,
-                      "Primal or dual infeasibility certificate found.\n");
-              fclose(t_file);
+              CLOG(ERROR, "mosek")
+                  << "Primal or dual infeasibility certificate found.";
               break;
             }
             case MSK_SOL_STA_UNKNOWN: {
-              t_file = fopen(logpath.c_str(), "a+");
-              fprintf(t_file,
-                      "The status of the solution could not be "
-                      "determined.\n");
-              fclose(t_file);
+              CLOG(ERROR, "mosek") << "The status of the solution could not be "
+                                      "determined.";
               break;
             }
             default: {
-              t_file = fopen(logpath.c_str(), "a+");
-              fprintf(t_file, "Other solution status.");
-              fclose(t_file);
+              CLOG(ERROR, "mosek") << "Other solution status.";
               break;
             }
           }
         } else {
-          t_file = fopen(logpath.c_str(), "a+");
-          fprintf(t_file, "Error while optimizing.\n");
-          fclose(t_file);
+          CLOG(ERROR, "mosek") << "Error while optimizing.";
         }
       }
       if (r != MSK_RES_OK) {
         /* In case of an error print error code and description. */
         char symname[MSK_MAX_STR_LEN];
         char desc[MSK_MAX_STR_LEN];
-        t_file = fopen(logpath.c_str(), "a+");
-        fprintf(t_file, "An error occurred while optimizing.\n");
         MSK_getcodedesc(r, symname, desc);
-        fprintf(t_file, "Error %s - '%s'\n", symname, desc);
-        fclose(t_file);
+
+        CLOG(ERROR, "mosek")
+            << "An error occurred while optimizing. " << std::string(symname)
+            << " - " << std::string(desc);
       }
     }
   }

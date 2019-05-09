@@ -33,6 +33,7 @@ set(HEADER_DIRECTORY ${HEADER_DIRECTORY}
 	"${CMAKE_CURRENT_SOURCE_DIR}/../include"
 	"/usr/include" 
 	"${PROJECT_DIRECTORY}/fileIO/include"
+	"${PROJECT_DIRECTORY}/logging/include"
 	"${PROJECT_DIRECTORY}/third_party/eigen"
 	"/opt/mosek/8/tools/platform/linux64x86/h")
 
@@ -40,9 +41,8 @@ set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY}
 	"/usr/lib"
     "/opt/mosek/8/tools/platform/linux64x86/bin")
 
-set(HEADER_FILES ${HEADER_FILES} 
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include/controllerdata.h"                            
-	"${CMAKE_CURRENT_SOURCE_DIR}/../include/thrustallocation.h")
+set(SOURCE_FILES ${SOURCE_FILES} 
+	"${PROJECT_DIRECTORY}/logging/src/easylogging++.cc" )
 
 
 # 指定生成目标
@@ -53,12 +53,12 @@ find_library(MOSEK8_LIBRARY mosek64 HINTS ${LIBRARY_DIRECTORY})
 target_link_libraries(testmosek PUBLIC ${MOSEK8_LIBRARY})
 
 
-add_executable (testthrust testthrust.cc)
+add_executable (testthrust testthrust.cc ${SOURCE_FILES})
 target_include_directories(testthrust PRIVATE ${HEADER_DIRECTORY})
 find_library(MOSEK8_LIBRARY mosek64 HINTS ${LIBRARY_DIRECTORY})
 target_link_libraries(testthrust PUBLIC ${MOSEK8_LIBRARY})
 target_link_libraries(testthrust PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 
 
-add_executable (testpidcontroller testpidcontroller.cc)
+add_executable (testpidcontroller testpidcontroller.cc )
 target_include_directories(testpidcontroller PRIVATE ${HEADER_DIRECTORY})

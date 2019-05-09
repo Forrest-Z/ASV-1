@@ -11,6 +11,8 @@
 #include "thrustallocation.h"
 #include "utilityio.h"
 
+INITIALIZE_EASYLOGGINGPP
+
 void testonestepthrustallocation() {
   const int m = 4;
   const int n = 3;
@@ -25,8 +27,8 @@ void testonestepthrustallocation() {
   int num_mainrudder =
       std::count(index_thrusters.begin(), index_thrusters.end(), 3);
 
-  thrustallocationdata _thrustallocationdata{
-      num_tunnel, num_azimuth, num_mainrudder, index_thrusters, "logfile.txt"};
+  thrustallocationdata _thrustallocationdata{num_tunnel, num_azimuth,
+                                             num_mainrudder, index_thrusters};
 
   std::vector<tunnelthrusterdata> v_tunnelthrusterdata;
   v_tunnelthrusterdata.reserve(num_tunnel);
@@ -119,8 +121,8 @@ void test_multiplethrusterallocation() {
   int num_mainrudder =
       std::count(index_thrusters.begin(), index_thrusters.end(), 3);
 
-  thrustallocationdata _thrustallocationdata{
-      num_tunnel, num_azimuth, num_mainrudder, index_thrusters, "logfile.txt"};
+  thrustallocationdata _thrustallocationdata{num_tunnel, num_azimuth,
+                                             num_mainrudder, index_thrusters};
 
   std::vector<tunnelthrusterdata> v_tunnelthrusterdata;
   v_tunnelthrusterdata.reserve(num_tunnel);
@@ -206,6 +208,12 @@ void test_multiplethrusterallocation() {
     save_rotation.col(i) = _controllerRTdata.rotation;
   }
 
+  save_tau = save_tau.transpose().eval();
+  save_u = save_u.transpose().eval();
+  save_alpha = save_alpha.transpose().eval();
+  save_alpha_deg = save_alpha_deg.transpose().eval();
+  save_tau = save_tau.transpose().eval();
+  save_u = save_u.transpose().eval();
   // save data to csv file
   utilityio _utilityio;
   std::string _name("../data/");
@@ -217,4 +225,11 @@ void test_multiplethrusterallocation() {
   _utilityio.write2csvfile(_name + "rotation.csv", save_rotation);
 }
 
-int main() { test_multiplethrusterallocation(); }
+int main() {
+  el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);
+  LOG(INFO) << "The program has started!";
+  test_multiplethrusterallocation();
+
+  LOG(INFO) << "Shutting down.";
+  return 0;
+}

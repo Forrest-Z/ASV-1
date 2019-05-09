@@ -5,9 +5,6 @@
 * senser, estimator, controller, planner, database, etc).
 * This header file can be read by C++ compilers
 *
-* 碧凌: 上古神兽名。碧凌的徒弟便是上古四大神兽：青龙、白虎、朱雀、玄武。
-* 相传碧凌是身穿紧身碧衣，满头青丝且瞳目为碧绿之色的太极神兽，由此而生。
-*
 *  by Hu.ZH(CrossOcean.ai)
 ***********************************************************************
 */
@@ -22,7 +19,6 @@
 #include "estimator.h"
 #include "gps.h"
 #include "timecounter.h"
-
 const int m = 3;
 const int n = 3;
 
@@ -31,7 +27,7 @@ class threadloop {
   threadloop()
       : _estimator(_vessel, _estimatordata),
         _gpsimu(51, true, 115200),
-        _sqlitetest("dbtest.db") {
+        _sqlite("dbtest.db") {
     intializethreadloop();
   }
   ~threadloop() {}
@@ -39,8 +35,11 @@ class threadloop {
   void testthread() {
     std::thread gps_thread(&threadloop::gpsimuloop, this);
     std::thread estimator_thread(&threadloop::estimatorloop, this);
-    gps_thread.join();
-    estimator_thread.join();
+    std::thread sql_thread(&threadloop::sqlloop, this);
+
+    gps_thread.detach();
+    estimator_thread.detach();
+    sql_thread.detach();
   }
 
  private:
@@ -102,9 +101,9 @@ class threadloop {
 
   estimator _estimator;
   gpsimu _gpsimu;
-  database<m, n> _sqlitetest;
+  database<m, n> _sqlite;
 
-  void intializethreadloop() { _sqlitetest.initializetables(); }
+  void intializethreadloop() { _sqlite.initializetables(); }
 
   // GPS/IMU
   void gpsimuloop() {
@@ -126,7 +125,7 @@ class threadloop {
       CLOG(ERROR, "GPS serial") << e.what();
     }
   }
-
+  // loop to give real time state estimation
   void estimatorloop() {
     while (1) {
       if (gps_data.status == 'B') {
@@ -150,14 +149,19 @@ class threadloop {
                                gps_data.heading, gps_data.Ve, gps_data.Vn,
                                desiredheading);
       _estimator.estimateerror(_estimatorRTdata, setpoints, vsetpoints);
-      std::cout << _estimatorRTdata.Measurement << std::endl;
-      std::cout << _estimatorRTdata.CTB2G << std::endl;
       // std::cout << _estimatorRTdata.Measurement << std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
+      // std::cout << _estimatorRTdata.CTB2G << std::endl;
+      // std::cout << _estimatorRTdata.Measurement << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   }
-
+  // loop to save real time data using sqlite3
+  void sqlloop() {
+    while (1) {
+      _sqlite.update_gps_table(gps_data);
+      _sqlite.update_estimator_table(_estimatorRTdata);
+    }
+  }
 };
 
 #endif /* _THREADLOOP_H_ */

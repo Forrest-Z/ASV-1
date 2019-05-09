@@ -1,0 +1,65 @@
+{
+  
+  "vesselname": "CrossOcean",
+  "Pi": 3.14159265358979323846, 
+  "control_rate":10,   
+  "dbsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/DPdata.db",
+  "logsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/log",
+  "Massproperty":{
+    "Mass":[
+      540, 0, 0, 0, 540, 200, 0, 200, 1000
+    ],   
+    "AddedMass":[
+      83, 0, 0, 0, 166, 244, 0, 244, 298
+    ], 
+    "Damping":[
+      17,0,0,0,20,0,0,0,100
+    ],
+    "CoG":[2.013, 0, -1.2]
+
+  },
+
+  "controller_mode":"FullyActuated", 
+  "thrust_limit":{
+    "x":[6.0, 5.0], 
+    "y":[3.0, 2.0], 
+    "Mz":[5.0, 3.0]
+  },
+  "first_thruster":{
+    "type":"tunnel",
+    "position":[1.9, 0],               
+    "thrust_contant":[5.5e-7, 1.3e-7], 
+    "max_delta_rotation": 100, 
+    "max_rotation": 3000    
+  },
+  "second_thruster":{
+    "type":"azimuth",
+    "position":[-1.893, -0.216],
+    "thrust_contant":2e-5,
+    "max_delta_rotation": 20, 
+    "max_rotation": 1000, 
+    "min_rotation": 50,   
+    "max_delta_alpha": 0.1277,   
+    "max_alpha": 3.053,    
+    "min_alpha": 0.1744 
+  },
+  "third_thruster":{
+    "type":"azimuth",
+    "position":[-1.893, 0.216],
+    "thrust_contant":2e-5,
+    "max_delta_rotation": 20, 
+    "max_rotation": 1000, 
+    "min_rotation": 50,   
+    "max_delta_alpha": 0.1277,   
+    "max_alpha": -0.1744,   
+    "min_alpha": -3.053  
+  },
+
+  "happy": true,     
+  "nothing": null,
+  "list": [1, 0, 2],
+  "object": {
+    "currency": "USD",
+    "value": 42.99
+  }
+}

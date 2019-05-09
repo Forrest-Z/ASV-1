@@ -64,11 +64,18 @@ class estimator {
     // calculate the coordinate transform matrix
     calculateCoordinateTransform(_RTdata.CTG2B, _RTdata.CTB2G,
                                  _RTdata.Measurement(2), _desiredheading);
-    if (kalman_use)
-      _RTdata.State =
-          _kalmanfilterv.kalmanonestep(_RTdata).getState();  // kalman filtering
-    else
-      _RTdata.State = _RTdata.Measurement;  // use low-pass filtering only
+
+    switch (kalman_use) {
+      case KALMANOFF:
+        _RTdata.State = _RTdata.Measurement;  // use low-pass filtering only
+        break;
+      case KALMANON:
+        _RTdata.State = _kalmanfilterv.kalmanonestep(_RTdata)
+                            .getState();  // kalman filtering
+        break;
+      default:
+        break;
+    }
   }
   // realtime calculation of position and velocity errors
   void estimateerror(estimatorRTdata& _RTdata,
@@ -100,7 +107,7 @@ class estimator {
   double former_heading;  // heading rate estimation
   double sample_time;
 
-  bool kalman_use;  // use kalman filtering or not:
+  const USEKALMAN kalman_use;  // use kalman filtering or not:
   // calculate the real time coordinate transform matrix
   void calculateCoordinateTransform(Eigen::Matrix3d& _CTG2B,
                                     Eigen::Matrix3d& _CTB2G, double _rtheading,

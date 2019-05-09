@@ -15,6 +15,11 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
+enum USEKALMAN {
+  KALMANOFF = 0,  // turn off kalman filtering
+  KALMANON        // turn on kalman filtering
+};
+
 // real-time data in the state estimators
 struct estimatorRTdata {
   Eigen::Matrix3d CTB2G;  // body  --> global
@@ -34,15 +39,16 @@ struct estimatorRTdata {
   Eigen::Matrix<double, 3, 1>
       v_error;  // velocity error in surge, sway and heading
 
-  Eigen::Matrix<double, 3, 1> BalphaU;  // estimated thrust
+  // estimated force in body, including thrust, wind force, etc
+  Eigen::Matrix<double, 3, 1> BalphaU;
 
   Eigen::Matrix<double, 6, 1> motiondata_6dof;
 };
 
 /********************* constant ***********************************/
 struct estimatordata {
-  double sample_time;  // sample time of estimator((unit: second)),
-  bool kalman_use;     //
+  double sample_time;    // sample time of estimator((unit: second)),
+  USEKALMAN kalman_use;  //
 };
 
 #endif /*_ESTIMATORDATA_H_*/

@@ -1,7 +1,7 @@
 /*
 ***********************************************************************
 * jsonparse.h:
-* Parse JSON file
+* Parse JSON file for USV
 * This header file can be read by C++ compilers
 *
 * by Hu.ZH(CrossOcean.ai)

@@ -15,12 +15,30 @@
 #include <Eigen/Dense>
 #include <vector>
 
+enum CONTROLMODE {
+  MANUAL = 0,   // manual controller
+  HEADINGONLY,  // heading only controller
+  AUTOMATIC     // automatic control
+};
+
+enum WINDCOMPENSATION {
+  WINDOFF = 0,  // turn off the wind compenstation
+  WINDON        // turn on the wind compenstation
+};
+
+// indicator in the controller
+struct controllerdata {
+  double sample_time;  // sample time of controller((unit: second)),
+  CONTROLMODE controlmode;
+  WINDCOMPENSATION windcompensation;
+};
+
 // real-time data in the controller
 template <int m, int n = 3>
 struct controllerRTdata {
   // Fx, Fy, Mz (desired force) in the body coordinate
   Eigen::Matrix<double, n, 1> tau;
-  // Fx, Fy, Mz (estimated generalized force) in the body-fixed coordinates
+  // Fx, Fy, Mz (estimated generalized thrust) in the body-fixed coordinates
   Eigen::Matrix<double, n, 1> BalphaU;
   // N, estimated thrust of all propellers
   Eigen::Matrix<double, m, 1> u;
@@ -32,12 +50,21 @@ struct controllerRTdata {
   Eigen::Matrix<int, m, 1> alpha_deg;
 };
 
+// real time wind compensation
+struct windestimation {
+  // Fx, Fy, Mz (wind force) in the body coordinate
+  Eigen::Matrix<double, 3, 1> load;
+  // wind direction and speed in body
+  Eigen::Matrix<double, 2, 1> wind_body;  // direction, speed
+  // wind direction and speed in global
+  Eigen::Matrix<double, 2, 1> wind_global;  // direction, speed
+};
+
 struct thrustallocationdata {
   const int num_tunnel;      // # of tunnel thruster
   const int num_azimuth;     // # of azimuth thruster
   const int num_mainrudder;  // # of main thruster with rudder
   const std::vector<int> index_thrusters;
-  const std::string logpath;  // directory for log file
 };
 
 // constant data of tunnel thruster, index = 1

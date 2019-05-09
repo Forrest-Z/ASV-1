@@ -1,9 +1,6 @@
 /*
 ***********************************************************************
-* timecounter.h: thread-based DP controller and network
-* function to run the whole loop on server (including PN server,
-* 6D motion capture, Kalman, PID, thruster allocation, joystick,
-* save2sqlite, viewer).
+* timecounter.h: to give the precise elapsed time in milliseconds.
 * This header file can be read by C++ compilers
 *
 *  by Hu.ZH(CrossOcean.ai)
@@ -12,11 +9,9 @@
 
 #ifndef _TIMECOUNTER_H_
 #define _TIMECOUNTER_H_
-#include <boost/date_time/microsec_time_clock.hpp>
+
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/timer.hpp>
-#include <iomanip>
 
 class timecounter {
   using T_BOOST_CLOCK =

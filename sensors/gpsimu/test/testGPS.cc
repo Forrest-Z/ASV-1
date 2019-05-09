@@ -14,73 +14,33 @@
 #include "gps.h"
 using std::setprecision;
 int main() {
-  gpsRTdata gps_data{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  std::string buffer;
+  // real time GPS/IMU data
+  gpsRTdata gps_data{
+      0,                // date
+      0,                // time
+      0,                // heading
+      0,                // pitch
+      0,                // roll
+      0,                // latitude
+      0,                // longitude
+      0,                // altitude
+      0,                // Ve
+      0,                // Vn
+      0,                // Vu
+      0,                // base_line
+      0,                // NSV1
+      0,                // NSV2
+      'a',              // status
+      {'a', 'b', '0'},  // check
+      0,                // UTM_x
+      0                 // UTM_y
+  };
   try {
     gpsimu _gpsimu(51, true, 115200);  // zone 30n
+
     while (1) {
       gps_data = _gpsimu.gpsonestep().getgpsRTdata();
-      buffer = _gpsimu.getserialbuffer();
-      std::cout << "buffer=    " << buffer;
-      std::cout << "date:      " << gps_data.date << std::endl;
-      std::cout << "time:      " << std::fixed << setprecision(3)
-                << gps_data.time << std::endl;
-      std::cout << "heading:   " << std::fixed << setprecision(3)
-                << gps_data.heading << std::endl;
-      std::cout << "pitch:     " << std::fixed << setprecision(3)
-                << gps_data.pitch << std::endl;
-      std::cout << "roll:      " << std::fixed << setprecision(3)
-                << gps_data.roll << std::endl;
-      std::cout << "latitud:   " << std::fixed << setprecision(7)
-                << gps_data.latitude << std::endl;
-      std::cout << "longitude: " << std::fixed << setprecision(7)
-                << gps_data.longitude << std::endl;
-      std::cout << "UTM_x:     " << std::fixed << setprecision(7)
-                << gps_data.UTM_x << std::endl;
-      std::cout << "UTM_y:     " << std::fixed << setprecision(7)
-                << gps_data.UTM_y << std::endl;
-      std::cout << "altitude:  " << std::fixed << setprecision(2)
-                << gps_data.altitude << std::endl;
-      std::cout << "speed_v:   " << std::fixed << setprecision(3) << gps_data.Ve
-                << std::endl;
-      std::cout << "speed_u:   " << std::fixed << setprecision(3) << gps_data.Vn
-                << std::endl;
-      std::cout << "speed_n:   " << std::fixed << setprecision(3) << gps_data.Vu
-                << std::endl;
-      std::cout << "basinLine  " << std::fixed << setprecision(3)
-                << gps_data.base_line << std::endl;
-      std::cout << "NSV1:      " << gps_data.NSV1 << std::endl;
-      std::cout << "NSV2:      " << gps_data.NSV2 << std::endl;
-      printf("status: %c\n", gps_data.status);
-      printf("check: %s\n", gps_data.check);
-
-      switch (gps_data.status) {
-        case '0':
-          std::cout << "Satus:     GPS初始化" << std::endl;
-          break;
-        case '1':
-          std::cout << "Satus:     粗对准" << std::endl;
-          break;
-        case '2':
-          std::cout << "Satus:     精对准" << std::endl;
-          break;
-        case '3':
-          std::cout << "Satus:     GPS定位" << std::endl;
-          break;
-        case '4':
-          std::cout << "Satus:     GPS定向" << std::endl;
-          break;
-        case '5':
-          std::cout << "Satus:     GPS RTK" << std::endl;
-          break;
-        case 'B':
-          std::cout << "Satus:     差分定向" << std::endl;
-          break;
-        default:
-          std::cout << "Satus:     状态未知" << std::endl;
-      }
-      std::cout << std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      std::cout << _gpsimu;
     }
 
   } catch (std::exception& e) {
