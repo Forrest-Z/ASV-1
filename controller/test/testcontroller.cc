@@ -79,9 +79,10 @@ void test_multiplecontroller() {
   };
 
   controllerdata _controllerdata{
-      0.1,        // sample_time
-      AUTOMATIC,  // controlmode
-      WINDON      // windstatus
+      0.1,           // sample_time
+      AUTOMATIC,     // controlmode
+      WINDON,        // windstatus
+      FULLYACTUATED  // index_actuation
   };
 
   std::vector<pidcontrollerdata> v_pidcontrollerdata;

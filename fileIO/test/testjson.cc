@@ -8,29 +8,23 @@
 ***********************************************************************
 */
 
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <json.hpp>
-#include <vector>
-
-using nlohmann::json;
+#include "jsonparse.h"
 
 int main() {
   // read a JSON file
-  std::ifstream in("../data/test.json");
+  jsonparse<3, 3> _jsonparse("../data/test.json");
+  _jsonparse.tets();
   // json file = json::parse(in);
-  json file;
-  in >> file;
-  std::vector<int> _jsonarray = file["list"];
-  std::cout << file["pi"] << std::endl;
-  std::cout << file["object"]["currency"] << std::endl;
-  std::cout << _jsonarray[0] << std::endl;
 
-  // iterate the array
-  for (json::iterator it = file.begin(); it != file.end(); ++it) {
-    std::cout << *it << '\n';
-  }
-  std::ofstream o("../data/pretty.json");
-  o << std::setw(4) << file << std::endl;
+  // std::vector<int> _jsonarray = file["list"];
+  // std::cout << file["pi"] << std::endl;
+  // std::cout << file["object"]["currency"] << std::endl;
+  // std::cout << _jsonarray[0] << std::endl;
+
+  // // iterate the array
+  // for (json::iterator it = file.begin(); it != file.end(); ++it) {
+  //   std::cout << *it << '\n';
+  // }
+  // std::ofstream o("../data/pretty.json");
+  // o << std::setw(4) << file << std::endl;
 }

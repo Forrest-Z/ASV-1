@@ -19,8 +19,8 @@
 #include "estimator.h"
 #include "gps.h"
 #include "timecounter.h"
-const int m = 3;
-const int n = 3;
+const int num_thruster = 3;
+const int dim_controlspace = 3;
 
 class threadloop {
  public:
@@ -101,7 +101,7 @@ class threadloop {
 
   estimator _estimator;
   gpsimu _gpsimu;
-  database<m, n> _sqlite;
+  database<num_thruster, dim_controlspace> _sqlite;
 
   void intializethreadloop() { _sqlite.initializetables(); }
 

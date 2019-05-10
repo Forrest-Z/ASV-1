@@ -39,23 +39,11 @@
             1000
         ]
     },
-    "Pi": 3.141592653589793,
     "control_rate": 10,
-    "controller_mode": "FullyActuated",
-    "dbsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/DPdata.db",
-    "first_thruster": {
-        "max_delta_rotation": 100,
-        "max_rotation": 3000,
-        "position": [
-            1.9,
-            0
-        ],
-        "thrust_contant": [
-            5.5e-07,
-            1.3e-07
-        ],
-        "type": "tunnel"
+    "controller": {
+        "sample_time": 0.1
     },
+    "dbsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/DPdata.db",
     "happy": true,
     "list": [
         1,
@@ -69,34 +57,6 @@
         "value": 42.99
     },
     "pi": null,
-    "second_thruster": {
-        "max_alpha": 3.053,
-        "max_delta_alpha": 0.1277,
-        "max_delta_rotation": 20,
-        "max_rotation": 1000,
-        "min_alpha": 0.1744,
-        "min_rotation": 50,
-        "position": [
-            -1.893,
-            -0.216
-        ],
-        "thrust_contant": 2e-05,
-        "type": "azimuth"
-    },
-    "third_thruster": {
-        "max_alpha": -0.1744,
-        "max_delta_alpha": 0.1277,
-        "max_delta_rotation": 20,
-        "max_rotation": 1000,
-        "min_alpha": -3.053,
-        "min_rotation": 50,
-        "position": [
-            -1.893,
-            0.216
-        ],
-        "thrust_contant": 2e-05,
-        "type": "azimuth"
-    },
     "thrust_limit": {
         "Mz": [
             5.0,
@@ -111,5 +71,59 @@
             2.0
         ]
     },
-    "vesselname": "CrossOcean"
+    "thruster1": {
+        "max_delta_rotation": 100,
+        "max_rotation": 3000,
+        "position": [
+            1.9,
+            0
+        ],
+        "thrust_contant": [
+            5.5e-07,
+            1.3e-07
+        ],
+        "type": "tunnel"
+    },
+    "thruster2": {
+        "max_delta_rotation": 100,
+        "max_rotation": 3000,
+        "position": [
+            1.8,
+            0
+        ],
+        "thrust_contant": [
+            3.7e-07,
+            1.7e-07
+        ],
+        "type": "tunnel"
+    },
+    "thruster3": {
+        "max_alpha": 180,
+        "max_delta_alpha": 7,
+        "max_delta_rotation": 20,
+        "max_rotation": 1000,
+        "min_alpha": 0,
+        "min_rotation": 50,
+        "position": [
+            -1.893,
+            -0.216
+        ],
+        "thrust_contant": 2e-05,
+        "type": "azimuth"
+    },
+    "thruster4": {
+        "max_alpha": 0,
+        "max_delta_alpha": 7,
+        "max_delta_rotation": 20,
+        "max_rotation": 1000,
+        "min_alpha": -180,
+        "min_rotation": 50,
+        "position": [
+            -1.893,
+            0.216
+        ],
+        "thrust_contant": 2e-05,
+        "type": "azimuth"
+    },
+    "vesselname": "Biling"
 }

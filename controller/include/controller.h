@@ -44,7 +44,6 @@ class controller {
         sample_time(_controllerdata.sample_time),
         controlmode(_controllerdata.controlmode),
         windstatus(_controllerdata.windstatus),
-        windload(vectornd::Zero()),
         _thrustallocation(_RTdata, _thrustallocationdata, _v_tunnelthrusterdata,
                           _v_azimuththrusterdata) {
     setPIDmatrix(_piddata);
@@ -62,20 +61,48 @@ class controller {
   void controlleronestep(controllerRTdata<m, n> &_controllerdata,
                          windestimation<n> &_wind, const vectornd &_error,
                          const vectornd &_derror, const vectornd &_command) {
+    // PID controller
+    vectornd d_tau = vectornd::Zero();
+    vectornd position_error_integral = updateIntegralMatrix(_error);
+    if (!compareerror(_error)) {
+      for (int i = 0; i != n; ++i)
+        d_tau(i) = pids(0, i) * _error(i)  // proportional term
+                   + pids(1, i) * position_error_integral(i)  // integral term
+                   + pids(2, i) * _derror(i);                 // derivative term
+    }
+
+    // wind compensation
     _wind.load =
         _windcompensation.computewindload(_wind.wind_body).getwindload();
     switch (windstatus) {
       case WINDOFF:
-        windload.setZero();
         break;
       case WINDON:  // TODO
-        windload = _wind.load;
+        d_tau += _wind.load;
         break;
       default:
         break;
     }
-    _controllerdata.tau =
-        calculategeneralizeforce(_error, _derror, windload, _command);
+
+    // controller mode
+    switch (controlmode) {
+      case MANUAL:
+        d_tau = _command;
+        break;
+      case HEADINGONLY:
+        for (int i = 0; i != 2; ++i) d_tau(i) = _command(i);
+        break;
+      case AUTOMATIC:
+        break;
+      default:
+        break;
+    }
+
+    // restrict desired force
+    restrictdesiredforce(d_tau);
+    _controllerdata.tau = d_tau;
+
+    // thrust allocation
     _thrustallocation.onestepthrustallocation(_controllerdata);
   }
 
@@ -106,43 +133,8 @@ class controller {
   double sample_time;
   CONTROLMODE controlmode;
   WINDCOMPENSATION windstatus;
-  vectornd windload;
   windcompensation<n> _windcompensation;
   thrustallocation<m, n> _thrustallocation;
-
-  // calculate the desired force using PID controller
-  vectornd calculategeneralizeforce(const vectornd &_error,
-                                    const vectornd &_derror,
-                                    const vectornd &_feedforward,
-                                    const vectornd &_command) {
-    vectornd d_tau = vectornd::Zero();
-    vectornd position_error_integral = updateIntegralMatrix(_error);
-    if (!compareerror(_error)) {
-      for (int i = 0; i != n; ++i)
-        d_tau(i) = pids(0, i) * _error(i)  // proportional term
-                   + pids(1, i) * position_error_integral(i)  // integral term
-                   + pids(2, i) * _derror(i);                 // derivative term
-    }
-    // add the wind compensation
-    d_tau += _feedforward;
-
-    switch (controlmode) {
-      case MANUAL:
-        d_tau = _command;
-        break;
-      case HEADINGONLY:
-        for (int i = 0; i != 2; ++i) d_tau(i) = _command(i);
-        break;
-      case AUTOMATIC:
-        break;
-      default:
-        break;
-    }
-
-    // restrict desired force
-    restrictdesiredforce(d_tau);
-    return d_tau;
-  }
 
   void initializepidcontroller(
       const std::vector<pidcontrollerdata> &_vcontrollerdata) {

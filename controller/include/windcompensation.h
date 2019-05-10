@@ -53,4 +53,4 @@ class windcompensation {
 
 #endif /*_WINDCOMPENSATION_H_*/
 
-// 多项式插值得到风力
+// 多项式插值得到风力, 风速和风向需要低通滤波

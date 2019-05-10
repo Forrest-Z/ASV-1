@@ -26,11 +26,17 @@ enum WINDCOMPENSATION {
   WINDON        // turn on the wind compenstation
 };
 
+enum ACTUATION {
+  UNDERACTUATED = 0,  // underactuated usv
+  FULLYACTUATED       // fully actuated usv
+};
+
 // indicator in the controller
 struct controllerdata {
   double sample_time;  // sample time of controller((unit: second)),
   CONTROLMODE controlmode;
   WINDCOMPENSATION windstatus;
+  ACTUATION index_actuation;
 };
 
 // real-time data in the controller
@@ -62,38 +68,38 @@ struct windestimation {
 };
 
 struct thrustallocationdata {
-  const int num_tunnel;      // # of tunnel thruster
-  const int num_azimuth;     // # of azimuth thruster
-  const int num_mainrudder;  // # of main thruster with rudder
-  const std::vector<int> index_thrusters;
+  int num_tunnel;      // # of tunnel thruster
+  int num_azimuth;     // # of azimuth thruster
+  int num_mainrudder;  // # of main thruster with rudder
+  std::vector<int> index_thrusters;
 };
 
 // constant data of tunnel thruster, index = 1
 struct tunnelthrusterdata {
-  const double lx;  // m
-  const double ly;  // m
-  const double K_positive;
-  const double K_negative;
-  const int max_delta_rotation;
-  const int max_rotation;
-  const double max_thrust_positive;
-  const double max_thrust_negative;
+  double lx;  // m
+  double ly;  // m
+  double K_positive;
+  double K_negative;
+  int max_delta_rotation;
+  int max_rotation;
+  double max_thrust_positive;
+  double max_thrust_negative;
 };
 
 // constant data of azimuth thruster, index = 2
 // Azimuth thruster can be used for fixed thruster, with a fixed alpha
 struct azimuththrusterdata {
-  const double lx;               // m
-  const double ly;               // m
-  const double K;                //
-  const int max_delta_rotation;  // rpm
-  const int max_rotation;        // rpm
-  const int min_rotation;        // rpm
-  const double max_delta_alpha;  // rad
-  const double max_alpha;        // rad
-  const double min_alpha;        // rad
-  const double max_thrust;       // N
-  const double min_thrust;       // N
+  double lx;               // m
+  double ly;               // m
+  double K;                //
+  int max_delta_rotation;  // rpm
+  int max_rotation;        // rpm
+  int min_rotation;        // rpm
+  double max_delta_alpha;  // rad
+  double max_alpha;        // rad
+  double min_alpha;        // rad
+  double max_thrust;       // N
+  double min_thrust;       // N
 };
 
 // constant data of main propeller with rudder, index = 3
