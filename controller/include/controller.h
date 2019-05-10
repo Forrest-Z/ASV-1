@@ -45,7 +45,6 @@ class controller {
         controlmode(_controllerdata.controlmode),
         windstatus(_controllerdata.windstatus),
         windload(vectornd::Zero()),
-        d_tau(vectornd::Zero()),
         _thrustallocation(_RTdata, _thrustallocationdata, _v_tunnelthrusterdata,
                           _v_azimuththrusterdata) {
     setPIDmatrix(_piddata);
@@ -61,8 +60,8 @@ class controller {
 
   // automatic control using pid controller and QP-based thrust allocation
   void controlleronestep(controllerRTdata<m, n> &_controllerdata,
-                         const vectornd &_error, const vectornd &_derror,
-                         windestimation<n> &_wind, const vecornd &_command) {
+                         windestimation<n> &_wind, const vectornd &_error,
+                         const vectornd &_derror, const vectornd &_command) {
     _wind.load =
         _windcompensation.computewindload(_wind.wind_body).getwindload();
     switch (windstatus) {
@@ -75,9 +74,9 @@ class controller {
       default:
         break;
     }
-    calculategeneralizeforce(_error, _derror, windload, _command);
-    _controllerdata.tau = d_tau;
-    _thrustallocation.onestepthrusterallocation(_controllerdata);
+    _controllerdata.tau =
+        calculategeneralizeforce(_error, _derror, windload, _command);
+    _thrustallocation.onestepthrustallocation(_controllerdata);
   }
 
   // assign value to pid controller
@@ -108,15 +107,15 @@ class controller {
   CONTROLMODE controlmode;
   WINDCOMPENSATION windstatus;
   vectornd windload;
-  vectornd d_tau;  // prevent "bump" in the desired force
   windcompensation<n> _windcompensation;
   thrustallocation<m, n> _thrustallocation;
 
   // calculate the desired force using PID controller
-  void calculategeneralizeforce(const vectornd &_error, const vectornd &_derror,
-                                const vectornd &_feedforward,
-                                const vectornd &_command) {
-    d_tau.setZero();
+  vectornd calculategeneralizeforce(const vectornd &_error,
+                                    const vectornd &_derror,
+                                    const vectornd &_feedforward,
+                                    const vectornd &_command) {
+    vectornd d_tau = vectornd::Zero();
     vectornd position_error_integral = updateIntegralMatrix(_error);
     if (!compareerror(_error)) {
       for (int i = 0; i != n; ++i)
@@ -142,6 +141,7 @@ class controller {
 
     // restrict desired force
     restrictdesiredforce(d_tau);
+    return d_tau;
   }
 
   void initializepidcontroller(

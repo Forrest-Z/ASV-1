@@ -60,5 +60,7 @@ target_link_libraries(testthrust PUBLIC ${MOSEK8_LIBRARY})
 target_link_libraries(testthrust PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 
 
-add_executable (testpidcontroller testpidcontroller.cc )
-target_include_directories(testpidcontroller PRIVATE ${HEADER_DIRECTORY})
+add_executable (testcontroller testcontroller.cc  ${SOURCE_FILES})
+target_include_directories(testcontroller PRIVATE ${HEADER_DIRECTORY})
+target_link_libraries(testcontroller PUBLIC ${MOSEK8_LIBRARY})
+target_link_libraries(testcontroller PUBLIC ${CMAKE_THREAD_LIBS_INIT})
