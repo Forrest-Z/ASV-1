@@ -29,10 +29,11 @@ body-fixed coordinate (BODY-G), whose origin located at the center of gravity
 
 template <int m, int n = 3>
 class jsonparse {
-  // using nlohmann::json;
+  template <int _m, int _n>
+  friend std::ostream& operator<<(std::ostream&, const jsonparse<_m, _n>&);
 
  public:
-  jsonparse(const std::string &_jsonname) : jsonname(_jsonname) {}
+  jsonparse(const std::string& _jsonname) : jsonname(_jsonname) {}
   ~jsonparse() {}
 
   void tets() {
@@ -108,12 +109,19 @@ class jsonparse {
         // thrust_contant
         std::vector<double> _thrustconstant =
             file[str_thruster]["thrust_contant"];
-        tunnelthrusterdata_input.K_positive = _thrustconstant[0];
-        tunnelthrusterdata_input.K_negative = _thrustconstant[1];
+        _tunnelthrusterdata_input.K_positive = _thrustconstant[0];
+        _tunnelthrusterdata_input.K_negative = _thrustconstant[1];
 
         // rotation
-        tunnelthrusterdata_input.max_delta_rotation controllerdata_input
-            .sample_time
+        _tunnelthrusterdata_input.max_delta_rotation =
+            file[str_thruster]["max_delta_rotation"];
+        _tunnelthrusterdata_input.max_delta_rotation =
+            static_cast<int>(controllerdata_input.sample_time *
+                             _tunnelthrusterdata_input.max_delta_rotation);
+        _tunnelthrusterdata_input.max_rotation =
+            file[str_thruster]["max_rotation"];
+        // thrust
+        tunnelthrusterdata_input.push_back(_tunnelthrusterdata_input);
       } else if (str_type == "azimuth") {
         ++thrustallocationdata_input.num_azimuth;
         thrustallocationdata_input.index_thrusters.push_back(2);
@@ -128,5 +136,24 @@ class jsonparse {
       std::cout << thrustallocationdata_input.index_thrusters[i] << std::endl;
   }
 };
+
+template <int _m, int _n>
+std::ostream& operator<<(std::ostream& os, const jsonparse<_m, _n>& _jp) {
+  for (unsigned int i = 0; i != _jp.tunnelthrusterdata_input.size(); ++i) {
+    std::cout << _jp.tunnelthrusterdata_input[i].lx << std::endl;
+    std::cout << _jp.tunnelthrusterdata_input[i].ly << std::endl;
+    std::cout << _jp.tunnelthrusterdata_input[i].K_positive << std::endl;
+    std::cout << _jp.tunnelthrusterdata_input[i].K_negative << std::endl;
+    std::cout << _jp.tunnelthrusterdata_input[i].max_delta_rotation
+              << std::endl;
+    std::cout << _jp.tunnelthrusterdata_input[i].max_rotation << std::endl;
+    std::cout << _jp.tunnelthrusterdata_input[i].max_thrust_positive
+              << std::endl;
+    std::cout << _jp.tunnelthrusterdata_input[i].max_thrust_negative
+              << std::endl;
+  }
+
+  return os;
+}
 
 #endif /* JSONPARSE_H */

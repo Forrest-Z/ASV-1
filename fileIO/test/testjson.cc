@@ -14,6 +14,7 @@ int main() {
   // read a JSON file
   jsonparse<3, 3> _jsonparse("../data/test.json");
   _jsonparse.tets();
+  std::cout << _jsonparse << std::endl;
   // json file = json::parse(in);
 
   // std::vector<int> _jsonarray = file["list"];
