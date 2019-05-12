@@ -1,5 +1,6 @@
 {
   "vesselname": "Biling",
+  "project_directory":"/home/scar1et/Coding/ASV",
   "dbsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/DPdata.db",
   "logsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/log",
   "property": {

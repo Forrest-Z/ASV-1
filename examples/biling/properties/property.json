@@ -1,7 +1,7 @@
 {
   "vesselname": "Biling",
-  "dbsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/DPdata.db",
-  "logsavedir": "/home/scar1et/Coding/CPP1X/USV/DPDecom/QT/build/data/log",
+  "project_directory":"/home/scar1et/Coding/ASV/examples/biling/",
+  "dbpath": "data/dbsave.db",
   "property": {
     "Mass": [540, 0, 0, 0, 540, 200, 0, 200, 1000],
     "AddedMass": [83, 0, 0, 0, 166, 244, 0, 244, 298],
@@ -81,10 +81,5 @@
     "sample_time": 1,
     "KALMANON": true
   },
-  "nothing": null,
-  "list": [1, 0, 2],
-  "object": {
-    "currency": "USD",
-    "value": 42.99
-  }
+  "nothing": null
 }

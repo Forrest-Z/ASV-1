@@ -39,11 +39,13 @@ set(HEADER_DIRECTORY ${HEADER_DIRECTORY}
 	"${PROJECT_DIRECTORY}/logging/include"
 	"${PROJECT_DIRECTORY}/third_party/eigen"
 	"${PROJECT_DIRECTORY}/third_party/serial/include"
+	"/opt/mosek/8/tools/platform/linux64x86/h"
 	"/usr/include" 
     "${CMAKE_CURRENT_SOURCE_DIR}/../include")
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} 
     "/usr/lib"
+    "/opt/mosek/8/tools/platform/linux64x86/bin"
    )
     
 # 指定生成目标
@@ -54,7 +56,9 @@ add_executable (testbiling ${SOURCE_FILES})
 target_include_directories(testbiling PRIVATE ${HEADER_DIRECTORY})
 find_library(SERIAL_LIBRARY serial HINTS ${LIBRARY_DIRECTORY})
 find_library(SQLITE3_LIBRARY sqlite3 HINTS ${LIBRARY_DIRECTORY})
+find_library(MOSEK8_LIBRARY mosek64 HINTS ${LIBRARY_DIRECTORY})
 target_link_libraries(testbiling PUBLIC ${SQLITE3_LIBRARY})
 target_link_libraries(testbiling PUBLIC ${SERIAL_LIBRARY})
 target_link_libraries(testbiling PUBLIC ${GeographicLib_LIBRARIES})
 target_link_libraries(testbiling PUBLIC ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(testbiling PUBLIC ${MOSEK8_LIBRARY})
