@@ -18,6 +18,7 @@
 #include "easylogging++.h"
 #include "estimator.h"
 #include "gps.h"
+#include "jsonparse.h"
 #include "timecounter.h"
 const int num_thruster = 3;
 const int dim_controlspace = 3;
@@ -25,7 +26,11 @@ const int dim_controlspace = 3;
 class threadloop {
  public:
   threadloop()
-      : _estimator(_vessel, _estimatordata),
+      : jsonaname(
+            "/home/scar1et/Coding/ASV/examples/biling/properties/"
+            "property.json"),
+        _jsonparse(jsonaname),
+        _estimator(_vessel, _estimatordata),
         _gpsimu(51, true, 115200),
         _sqlite("dbtest.db") {
     intializethreadloop();
@@ -43,24 +48,28 @@ class threadloop {
   }
 
  private:
+  // json
+  const std::string jsonaname;
+  jsonparse<num_thruster, dim_controlspace> _jsonparse;
   // mass property of vessel (TODO: read from json)
   vessel _vessel{
-      (Eigen::Matrix3d() << 500, 0, 0, 0, 500, 344, 0, 344, 1000)
-          .finished(),  // Mass
-      (Eigen::Matrix3d() << 123, 0, 0, 0, 206, 100, 0, 100, 298)
-          .finished(),  // added Mass
-      (Eigen::Matrix3d() << 17, 0, 0, 0, 20, 0, 0, 0, 100)
-          .finished(),                              // damping
-      (Eigen::Vector2d() << 1.9, 0).finished(),     // cog
-      (Eigen::Vector2d() << -5.0, 6.0).finished(),  // x_thrust
-      (Eigen::Vector2d() << -2.0, 3.0).finished(),  // y_thrust
-      (Eigen::Vector2d() << -2.0, 3.0).finished(),  // mz_thrust
-      (Eigen::Vector2d() << -3.0, 5.0).finished(),  // surge_v
-      (Eigen::Vector2d() << -1.0, 1.0).finished(),  // sway_v
-      (Eigen::Vector2d() << -1.0, 1.0).finished(),  // yaw_v
-      (Eigen::Vector2d() << -0.5, 0.5).finished()   // roll_v
+      Eigen::Matrix3d::Zero(),  // Mass
+      Eigen::Matrix3d::Zero(),  // added Mass
+      Eigen::Matrix3d::Zero(),  // damping
+      Eigen::Vector2d::Zero(),  // cog
+      Eigen::Vector2d::Zero(),  // x_thrust
+      Eigen::Vector2d::Zero(),  // y_thrust
+      Eigen::Vector2d::Zero(),  // mz_thrust
+      Eigen::Vector2d::Zero(),  // surge_v
+      Eigen::Vector2d::Zero(),  // sway_v
+      Eigen::Vector2d::Zero(),  // yaw_v
+      Eigen::Vector2d::Zero()   // roll_v
   };
-
+  // constant parameters in state estimation
+  estimatordata _estimatordata{
+      0.,       // sample_time
+      KALMANON  // kalman_use
+  };
   // realtime parameters of the estimators
   estimatorRTdata _estimatorRTdata{
       Eigen::Matrix3d::Identity(),          // CTB2G
@@ -72,11 +81,7 @@ class threadloop {
       Eigen::Vector3d::Zero(),              // BalphaU
       Eigen::Matrix<double, 6, 1>::Zero()   // motiondata_6dof
   };
-  // constant parameters in state estimation
-  estimatordata _estimatordata{
-      0.1,  // sample_time
-      true  // kalman_use
-  };
+
   // real time GPS/IMU data
   gpsRTdata gps_data{
       0,                // date
@@ -103,7 +108,11 @@ class threadloop {
   gpsimu _gpsimu;
   database<num_thruster, dim_controlspace> _sqlite;
 
-  void intializethreadloop() { _sqlite.initializetables(); }
+  void intializethreadloop() {
+    _vessel = _jsonparse.getvessel();
+
+    _sqlite.initializetables();
+  }
 
   // GPS/IMU
   void gpsimuloop() {

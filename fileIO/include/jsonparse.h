@@ -10,6 +10,7 @@
 
 #ifndef JSONPARSE_H
 #define JSONPARSE_H
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -33,12 +34,37 @@ class jsonparse {
   friend std::ostream& operator<<(std::ostream&, const jsonparse<_m, _n>&);
 
  public:
-  jsonparse(const std::string& _jsonname) : jsonname(_jsonname) {}
+  explicit jsonparse(const std::string& _jsonname) : jsonname(_jsonname) {
+    readjson();
+  }
+  jsonparse() = delete;
   ~jsonparse() {}
 
-  void tets() {
+  vessel getvessel() const noexcept { return vesseldata_input; }
+  controllerdata getcontrollerdata() const noexcept {
+    return controllerdata_input;
+  }
+  thrustallocationdata getthrustallocationdata() const noexcept {
+    return thrustallocationdata_input;
+  }
+  std::vector<tunnelthrusterdata> gettunneldata() const noexcept {
+    return tunnelthrusterdata_input;
+  }
+  std::vector<azimuththrusterdata> getazimuthdata() const noexcept {
+    return azimuththrusterdata_input;
+  }
+  std::vector<pidcontrollerdata> getpiddata() const noexcept {
+    return pidcontrollerdata_input;
+  }
+  estimatordata getestimatordata() const noexcept {
+    return estimatordata_input;
+  }
+
+  void readjson() {
     parsejson();
     parsecontrollerdata();
+    parseestimatordata();
+    parsevesselpropertydata();
   }
 
  private:
@@ -46,25 +72,26 @@ class jsonparse {
   // json file = json::parse(in);
   nlohmann::json file;
 
-  bool index_actuation;        // 1: fully-actuated; 0: underactuated
-  std::string dbsavedir;       // directory for database file
-  std::string logsavedir;      // directory for log file
-  int control_rate;            // Hz
-  double control_sample_time;  // s
-  Eigen::MatrixXd Mass;        // mass matrix, in the BODY-G
-  Eigen::MatrixXd AddedMass;
-  Eigen::MatrixXd TotalMass;
-  Eigen::MatrixXd Damping;  // damping matrix, in the BODY-G
-  Eigen::VectorXd CoG;      // position of CoG, in the BODY
+  utilityio _utilityio;
 
-  Eigen::VectorXd thrustlimit_p;  // positive
-  Eigen::VectorXd thrustlimit_n;  // negative
-  int num_thruster;               // # of thrusters
-  int num_constraints;            // # of constraints in control allocation
-  int nun_var;                    // # of variables in control allocation
-  // the number of constraints
-  Eigen::VectorXd x_thruster;  // position of each thruster in the BODY-G
-  Eigen::VectorXd y_thruster;
+  bool index_actuation;    // 1: fully-actuated; 0: underactuated
+  std::string dbsavedir;   // directory for database file
+  std::string logsavedir;  // directory for log file
+
+  // vessel property
+  vessel vesseldata_input{
+      Eigen::Matrix3d::Zero(),  // Mass
+      Eigen::Matrix3d::Zero(),  // AddedMass
+      Eigen::Matrix3d::Zero(),  // Damping
+      Eigen::Vector2d::Zero(),  // cog
+      Eigen::Vector2d::Zero(),  // x_thrust
+      Eigen::Vector2d::Zero(),  // y_thrust
+      Eigen::Vector2d::Zero(),  // mz_thrust
+      Eigen::Vector2d::Zero(),  // surge_v
+      Eigen::Vector2d::Zero(),  // sway_v
+      Eigen::Vector2d::Zero(),  // yaw_v
+      Eigen::Vector2d::Zero()   // roll_v
+  };
 
   // controllerdata
   controllerdata controllerdata_input{
@@ -83,6 +110,12 @@ class jsonparse {
   std::vector<azimuththrusterdata> azimuththrusterdata_input;
   std::vector<pidcontrollerdata> pidcontrollerdata_input;
 
+  // estimatordata
+  estimatordata estimatordata_input{
+      0.1,       // sample_time
+      KALMANOFF  // kalman_use
+  };
+
   void parsejson() {
     // read a JSON file
     std::ifstream in(jsonname);
@@ -90,41 +123,124 @@ class jsonparse {
   }
 
   void parsecontrollerdata() {
-    controllerdata_input.sample_time = file["controller"]["sample_time"];
-
+    // controller
+    controllerdata_input.sample_time =
+        file["controller"]["sample_time"].get<double>();
+    pidcontrollerdata _pidcontrollerdata_input;
+    // surge-- controller
+    _pidcontrollerdata_input.P = file["controller"]["surge"]["P"].get<double>();
+    _pidcontrollerdata_input.I = file["controller"]["surge"]["I"].get<double>();
+    _pidcontrollerdata_input.D = file["controller"]["surge"]["D"].get<double>();
+    _pidcontrollerdata_input.allowed_error =
+        file["controller"]["surge"]["allowed_error"].get<double>();
+    _pidcontrollerdata_input.min_output =
+        file["controller"]["surge"]["min_output"].get<double>();
+    _pidcontrollerdata_input.max_output =
+        file["controller"]["surge"]["max_output"].get<double>();
+    pidcontrollerdata_input.push_back(_pidcontrollerdata_input);
+    // sway-- controller
+    _pidcontrollerdata_input.P = file["controller"]["sway"]["P"].get<double>();
+    _pidcontrollerdata_input.I = file["controller"]["sway"]["I"].get<double>();
+    _pidcontrollerdata_input.D = file["controller"]["sway"]["D"].get<double>();
+    _pidcontrollerdata_input.allowed_error =
+        file["controller"]["sway"]["allowed_error"].get<double>();
+    _pidcontrollerdata_input.min_output =
+        file["controller"]["sway"]["min_output"].get<double>();
+    _pidcontrollerdata_input.max_output =
+        file["controller"]["sway"]["max_output"].get<double>();
+    pidcontrollerdata_input.push_back(_pidcontrollerdata_input);
+    // yaw-- controller
+    _pidcontrollerdata_input.P = file["controller"]["yaw"]["P"].get<double>();
+    _pidcontrollerdata_input.I = file["controller"]["yaw"]["I"].get<double>();
+    _pidcontrollerdata_input.D = file["controller"]["yaw"]["D"].get<double>();
+    _pidcontrollerdata_input.allowed_error =
+        file["controller"]["yaw"]["allowed_error"].get<double>();
+    _pidcontrollerdata_input.min_output =
+        file["controller"]["yaw"]["min_output"].get<double>();
+    _pidcontrollerdata_input.max_output =
+        file["controller"]["yaw"]["max_output"].get<double>();
+    pidcontrollerdata_input.push_back(_pidcontrollerdata_input);
+    // thrusters
     for (int i = 0; i != m; ++i) {
       std::string str_thruster("thruster");
       str_thruster += std::to_string(i + 1);
       std::string str_type = file[str_thruster]["type"];
       if (str_type == "tunnel") {
+        // update # of tunnels and index_thruster
         ++thrustallocationdata_input.num_tunnel;
         thrustallocationdata_input.index_thrusters.push_back(1);
 
-        tunnelthrusterdata _tunnelthrusterdata_input;
+        tunnelthrusterdata _thrusterdata_input;
 
         // position
         std::vector<double> _position = file[str_thruster]["position"];
-        _tunnelthrusterdata_input.lx = _position[0];
-        _tunnelthrusterdata_input.ly = _position[1];
+        _thrusterdata_input.lx = _position[0];
+        _thrusterdata_input.ly = _position[1];
         // thrust_contant
         std::vector<double> _thrustconstant =
             file[str_thruster]["thrust_contant"];
-        _tunnelthrusterdata_input.K_positive = _thrustconstant[0];
-        _tunnelthrusterdata_input.K_negative = _thrustconstant[1];
+        _thrusterdata_input.K_positive = _thrustconstant[0];
+        _thrusterdata_input.K_negative = _thrustconstant[1];
 
         // rotation
-        _tunnelthrusterdata_input.max_delta_rotation =
-            file[str_thruster]["max_delta_rotation"];
-        _tunnelthrusterdata_input.max_delta_rotation =
-            static_cast<int>(controllerdata_input.sample_time *
-                             _tunnelthrusterdata_input.max_delta_rotation);
-        _tunnelthrusterdata_input.max_rotation =
-            file[str_thruster]["max_rotation"];
+        _thrusterdata_input.max_delta_rotation = static_cast<int>(
+            controllerdata_input.sample_time *
+            file[str_thruster]["max_delta_rotation"].get<double>());
+        _thrusterdata_input.max_rotation =
+            file[str_thruster]["max_rotation"].get<int>();
         // thrust
-        tunnelthrusterdata_input.push_back(_tunnelthrusterdata_input);
+        _thrusterdata_input.max_thrust_positive =
+            _thrusterdata_input.K_positive *
+            std::pow(_thrusterdata_input.max_rotation, 2);
+        _thrusterdata_input.max_thrust_negative =
+            _thrusterdata_input.K_negative *
+            std::pow(_thrusterdata_input.max_rotation, 2);
+
+        //
+        tunnelthrusterdata_input.push_back(_thrusterdata_input);
       } else if (str_type == "azimuth") {
+        // update # of azimuth and index_thruster
         ++thrustallocationdata_input.num_azimuth;
         thrustallocationdata_input.index_thrusters.push_back(2);
+
+        azimuththrusterdata _thrusterdata_input;
+
+        // position
+        std::vector<double> _position = file[str_thruster]["position"];
+        _thrusterdata_input.lx = _position[0];
+        _thrusterdata_input.ly = _position[1];
+        // thrust_contant
+        _thrusterdata_input.K =
+            file[str_thruster]["thrust_contant"].get<double>();
+
+        // rotation
+        _thrusterdata_input.max_delta_rotation = static_cast<int>(
+            controllerdata_input.sample_time *
+            file[str_thruster]["max_delta_rotation"].get<double>());
+        _thrusterdata_input.max_rotation =
+            file[str_thruster]["max_rotation"].get<int>();
+        _thrusterdata_input.min_rotation =
+            file[str_thruster]["min_rotation"].get<int>();
+
+        // alpha
+        _thrusterdata_input.max_delta_alpha =
+            controllerdata_input.sample_time *
+            file[str_thruster]["max_delta_alpha"].get<double>();
+
+        _thrusterdata_input.max_alpha =
+            file[str_thruster]["max_alpha"].get<double>();
+        _thrusterdata_input.min_alpha =
+            file[str_thruster]["min_alpha"].get<double>();
+        // thrust
+        _thrusterdata_input.max_thrust =
+            _thrusterdata_input.K *
+            std::pow(_thrusterdata_input.max_rotation, 2);
+        _thrusterdata_input.min_thrust =
+            _thrusterdata_input.K *
+            std::pow(_thrusterdata_input.min_rotation, 2);
+
+        //
+        azimuththrusterdata_input.push_back(_thrusterdata_input);
       } else if (str_type == "rudder") {
         ++thrustallocationdata_input.num_mainrudder;
         thrustallocationdata_input.index_thrusters.push_back(3);
@@ -132,26 +248,113 @@ class jsonparse {
         std::cout << "unknow thruster type!\n";
       }
     }
-    for (int i = 0; i != 3; ++i)
-      std::cout << thrustallocationdata_input.index_thrusters[i] << std::endl;
-  }
+
+  }  // parsecontrollerdata()
+
+  void parseestimatordata() {
+    estimatordata_input.sample_time =
+        file["estimator"]["sample_time"].get<double>();
+    bool kalman_on = file["estimator"]["KALMANON"];
+    if (kalman_on)
+      estimatordata_input.kalman_use = KALMANON;
+    else
+      estimatordata_input.kalman_use = KALMANOFF;
+  }  // parseestimatordata
+
+  void parsevesselpropertydata() {
+    vesseldata_input.Mass = _utilityio.convertstdvector2EigenMat<double, 3, 3>(
+        file["property"]["Mass"].get<std::vector<double>>());
+    vesseldata_input.AddedMass =
+        _utilityio.convertstdvector2EigenMat<double, 3, 3>(
+            file["property"]["AddedMass"].get<std::vector<double>>());
+    vesseldata_input.Damping =
+        _utilityio.convertstdvector2EigenMat<double, 3, 3>(
+            file["property"]["Damping"].get<std::vector<double>>());
+    vesseldata_input.cog = _utilityio.convertstdvector2EigenMat<double, 2, 1>(
+        file["property"]["CoG"].get<std::vector<double>>());
+
+    vesseldata_input.x_thrust
+        << file["controller"]["surge"]["min_output"].get<double>(),
+        file["controller"]["surge"]["max_output"].get<double>();
+    vesseldata_input.y_thrust
+        << file["controller"]["sway"]["min_output"].get<double>(),
+        file["controller"]["sway"]["max_output"].get<double>();
+    vesseldata_input.mz_thrust
+        << file["controller"]["yaw"]["min_output"].get<double>(),
+        file["controller"]["yaw"]["max_output"].get<double>();
+
+    vesseldata_input
+        .surge_v = _utilityio.convertstdvector2EigenMat<double, 2, 1>(
+        file["property"]["velocity_limit"]["surge"].get<std::vector<double>>());
+    vesseldata_input
+        .sway_v = _utilityio.convertstdvector2EigenMat<double, 2, 1>(
+        file["property"]["velocity_limit"]["sway"].get<std::vector<double>>());
+    vesseldata_input.yaw_v = _utilityio.convertstdvector2EigenMat<double, 2, 1>(
+        file["property"]["velocity_limit"]["yaw"].get<std::vector<double>>());
+    vesseldata_input
+        .roll_v = _utilityio.convertstdvector2EigenMat<double, 2, 1>(
+        file["property"]["velocity_limit"]["roll"].get<std::vector<double>>());
+  }  // parsevesselpropertydata
 };
 
 template <int _m, int _n>
 std::ostream& operator<<(std::ostream& os, const jsonparse<_m, _n>& _jp) {
+  os << "index of each thruster:\n";
+  for (int i = 0; i != _m; ++i)
+    os << _jp.thrustallocationdata_input.index_thrusters[i] << " ";
+
+  os << "info of each tunnel thruster:\n";
   for (unsigned int i = 0; i != _jp.tunnelthrusterdata_input.size(); ++i) {
-    std::cout << _jp.tunnelthrusterdata_input[i].lx << std::endl;
-    std::cout << _jp.tunnelthrusterdata_input[i].ly << std::endl;
-    std::cout << _jp.tunnelthrusterdata_input[i].K_positive << std::endl;
-    std::cout << _jp.tunnelthrusterdata_input[i].K_negative << std::endl;
-    std::cout << _jp.tunnelthrusterdata_input[i].max_delta_rotation
-              << std::endl;
-    std::cout << _jp.tunnelthrusterdata_input[i].max_rotation << std::endl;
-    std::cout << _jp.tunnelthrusterdata_input[i].max_thrust_positive
-              << std::endl;
-    std::cout << _jp.tunnelthrusterdata_input[i].max_thrust_negative
-              << std::endl;
+    os << _jp.tunnelthrusterdata_input[i].lx << std::endl;
+    os << _jp.tunnelthrusterdata_input[i].ly << std::endl;
+    os << _jp.tunnelthrusterdata_input[i].K_positive << std::endl;
+    os << _jp.tunnelthrusterdata_input[i].K_negative << std::endl;
+    os << _jp.tunnelthrusterdata_input[i].max_delta_rotation << std::endl;
+    os << _jp.tunnelthrusterdata_input[i].max_rotation << std::endl;
+    os << _jp.tunnelthrusterdata_input[i].max_thrust_positive << std::endl;
+    os << _jp.tunnelthrusterdata_input[i].max_thrust_negative << std::endl;
   }
+
+  os << "info of each azimuth thruster:\n";
+  for (unsigned int i = 0; i != _jp.azimuththrusterdata_input.size(); ++i) {
+    os << _jp.azimuththrusterdata_input[i].lx << std::endl;
+    os << _jp.azimuththrusterdata_input[i].ly << std::endl;
+    os << _jp.azimuththrusterdata_input[i].K << std::endl;
+    os << _jp.azimuththrusterdata_input[i].max_delta_rotation << std::endl;
+    os << _jp.azimuththrusterdata_input[i].max_rotation << std::endl;
+    os << _jp.azimuththrusterdata_input[i].min_rotation << std::endl;
+    os << _jp.azimuththrusterdata_input[i].max_delta_alpha << std::endl;
+    os << _jp.azimuththrusterdata_input[i].max_alpha << std::endl;
+    os << _jp.azimuththrusterdata_input[i].min_alpha << std::endl;
+    os << _jp.azimuththrusterdata_input[i].max_thrust << std::endl;
+    os << _jp.azimuththrusterdata_input[i].min_thrust << std::endl;
+  }
+
+  os << "pid controller:\n";
+  for (unsigned int i = 0; i != _jp.pidcontrollerdata_input.size(); ++i) {
+    os << _jp.pidcontrollerdata_input[i].P << std::endl;
+    os << _jp.pidcontrollerdata_input[i].I << std::endl;
+    os << _jp.pidcontrollerdata_input[i].D << std::endl;
+    os << _jp.pidcontrollerdata_input[i].allowed_error << std::endl;
+    os << _jp.pidcontrollerdata_input[i].min_output << std::endl;
+    os << _jp.pidcontrollerdata_input[i].max_output << std::endl;
+  }
+  os << "estimator:\n";
+  os << _jp.estimatordata_input.sample_time << std::endl;
+  os << _jp.estimatordata_input.kalman_use << std::endl;
+
+  os << "Mass property:\n";
+  os << _jp.vesseldata_input.Mass << std::endl;
+  os << _jp.vesseldata_input.AddedMass << std::endl;
+  os << _jp.vesseldata_input.Damping << std::endl;
+  os << _jp.vesseldata_input.cog << std::endl;
+  os << _jp.vesseldata_input.x_thrust << std::endl;
+  os << _jp.vesseldata_input.y_thrust << std::endl;
+  os << _jp.vesseldata_input.mz_thrust << std::endl;
+  os << _jp.vesseldata_input.surge_v << std::endl;
+  os << _jp.vesseldata_input.sway_v << std::endl;
+  os << _jp.vesseldata_input.yaw_v << std::endl;
+  os << _jp.vesseldata_input.roll_v << std::endl;
 
   return os;
 }

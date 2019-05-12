@@ -23,6 +23,13 @@ class utilityio {
   ~utilityio() {}
 
  public:
+  template <typename T, int m, int n>
+  Eigen::Matrix<T, m, n> convertstdvector2EigenMat(const std::vector<T> &_vec) {
+    Eigen::Matrix<T, m, n> mat = Eigen::Matrix<T, m, n>::Zero();
+    for (int i = 0; i != n; ++i)
+      for (int j = 0; j != m; ++j) mat(j, i) = _vec[i * m + j];
+    return mat;
+  }
   // convert std vector to Eigen3 Matrix (by column)
   Eigen::MatrixXd convertstdvector2EigenMat(const std::vector<double> &_vec,
                                             int nrow, int ncol) {

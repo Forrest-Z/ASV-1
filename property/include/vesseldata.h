@@ -18,21 +18,21 @@
 // 船体的参数
 struct vessel {
   // mass property
-  const Eigen::Matrix3d Mass;
-  const Eigen::Matrix3d AddedMass;
-  const Eigen::Matrix3d Damping;
-  const Eigen::Vector2d cog;
+  Eigen::Matrix3d Mass;
+  Eigen::Matrix3d AddedMass;
+  Eigen::Matrix3d Damping;
+  Eigen::Vector2d cog;
 
   // thrust limit
-  const Eigen::Vector2d x_thrust;   // min, max
-  const Eigen::Vector2d y_thrust;   // min, max
-  const Eigen::Vector2d mz_thrust;  // min, max
+  Eigen::Vector2d x_thrust;   // min, max
+  Eigen::Vector2d y_thrust;   // min, max
+  Eigen::Vector2d mz_thrust;  // min, max
 
   // velocity limit
-  const Eigen::Vector2d surge_v;  // min, max
-  const Eigen::Vector2d sway_v;   // min, max
-  const Eigen::Vector2d yaw_v;    // min, max
-  const Eigen::Vector2d roll_v;   // min, max
+  Eigen::Vector2d surge_v;  // min, max
+  Eigen::Vector2d sway_v;   // min, max
+  Eigen::Vector2d yaw_v;    // min, max
+  Eigen::Vector2d roll_v;   // min, max
 };
 
 #endif /* _VESSELDATA_H_ */
