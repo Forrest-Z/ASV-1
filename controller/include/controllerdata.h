@@ -82,8 +82,8 @@ struct tunnelthrusterdata {
   double K_negative;
   int max_delta_rotation;
   int max_rotation;
-  double max_thrust_positive;
-  double max_thrust_negative;
+  double max_thrust_positive;  // positive value
+  double max_thrust_negative;  // positive value
 };
 
 // constant data of azimuth thruster, index = 2
@@ -98,8 +98,8 @@ struct azimuththrusterdata {
   double max_delta_alpha;  // rad
   double max_alpha;        // rad
   double min_alpha;        // rad
-  double max_thrust;       // N
-  double min_thrust;       // N
+  double max_thrust;       // N, positive value
+  double min_thrust;       // N, positive value
 };
 
 // constant data of main propeller with rudder, index = 3

@@ -46,7 +46,7 @@ void test_multiplecontroller() {
       2e-5,              // K
       20,                // max_delta_rotation
       1000,              // max rotation
-      50,                // min_rotation
+      5,                 // min_rotation
       0.1277,            // max_delta_alpha
       M_PI * 175 / 180,  // max_alpha
       M_PI / 18,         // min_alpha
@@ -59,7 +59,7 @@ void test_multiplecontroller() {
       2e-5,               // K
       20,                 // max_delta_rotation
       1000,               // max rotation
-      50,                 // min_rotation
+      5,                  // min_rotation
       0.1277,             // max_delta_alpha
       -M_PI / 18,         // max_alpha
       -M_PI * 175 / 180,  // min_alpha
@@ -97,9 +97,10 @@ void test_multiplecontroller() {
       Eigen::Matrix<double, 2, 1>::Zero(),  // wind_global
   };
 
-  controller<L, m, n> _controller(_controllerRTdata, _controllerdata,
-                                  v_pidcontrollerdata, _thrustallocationdata,
-                                  v_tunnelthrusterdata, v_azimuththrusterdata);
+  controller<L, m, n> _controller(_controllerdata, v_pidcontrollerdata,
+                                  _thrustallocationdata, v_tunnelthrusterdata,
+                                  v_azimuththrusterdata);
+  _controller.initializecontroller(_controllerRTdata);
   Eigen::Matrix<double, n, 1> error;
   Eigen::Matrix<double, n, 1> derror;
   Eigen::Matrix<double, n, 1> command;

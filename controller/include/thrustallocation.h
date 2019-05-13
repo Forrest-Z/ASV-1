@@ -22,7 +22,7 @@
 #include <vector>
 #include "controllerdata.h"
 #include "easylogging++.h"
-#include "mosek.h" /* Include the MOSEK definition file. */
+#include "mosek.h"
 
 // # of thread used by mosek
 #define QP_THREADS_USED 1
@@ -40,7 +40,6 @@ class thrustallocation {
 
  public:
   explicit thrustallocation(
-      controllerRTdata<m, n> &_RTdata,
       const thrustallocationdata &_thrustallocationdata,
       const std::vector<tunnelthrusterdata> &_v_tunnelthrusterdata,
       const std::vector<azimuththrusterdata> &_v_azimuththrusterdata)
@@ -70,7 +69,7 @@ class thrustallocation {
         delta_u(vectormd::Zero()),
         derivative_dx(1e-6),
         results(Eigen::Matrix<double, 2 * m + n, 1>::Zero()) {
-    initializethrusterallocation(_RTdata);
+    initializethrusterallocation();
   }
 
   // explicit thrustallocation(
@@ -92,6 +91,27 @@ class thrustallocation {
     updateNextstep(_RTdata);
   }
 
+  void initializapropeller(controllerRTdata<m, n> &_RTdata) {
+    // alpha and thrust of each propeller
+    for (int i = 0; i != num_tunnel; ++i) {
+      _RTdata.rotation(i) = 1;
+      _RTdata.u(i) = v_tunnelthrusterdata[i].K_positive;
+      _RTdata.alpha(i) = M_PI / 2;
+      _RTdata.alpha_deg(i) = 90;
+    }
+    for (int j = 0; j != num_azimuth; ++j) {
+      int a_index = j + num_tunnel;
+      _RTdata.rotation(a_index) = v_azimuththrusterdata[j].min_rotation;
+      _RTdata.u(a_index) = v_azimuththrusterdata[j].K *
+                           std::pow(v_azimuththrusterdata[j].min_rotation, 2);
+      _RTdata.alpha(a_index) = v_azimuththrusterdata[j].min_alpha;
+      _RTdata.alpha_deg(a_index) =
+          static_cast<int>(v_azimuththrusterdata[j].min_alpha * 180 / M_PI);
+    }
+
+    // update BalphaU
+    _RTdata.BalphaU = calculateBalphau(_RTdata.alpha, _RTdata.u);
+  }
   // modify penality for each error (heading-only controller)
   void setQ(CONTROLMODE _cm) {
     switch (_cm) {
@@ -110,10 +130,7 @@ class thrustallocation {
         break;
     }
   }
-  // modify penality for each error (automatic controller)
-  void resetQ() {
-    for (int i = 0; i != n; ++i) Q(i, i) = 1000;
-  }
+
   //
   vectormd getlx() const { return lx; }
   vectormd getly() const { return ly; }
@@ -204,7 +221,7 @@ class thrustallocation {
   MSKtask_t task = NULL;
   MSKrescodee r;
 
-  void initializethrusterallocation(controllerRTdata<m, n> &_RTdata) {
+  void initializethrusterallocation() {
     for (int i = 0; i != num_tunnel; ++i) {
       lx(i) = v_tunnelthrusterdata[i].lx;
       ly(i) = v_tunnelthrusterdata[i].ly;
@@ -219,13 +236,10 @@ class thrustallocation {
     }
 
     // quadratic penality matrix for error
-    setQ(MANUAL);
+    setQ(HEADINGONLY);
 
     initializemosekvariables();
 
-    calculaterotation(_RTdata);
-    // update BalphaU
-    _RTdata.BalphaU = calculateBalphau(_RTdata.alpha, _RTdata.u);
     initializeMosekAPI();
   }
 

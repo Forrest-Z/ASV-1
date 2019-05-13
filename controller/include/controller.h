@@ -31,7 +31,7 @@ class controller {
  public:
   // fully actuated
   explicit controller(
-      controllerRTdata<m, n> &_RTdata, const controllerdata &_controllerdata,
+      const controllerdata &_controllerdata,
       const std::vector<pidcontrollerdata> &_piddata,
       const thrustallocationdata &_thrustallocationdata,
       const std::vector<tunnelthrusterdata> &_v_tunnelthrusterdata,
@@ -44,7 +44,7 @@ class controller {
         sample_time(_controllerdata.sample_time),
         controlmode(_controllerdata.controlmode),
         windstatus(_controllerdata.windstatus),
-        _thrustallocation(_RTdata, _thrustallocationdata, _v_tunnelthrusterdata,
+        _thrustallocation(_thrustallocationdata, _v_tunnelthrusterdata,
                           _v_azimuththrusterdata) {
     setPIDmatrix(_piddata);
     initializepidcontroller(_piddata);
@@ -52,10 +52,16 @@ class controller {
 
   ~controller() {}
 
+  void initializecontroller(controllerRTdata<m, n> &_RTdata) {
+    _thrustallocation.initializapropeller(_RTdata);
+  }
+
   void setcontrolmode(CONTROLMODE _controlmode) {
     controlmode = _controlmode;
     _thrustallocation.setQ(_controlmode);
   }
+
+  void estimatewind() {}
 
   // automatic control using pid controller and QP-based thrust allocation
   void controlleronestep(controllerRTdata<m, n> &_controllerdata,

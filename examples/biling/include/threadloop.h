@@ -27,17 +27,16 @@ const int dim_controlspace = 3;
 class threadloop {
  public:
   threadloop()
-      : jsonaname(
+      : _jsonparse(
             "/home/scar1et/Coding/ASV/examples/biling/properties/"
             "property.json"),
-        _jsonparse(jsonaname),
         _estimator(_jsonparse.getvessel(), _jsonparse.getestimatordata()),
         _gpsimu(51, true, 115200),
         _controller(_controllerRTdata, _jsonparse.getcontrollerdata(),
                     _jsonparse.getpiddata(),
                     _jsonparse.getthrustallocationdata(),
                     _jsonparse.gettunneldata(), _jsonparse.getazimuthdata()),
-        _sqlite("../data/dbtest.db") {
+        _sqlite(_jsonparse.getsqlitedata()) {
     intializethreadloop();
   }
   ~threadloop() {}
@@ -45,16 +44,17 @@ class threadloop {
   void testthread() {
     std::thread gps_thread(&threadloop::gpsimuloop, this);
     std::thread estimator_thread(&threadloop::estimatorloop, this);
+    std::thread controller_thread(&threadloop::controllerloop, this);
     std::thread sql_thread(&threadloop::sqlloop, this);
 
     gps_thread.detach();
+    controller_thread.detach();
     estimator_thread.detach();
     sql_thread.detach();
   }
 
  private:
   // json
-  const std::string jsonaname;
   jsonparse<num_thruster, dim_controlspace> _jsonparse;
 
   controllerRTdata<num_thruster, dim_controlspace> _controllerRTdata{
@@ -70,6 +70,12 @@ class threadloop {
           .finished(),                             // alpha
       Eigen::Matrix<int, num_thruster, 1>::Zero()  // alpha_deg
 
+  };
+
+  windestimation<dim_controlspace> _windestimation{
+      Eigen::Matrix<double, dim_controlspace, 1>::Zero(),  // load
+      Eigen::Matrix<double, 2, 1>::Zero(),                 // wind_body
+      Eigen::Matrix<double, 2, 1>::Zero(),                 // wind_global
   };
   // realtime parameters of the estimators
   estimatorRTdata _estimatorRTdata{
@@ -108,6 +114,7 @@ class threadloop {
   estimator _estimator;
   gpsimu _gpsimu;
   controller<10, num_thruster, dim_controlspace> _controller;
+
   database<num_thruster, dim_controlspace> _sqlite;
 
   void intializethreadloop() { _sqlite.initializetables(); }
@@ -131,7 +138,19 @@ class threadloop {
     } catch (std::exception& e) {
       CLOG(ERROR, "GPS serial") << e.what();
     }
-  }
+  }  // gpsimuloop()
+
+  void controllerloop() {
+    Eigen::Matrix<double, dim_controlspace, 1> command =
+        Eigen::Matrix<double, dim_controlspace,
+                      1>::Zero();  // TODO: command from planner
+    while (1) {
+      _controller.controlleronestep(_controllerRTdata, _windestimation,
+                                    _estimatorRTdata.p_error,
+                                    _estimatorRTdata.v_error, command);
+    }
+  }  // controllerloop
+
   // loop to give real time state estimation
   void estimatorloop() {
     while (1) {
@@ -147,10 +166,12 @@ class threadloop {
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
-    double desiredheading = 0;
-    Eigen::Vector3d setpoints = Eigen::Vector3d::Zero();
-    Eigen::Vector3d vsetpoints = Eigen::Vector3d::Zero();
+    double desiredheading = 0;                             // TODO: planner
+    Eigen::Vector3d setpoints = Eigen::Vector3d::Zero();   // TODO: planner
+    Eigen::Vector3d vsetpoints = Eigen::Vector3d::Zero();  // TODO: planner
     while (1) {
+      _estimator.updateestimatedforce(
+          _estimatorRTdata, _controllerRTdata.BalphaU, _windestimation.load);
       _estimator.estimatestate(_estimatorRTdata, gps_data.UTM_x, gps_data.UTM_y,
                                gps_data.altitude, gps_data.roll, gps_data.pitch,
                                gps_data.heading, gps_data.Ve, gps_data.Vn,
@@ -161,14 +182,16 @@ class threadloop {
       // std::cout << _estimatorRTdata.Measurement << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-  }
+  }  // estimatorloop()
+
   // loop to save real time data using sqlite3
   void sqlloop() {
     while (1) {
       _sqlite.update_gps_table(gps_data);
       _sqlite.update_estimator_table(_estimatorRTdata);
+      _sqlite.update_controller_table(_controllerRTdata);
     }
-  }
+  }  // sqlloop()
 };
 
 #endif /* _THREADLOOP_H_ */

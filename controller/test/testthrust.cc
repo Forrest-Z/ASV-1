@@ -77,9 +77,8 @@ void testonestepthrustallocation() {
   };
 
   thrustallocation<m, n> _thrustallocation(
-      _controllerRTdata, _thrustallocationdata, v_tunnelthrusterdata,
-      v_azimuththrusterdata);
-
+      _thrustallocationdata, v_tunnelthrusterdata, v_azimuththrusterdata);
+  _thrustallocation.initializapropeller(_controllerRTdata);
   utilityio _utilityio;
 
   std::cout << _controllerRTdata.alpha << std::endl;
@@ -158,21 +157,31 @@ void test_multiplethrusterallocation() {
       0.05                // min_thrust
   });
 
-  controllerRTdata<m, n> _controllerRTdata{
-      (Eigen::Matrix<double, n, 1>() << 0, 0, 1).finished(),         // tau
-      Eigen::Matrix<double, n, 1>::Zero(),                           // BalphaU
-      (Eigen::Matrix<double, m, 1>() << 0.01, 0.2, 0.2).finished(),  // u
-      (Eigen::Matrix<int, m, 1>() << 0, 0, 0).finished(),            // rotation
-      (Eigen::Matrix<double, m, 1>() << M_PI / 2, M_PI / 10, -M_PI / 4)
-          .finished(),                  // alpha
-      Eigen::Matrix<int, m, 1>::Zero()  // alpha_deg
+  // controllerRTdata<m, n> _controllerRTdata{
+  //     (Eigen::Matrix<double, n, 1>() << 0, 0, 1).finished(),         // tau
+  //     Eigen::Matrix<double, n, 1>::Zero(),                           //
+  //     BalphaU (Eigen::Matrix<double, m, 1>() << 0.01, 0.2, 0.2).finished(),
+  //     // u (Eigen::Matrix<int, m, 1>() << 0, 0, 0).finished(),            //
+  //     rotation (Eigen::Matrix<double, m, 1>() << M_PI / 2, M_PI / 10, -M_PI /
+  //     4)
+  //         .finished(),                  // alpha
+  //     Eigen::Matrix<int, m, 1>::Zero()  // alpha_deg
 
+  // };
+
+  controllerRTdata<m, n> _controllerRTdata{
+      Eigen::Matrix<double, n, 1>::Zero(),  // tau
+      Eigen::Matrix<double, n, 1>::Zero(),  // BalphaU
+      Eigen::Matrix<double, m, 1>::Zero(),  // u
+      Eigen::Matrix<int, m, 1>::Zero(),     // rotation
+      Eigen::Matrix<double, m, 1>::Zero(),  // alpha
+      Eigen::Matrix<int, m, 1>::Zero()      // alpha_deg
   };
 
   // initialize the thrust allocation
   thrustallocation<m, n> _thrustallocation(
-      _controllerRTdata, _thrustallocationdata, v_tunnelthrusterdata,
-      v_azimuththrusterdata);
+      _thrustallocationdata, v_tunnelthrusterdata, v_azimuththrusterdata);
+  _thrustallocation.initializapropeller(_controllerRTdata);
 
   // data saved for validation and viewer
   const int totalstep = 200;
@@ -188,11 +197,11 @@ void test_multiplethrusterallocation() {
   double angle = 0;
   for (int i = 0; i != 30; ++i) {
     angle = (i + 1) * M_PI / 15;
-    save_tau(2, i + 70) = 0.0 * sin(angle) + 0.1 * std::rand() / RAND_MAX;
+    save_tau(2, i + 70) = 0.5 * sin(angle) + 0.1 * std::rand() / RAND_MAX;
   }
-  save_tau.block(1, 0, 1, 100) = Eigen::MatrixXd::Constant(1, 100, 4) +
+  save_tau.block(1, 0, 1, 100) = Eigen::MatrixXd::Constant(1, 100, 0.2) +
                                  0.0 * Eigen::MatrixXd::Random(1, 100);
-  save_tau.block(1, 100, 1, 100) = Eigen::MatrixXd::Constant(1, 100, -4) +
+  save_tau.block(1, 100, 1, 100) = Eigen::MatrixXd::Constant(1, 100, -0.2) +
                                    0.0 * Eigen::MatrixXd::Random(1, 100);
   save_tau.row(0) = 0.01 * Eigen::MatrixXd::Random(1, totalstep);
   for (int i = 0; i != totalstep; ++i) {
@@ -212,8 +221,8 @@ void test_multiplethrusterallocation() {
   save_u = save_u.transpose().eval();
   save_alpha = save_alpha.transpose().eval();
   save_alpha_deg = save_alpha_deg.transpose().eval();
-  save_tau = save_tau.transpose().eval();
-  save_u = save_u.transpose().eval();
+  save_Balphau = save_Balphau.transpose().eval();
+  save_rotation = save_rotation.transpose().eval();
   // save data to csv file
   utilityio _utilityio;
   std::string _name("../data/");

@@ -53,6 +53,12 @@ class estimator {
     // Kalman filtering
     _kalmanfilterv.setState(_RTdata.State);
   }
+  // update the estimated force acting on the vessel
+  void updateestimatedforce(estimatorRTdata& _RTdata,
+                            const Eigen::Vector3d& _thrust,
+                            const Eigen::Vector3d& _wind) {
+    _RTdata.BalphaU = _thrust + _wind;
+  }
   // read sensor data and perform state estimation
   void estimatestate(estimatorRTdata& _RTdata, double gps_x, double gps_y,
                      double gps_z, double gps_roll, double gps_pitch,

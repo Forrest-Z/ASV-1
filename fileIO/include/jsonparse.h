@@ -59,12 +59,14 @@ class jsonparse {
   estimatordata getestimatordata() const noexcept {
     return estimatordata_input;
   }
+  std::string getsqlitedata() const noexcept { return dbpath; }
 
   void readjson() {
     parsejson();
     parsecontrollerdata();
     parseestimatordata();
     parsevesselpropertydata();
+    parsesqlitedata();
   }
 
  private:
@@ -74,9 +76,8 @@ class jsonparse {
 
   utilityio _utilityio;
 
-  bool index_actuation;    // 1: fully-actuated; 0: underactuated
-  std::string dbsavedir;   // directory for database file
-  std::string logsavedir;  // directory for log file
+  bool index_actuation;  // 1: fully-actuated; 0: underactuated
+  std::string dbpath;    // directory for database file
 
   // vessel property
   vessel vesseldata_input{
@@ -295,6 +296,12 @@ class jsonparse {
         .roll_v = _utilityio.convertstdvector2EigenMat<double, 2, 1>(
         file["property"]["velocity_limit"]["roll"].get<std::vector<double>>());
   }  // parsevesselpropertydata
+
+  void parsesqlitedata() {
+    dbpath = file["project_directory"].get<std::string>() +
+             file["dbpath"].get<std::string>();
+
+  }  // parsesqlitedata
 };
 
 template <int _m, int _n>
