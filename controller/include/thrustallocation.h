@@ -104,9 +104,12 @@ class thrustallocation {
       _RTdata.rotation(a_index) = v_azimuththrusterdata[j].min_rotation;
       _RTdata.u(a_index) = v_azimuththrusterdata[j].K *
                            std::pow(v_azimuththrusterdata[j].min_rotation, 2);
-      _RTdata.alpha(a_index) = v_azimuththrusterdata[j].min_alpha;
+      _RTdata.alpha(a_index) = (v_azimuththrusterdata[j].min_alpha +
+                                v_azimuththrusterdata[j].max_alpha) /
+                               2;
+
       _RTdata.alpha_deg(a_index) =
-          static_cast<int>(v_azimuththrusterdata[j].min_alpha * 180 / M_PI);
+          static_cast<int>(_RTdata.alpha(a_index) * 180 / M_PI);
     }
 
     // update BalphaU
@@ -236,7 +239,7 @@ class thrustallocation {
     }
 
     // quadratic penality matrix for error
-    setQ(HEADINGONLY);
+    setQ(MANUAL);
 
     initializemosekvariables();
 

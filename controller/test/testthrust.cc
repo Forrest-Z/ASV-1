@@ -126,7 +126,7 @@ void test_multiplethrusterallocation() {
   std::vector<tunnelthrusterdata> v_tunnelthrusterdata;
   v_tunnelthrusterdata.reserve(num_tunnel);
   v_tunnelthrusterdata.push_back(
-      {1.9, 0, 3.7e-7, 1.7e-7, 100, 3000, 3.33, 1.53});
+      {1.9, 0, 3.7e-7, 1.7e-7, 50, 3000, 3.33, 1.53});
 
   std::vector<azimuththrusterdata> v_azimuththrusterdata;
   v_azimuththrusterdata.reserve(num_azimuth);
@@ -136,12 +136,12 @@ void test_multiplethrusterallocation() {
       2e-5,              // K
       20,                // max_delta_rotation
       1000,              // max rotation
-      50,                // min_rotation
+      10,                // min_rotation
       0.1277,            // max_delta_alpha
       M_PI * 175 / 180,  // max_alpha
       M_PI / 18,         // min_alpha
       20,                // max_thrust
-      0.05               // min_thrust
+      0.002              // min_thrust
   });
   v_azimuththrusterdata.push_back({
       -1.893,             // lx
@@ -149,12 +149,12 @@ void test_multiplethrusterallocation() {
       2e-5,               // K
       20,                 // max_delta_rotation
       1000,               // max rotation
-      50,                 // min_rotation
+      10,                 // min_rotation
       0.1277,             // max_delta_alpha
       -M_PI / 18,         // max_alpha
       -M_PI * 175 / 180,  // min_alpha
       20,                 // max_thrust
-      0.05                // min_thrust
+      0.002               // min_thrust
   });
 
   // controllerRTdata<m, n> _controllerRTdata{
@@ -195,9 +195,9 @@ void test_multiplethrusterallocation() {
 
   // desired forces
   double angle = 0;
-  for (int i = 0; i != 30; ++i) {
-    angle = (i + 1) * M_PI / 15;
-    save_tau(2, i + 70) = 0.5 * sin(angle) + 0.1 * std::rand() / RAND_MAX;
+  for (int i = 0; i != 120; ++i) {
+    angle = (i + 1) * M_PI / 60;
+    save_tau(2, i + 1) = 0.5 * sin(angle) + 0.1 * std::rand() / RAND_MAX;
   }
   save_tau.block(1, 0, 1, 100) = Eigen::MatrixXd::Constant(1, 100, 0.2) +
                                  0.0 * Eigen::MatrixXd::Random(1, 100);
