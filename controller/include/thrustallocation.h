@@ -329,8 +329,8 @@ class thrustallocation {
 
   // calculate the contraints of tunnel thruster
   // depend on the desired force in the Y direction or Mz direction
-  void calculateconstrains_tunnel(const controllerRTdata<m, n> &_RTdata,
-                                  double _desired_Mz) {
+  void calculateconstraints_tunnel(const controllerRTdata<m, n> &_RTdata,
+                                   double _desired_Mz) {
     for (int i = 0; i != num_tunnel; ++i) {
       int _maxdeltar = v_tunnelthrusterdata[i].max_delta_rotation;
       double _Kp = v_tunnelthrusterdata[i].K_positive;
@@ -395,7 +395,7 @@ class thrustallocation {
   }
 
   // calculate the consraints of azimuth thruster
-  void calculateconstrains_azimuth(const controllerRTdata<m, n> &_RTdata) {
+  void calculateconstraints_azimuth(const controllerRTdata<m, n> &_RTdata) {
     for (int j = 0; j != num_azimuth; ++j) {
       int index_azimuth = j + num_tunnel;
       /* contraints on the increment of angle */
@@ -408,7 +408,38 @@ class thrustallocation {
       /* contraints on the increment of thrust */
       double K = v_azimuththrusterdata[j].K;
       int _maxdeltar = v_azimuththrusterdata[j].max_delta_rotation;
-      double _thrust = K * std::pow(_RTdata.rotation(index_azimuth), 2);
+      upper_delta_u(index_azimuth) =
+          std::min(
+              v_azimuththrusterdata[j].max_thrust,
+              K * std::pow(_RTdata.rotation(index_azimuth) + _maxdeltar, 2)) -
+          _RTdata.u(index_azimuth);
+
+      if (_RTdata.rotation(index_azimuth) < _maxdeltar)
+        lower_delta_u(index_azimuth) =
+            v_azimuththrusterdata[j].min_thrust - _RTdata.u(index_azimuth);
+      else
+        lower_delta_u(index_azimuth) =
+            std::max(
+                K * std::pow(_RTdata.rotation(index_azimuth) - _maxdeltar, 2),
+                v_azimuththrusterdata[j].min_thrust) -
+            _RTdata.u(index_azimuth);
+    }
+  }  // calculateconstraints_azimuth
+
+  //  calculate the consraints of thruster with rudder
+  void calculateconstraints_rudder(const controllerRTdata<m, n> &_RTdata) {
+    for (int k = 0; k != num_mainrudder; ++k) {
+      int index_rudder = k + num_tunnel + num_azimuth;
+      /* contraints on the increment of thrust */
+      double K = v_ruddermaindata[k].K;
+      int _maxdeltar = v_ruddermaindata[k].max_delta_rotation;
+      double _max_u = std::min(
+          v_ruddermaindata[k].max_thrust,
+          K * std::pow(_RTdata.rotation(index_rudder) + _maxdeltar, 2));
+      double _min_u = std::max(
+          v_ruddermaindata[k].min_thrust,
+          K * std::pow(_RTdata.rotation(index_rudder) - _maxdeltar, 2));
+
       upper_delta_u(index_azimuth) =
           std::min(
               v_azimuththrusterdata[j].max_thrust,
@@ -509,6 +540,8 @@ class thrustallocation {
       } else
         _RTdata.rotation(index_azimuth) = t_rotation;
     }
+
+    // thruster with rudder
   }
 
   // calculate Balpha as function of alpha
@@ -583,8 +616,8 @@ class thrustallocation {
     calculateJocobianBalphaU(_RTdata.alpha, _RTdata.u);
     calculateDeltauQ(_RTdata.u);
     calculateb(_RTdata.tau, _RTdata.BalphaU);
-    calculateconstrains_tunnel(_RTdata, _RTdata.tau(2));
-    calculateconstrains_azimuth(_RTdata);
+    calculateconstraints_tunnel(_RTdata, _RTdata.tau(2));
+    calculateconstraints_azimuth(_RTdata);
   }
   // update parameters in QP for each time step
   void updateMosekparameters() {

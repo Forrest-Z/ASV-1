@@ -111,6 +111,8 @@ struct ruddermaindata {
   double max_delta_rotation;  // rpm
   double max_rotation;        // rpm
   double min_rotation;        // rpm
+  double max_thrust;          // N
+  double min_thrust;          // N
   double max_delta_varphi;    // deg(rudder)
   double max_varphi;          // deg(rudder)
   double min_varphi;          // deg(rudder)

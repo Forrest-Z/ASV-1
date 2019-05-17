@@ -259,11 +259,13 @@ void testrudder() {
   v_ruddermaindata.push_back({
       -1.893,  // lx
       0,       // ly
-      2e-5,    // K
+      2e-4,    // K
       0.0126,  // Cy
       20,      // max_delta_rotation
       500,     // max rotation
       1,       // min_rotation
+      50,      // max_thrust
+      2e-4,    // min_thrust
       1,       // max_delta_varphi
       30,      // max_varphi
       -30      // min_varphi
@@ -276,6 +278,8 @@ void testrudder() {
       20,      // max_delta_rotation
       500,     // max rotation
       1,       // min_rotation
+      5,       // max_thrust
+      2e-5,    // min_thrust
       1,       // max_delta_varphi
       30,      // max_varphi
       -30      // min_varphi
