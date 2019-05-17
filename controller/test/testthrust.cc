@@ -13,6 +13,7 @@
 
 INITIALIZE_EASYLOGGINGPP
 
+// test thrust allocation for 4 propellers (fully actuated)
 void testonestepthrustallocation() {
   const int m = 4;
   const int n = 3;
@@ -63,6 +64,7 @@ void testonestepthrustallocation() {
       20,            // max_thrust
       2e-3           // min_thrust
   });
+  std::vector<ruddermaindata> v_ruddermaindata;
 
   controllerRTdata<m, n> _controllerRTdata{
       (Eigen::Matrix<double, n, 1>() << 0, 0, 1).finished(),       // tau
@@ -77,7 +79,8 @@ void testonestepthrustallocation() {
   };
 
   thrustallocation<m, n> _thrustallocation(
-      _thrustallocationdata, v_tunnelthrusterdata, v_azimuththrusterdata);
+      _thrustallocationdata, v_tunnelthrusterdata, v_azimuththrusterdata,
+      v_ruddermaindata);
   _thrustallocation.initializapropeller(_controllerRTdata);
   utilityio _utilityio;
 
@@ -104,6 +107,7 @@ void testonestepthrustallocation() {
   _utilityio.write2csvfile("csvfile.csv", vvv);
 }
 
+// test thrust allocation for 3 propellers (fully actuated)
 void test_multiplethrusterallocation() {
   // set the parameters in the thrust allocation
   const int m = 3;
@@ -157,17 +161,7 @@ void test_multiplethrusterallocation() {
       0.002               // min_thrust
   });
 
-  // controllerRTdata<m, n> _controllerRTdata{
-  //     (Eigen::Matrix<double, n, 1>() << 0, 0, 1).finished(),         // tau
-  //     Eigen::Matrix<double, n, 1>::Zero(),                           //
-  //     BalphaU (Eigen::Matrix<double, m, 1>() << 0.01, 0.2, 0.2).finished(),
-  //     // u (Eigen::Matrix<int, m, 1>() << 0, 0, 0).finished(),            //
-  //     rotation (Eigen::Matrix<double, m, 1>() << M_PI / 2, M_PI / 10, -M_PI /
-  //     4)
-  //         .finished(),                  // alpha
-  //     Eigen::Matrix<int, m, 1>::Zero()  // alpha_deg
-
-  // };
+  std::vector<ruddermaindata> v_ruddermaindata;
 
   controllerRTdata<m, n> _controllerRTdata{
       Eigen::Matrix<double, n, 1>::Zero(),  // tau
@@ -180,7 +174,8 @@ void test_multiplethrusterallocation() {
 
   // initialize the thrust allocation
   thrustallocation<m, n> _thrustallocation(
-      _thrustallocationdata, v_tunnelthrusterdata, v_azimuththrusterdata);
+      _thrustallocationdata, v_tunnelthrusterdata, v_azimuththrusterdata,
+      v_ruddermaindata);
   _thrustallocation.initializapropeller(_controllerRTdata);
 
   // data saved for validation and viewer
@@ -234,10 +229,79 @@ void test_multiplethrusterallocation() {
   _utilityio.write2csvfile(_name + "rotation.csv", save_rotation);
 }
 
+void testrudder() {
+  // set the parameters in the thrust allocation
+  const int m = 2;
+  const int n = 3;
+
+  std::vector<int> index_thrusters{3, 3};
+
+  int num_tunnel =
+      std::count(index_thrusters.begin(), index_thrusters.end(), 1);
+
+  int num_azimuth =
+      std::count(index_thrusters.begin(), index_thrusters.end(), 2);
+
+  int num_mainrudder =
+      std::count(index_thrusters.begin(), index_thrusters.end(), 3);
+
+  thrustallocationdata _thrustallocationdata{num_tunnel, num_azimuth,
+                                             num_mainrudder, index_thrusters};
+
+  std::vector<tunnelthrusterdata> v_tunnelthrusterdata;
+  v_tunnelthrusterdata.reserve(num_tunnel);
+
+  std::vector<azimuththrusterdata> v_azimuththrusterdata;
+  v_azimuththrusterdata.reserve(num_azimuth);
+
+  std::vector<ruddermaindata> v_ruddermaindata;
+  v_ruddermaindata.reserve(num_mainrudder);
+  v_ruddermaindata.push_back({
+      -1.893,  // lx
+      0,       // ly
+      2e-5,    // K
+      0.0126,  // Cy
+      20,      // max_delta_rotation
+      500,     // max rotation
+      1,       // min_rotation
+      1,       // max_delta_varphi
+      30,      // max_varphi
+      -30      // min_varphi
+  });
+  v_ruddermaindata.push_back({
+      1.893,   // lx
+      0,       // ly
+      2e-5,    // K
+      0.0126,  // Cy
+      20,      // max_delta_rotation
+      500,     // max rotation
+      1,       // min_rotation
+      1,       // max_delta_varphi
+      30,      // max_varphi
+      -30      // min_varphi
+  });
+
+  controllerRTdata<m, n> _controllerRTdata{
+      Eigen::Matrix<double, n, 1>::Zero(),  // tau
+      Eigen::Matrix<double, n, 1>::Zero(),  // BalphaU
+      Eigen::Matrix<double, m, 1>::Zero(),  // u
+      Eigen::Matrix<int, m, 1>::Zero(),     // rotation
+      Eigen::Matrix<double, m, 1>::Zero(),  // alpha
+      Eigen::Matrix<int, m, 1>::Zero()      // alpha_deg
+  };
+
+  // initialize the thrust allocation
+  thrustallocation<m, n> _thrustallocation(
+      _thrustallocationdata, v_tunnelthrusterdata, v_azimuththrusterdata,
+      v_ruddermaindata);
+  _thrustallocation.initializapropeller(_controllerRTdata);
+  _thrustallocation.testrudder(_controllerRTdata);
+}
+
 int main() {
   el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);
   LOG(INFO) << "The program has started!";
-  test_multiplethrusterallocation();
+  testrudder();
 
   LOG(INFO) << "Shutting down.";
   return 0;

@@ -66,6 +66,7 @@ void test_multiplecontroller() {
       20,                 // max_thrust
       0.05                // min_thrust
   });
+  std::vector<ruddermaindata> v_ruddermaindata;
 
   controllerRTdata<m, n> _controllerRTdata{
       (Eigen::Matrix<double, n, 1>() << 0, 0, 1).finished(),         // tau
@@ -99,7 +100,7 @@ void test_multiplecontroller() {
 
   controller<L, m, n> _controller(_controllerdata, v_pidcontrollerdata,
                                   _thrustallocationdata, v_tunnelthrusterdata,
-                                  v_azimuththrusterdata);
+                                  v_azimuththrusterdata, v_ruddermaindata);
   _controller.initializecontroller(_controllerRTdata);
   Eigen::Matrix<double, n, 1> error;
   Eigen::Matrix<double, n, 1> derror;

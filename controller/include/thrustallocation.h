@@ -42,7 +42,8 @@ class thrustallocation {
   explicit thrustallocation(
       const thrustallocationdata &_thrustallocationdata,
       const std::vector<tunnelthrusterdata> &_v_tunnelthrusterdata,
-      const std::vector<azimuththrusterdata> &_v_azimuththrusterdata)
+      const std::vector<azimuththrusterdata> &_v_azimuththrusterdata,
+      const std::vector<ruddermaindata> &_v_ruddermaindata)
       : num_tunnel(_thrustallocationdata.num_tunnel),
         num_azimuth(_thrustallocationdata.num_azimuth),
         num_mainrudder(_thrustallocationdata.num_mainrudder),
@@ -51,6 +52,7 @@ class thrustallocation {
         index_thrusters(_thrustallocationdata.index_thrusters),
         v_tunnelthrusterdata(_v_tunnelthrusterdata),
         v_azimuththrusterdata(_v_azimuththrusterdata),
+        v_ruddermaindata(_v_ruddermaindata),
         lx(vectormd::Zero()),
         ly(vectormd::Zero()),
         upper_delta_alpha(vectormd::Zero()),
@@ -72,15 +74,18 @@ class thrustallocation {
     initializethrusterallocation();
   }
 
-  // explicit thrustallocation(
-  //     const thrustallocationdata &_thrustallocationdata,
-  //     const std::vector<tunnelthrusterdata> &_v_tunnelthrusterdata,
-  //     const std::vector<azimuththrusterdata> &_v_azimuththrusterdata,
-  //     const std::vector<ruddermaindata> &_v_ruddermaindata) {}
   thrustallocation() = delete;
   ~thrustallocation() {
     MSK_deletetask(&task);
     MSK_deleteenv(&env);
+  }
+
+  // TODO
+  void testrudder(controllerRTdata<m, n> &_RTdata) {
+    _RTdata.alpha << -M_PI / 180, -M_PI / 10;
+    convertalpharadian2int(_RTdata.alpha, _RTdata.alpha_deg);
+    std::cout << _RTdata.alpha << std::endl;
+    std::cout << _RTdata.alpha_deg << std::endl;
   }
 
   // perform the thrust allocation using QP solver (one step)
@@ -111,7 +116,14 @@ class thrustallocation {
       _RTdata.alpha_deg(a_index) =
           static_cast<int>(_RTdata.alpha(a_index) * 180 / M_PI);
     }
-
+    for (int k = 0; k != num_mainrudder; ++k) {
+      int a_index = k + num_tunnel + num_azimuth;
+      _RTdata.rotation(a_index) = v_ruddermaindata[k].min_rotation;
+      _RTdata.u(a_index) =
+          v_ruddermaindata[k].K * std::pow(v_ruddermaindata[k].min_rotation, 2);
+      _RTdata.alpha(a_index) = 0;
+      _RTdata.alpha_deg(a_index) = 0;
+    }
     // update BalphaU
     _RTdata.BalphaU = calculateBalphau(_RTdata.alpha, _RTdata.u);
   }
@@ -433,9 +445,29 @@ class thrustallocation {
   }
   // convert the radian to deg, and round to integer
   void convertalpharadian2int(const vectormd &_alpha, vectormi &_alpha_deg) {
-    // round to int (deg)
-    for (int i = 0; i != m; ++i)
+    // round to int (deg) for tunnel and azimuth thrusters
+    for (int i = 0; i != (num_tunnel + num_azimuth); ++i)
       _alpha_deg(i) = static_cast<int>(_alpha(i) * 180 / M_PI);
+
+    // convert alpha to varphi (rudder angle) for thrusters with rudder
+    for (int k = 0; k != num_mainrudder; ++k) {
+      int r_index = num_tunnel + num_azimuth + k;
+
+      if (static_cast<int>(180 * _alpha(r_index) / M_PI) == 0) {
+        _alpha_deg(r_index) = 0;
+        continue;
+      }
+
+      double cytan = v_ruddermaindata[k].Cy / std::tan(_alpha(r_index));
+      double sqrtterm =
+          std::sqrt(std::pow(cytan, 2) + 0.08 * v_ruddermaindata[k].Cy);
+      double varphi = 0;
+      if (_alpha(r_index) > 0)
+        varphi = 25 * (sqrtterm - cytan) / v_ruddermaindata[k].Cy;
+      else
+        varphi = 25 * (-sqrtterm - cytan) / v_ruddermaindata[k].Cy;
+      _alpha_deg(r_index) = static_cast<int>(varphi);
+    }
   }
 
   // calcuate rotation speed of each thruster based on thrust

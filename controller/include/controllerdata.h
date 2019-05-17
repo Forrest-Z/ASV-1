@@ -50,9 +50,9 @@ struct controllerRTdata {
   Eigen::Matrix<double, m, 1> u;
   // rpm, rotation of all propellers
   Eigen::Matrix<int, m, 1> rotation;
-  // rad, angle of all propellers
+  // rad, angle of all propellers (compute the estimated force)
   Eigen::Matrix<double, m, 1> alpha;
-  // deg, angle of all propellers
+  // deg, angle of all propellers (sent to the actuators)
   Eigen::Matrix<int, m, 1> alpha_deg;
 };
 
@@ -107,14 +107,13 @@ struct ruddermaindata {
   double lx;                  // m
   double ly;                  // m
   double K;                   //
+  double Cy;                  // Cx=0.02Cy
   double max_delta_rotation;  // rpm
   double max_rotation;        // rpm
   double min_rotation;        // rpm
-  double max_delta_alpha;     // rad
-  double max_alpha;           // rad
-  double min_alpha;           // rad
-  double max_thrust;          // N
-  double min_thrust;          // N
+  double max_delta_varphi;    // deg(rudder)
+  double max_varphi;          // deg(rudder)
+  double min_varphi;          // deg(rudder)
 };
 
 // quasi-static data of pid controller

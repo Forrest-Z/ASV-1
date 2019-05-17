@@ -35,7 +35,8 @@ class controller {
       const std::vector<pidcontrollerdata> &_piddata,
       const thrustallocationdata &_thrustallocationdata,
       const std::vector<tunnelthrusterdata> &_v_tunnelthrusterdata,
-      const std::vector<azimuththrusterdata> &_v_azimuththrusterdata)
+      const std::vector<azimuththrusterdata> &_v_azimuththrusterdata,
+      const std::vector<ruddermaindata> &_v_ruddermaindata)
       : pids(matrixpid::Zero()),
         v_allowed_error(vectornd::Zero()),
         v_max_output(vectornd::Zero()),
@@ -45,7 +46,7 @@ class controller {
         controlmode(_controllerdata.controlmode),
         windstatus(_controllerdata.windstatus),
         _thrustallocation(_thrustallocationdata, _v_tunnelthrusterdata,
-                          _v_azimuththrusterdata) {
+                          _v_azimuththrusterdata, _v_ruddermaindata) {
     setPIDmatrix(_piddata);
     initializepidcontroller(_piddata);
   }
@@ -168,9 +169,10 @@ class controller {
     matrixnld t_integralmatrix = matrixnld::Zero();
     int index = L - 1;
     t_integralmatrix.leftCols(index) = error_integralmatrix.rightCols(index);
-    t_integralmatrix.col(index) = sample_time * _error;
+    // t_integralmatrix.col(index) = sample_time * _error;
+    t_integralmatrix.col(index) = _error;
     error_integralmatrix = t_integralmatrix;
-    return error_integralmatrix.rowwise().sum();
+    return error_integralmatrix.rowwise().mean();
   }
   // compare the real time error with the allowed error
   bool compareerror(const vectornd &_error) {

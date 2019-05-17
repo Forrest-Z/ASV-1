@@ -1,6 +1,6 @@
 /*
 *******************************************************************************
-* controllerdata.h:
+* plannerdata.h:
 * define the data struct used in the controller
 * This header file can be read by C++ compilers
 *
