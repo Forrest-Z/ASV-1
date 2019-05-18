@@ -108,7 +108,7 @@ plot(x(3,:),'--k');
 figure(3)
 
 subplot(311)
-title('velocity');
+title('velocity'
 plot(x(4,:));
 subplot(312)
 plot(x(5,:));

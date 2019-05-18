@@ -29,7 +29,7 @@
 
 // m: # of all thrusters on the vessel
 // n: # of dimension of control space
-template <int m, int n = 3>
+template <int m, ACTUATION index_actuation, int n = 3>
 class thrustallocation {
   using vectormd = Eigen::Matrix<double, m, 1>;
   using vectormi = Eigen::Matrix<int, m, 1>;
@@ -86,6 +86,16 @@ class thrustallocation {
     convertalpharadian2int(_RTdata.alpha, _RTdata.alpha_deg);
     std::cout << _RTdata.alpha << std::endl;
     std::cout << _RTdata.alpha_deg << std::endl;
+
+    for (int i = 0; i != num_mainrudder; ++i) {
+      int index_rudder = num_tunnel + num_azimuth + i;
+
+      // re-calculate the max thrust of main thruser with rudder
+      std::cout << v_ruddermaindata[i].max_thrust << std::endl;
+      std::cout << v_ruddermaindata[i].min_thrust << std::endl;
+      std::cout << v_ruddermaindata[i].max_alpha << std::endl;
+      std::cout << v_ruddermaindata[i].min_alpha << std::endl;
+    }
   }
 
   // perform the thrust allocation using QP solver (one step)
@@ -107,8 +117,7 @@ class thrustallocation {
     for (int j = 0; j != num_azimuth; ++j) {
       int a_index = j + num_tunnel;
       _RTdata.rotation(a_index) = v_azimuththrusterdata[j].min_rotation;
-      _RTdata.u(a_index) = v_azimuththrusterdata[j].K *
-                           std::pow(v_azimuththrusterdata[j].min_rotation, 2);
+      _RTdata.u(a_index) = v_azimuththrusterdata[j].min_thrust;
       _RTdata.alpha(a_index) = (v_azimuththrusterdata[j].min_alpha +
                                 v_azimuththrusterdata[j].max_alpha) /
                                2;
@@ -119,8 +128,7 @@ class thrustallocation {
     for (int k = 0; k != num_mainrudder; ++k) {
       int a_index = k + num_tunnel + num_azimuth;
       _RTdata.rotation(a_index) = v_ruddermaindata[k].min_rotation;
-      _RTdata.u(a_index) =
-          v_ruddermaindata[k].K * std::pow(v_ruddermaindata[k].min_rotation, 2);
+      _RTdata.u(a_index) = v_ruddermaindata[k].min_thrust;
       _RTdata.alpha(a_index) = 0;
       _RTdata.alpha_deg(a_index) = 0;
     }
@@ -129,20 +137,42 @@ class thrustallocation {
   }
   // modify penality for each error (heading-only controller)
   void setQ(CONTROLMODE _cm) {
-    switch (_cm) {
-      case MANUAL:
-        for (int i = 0; i != n; ++i) Q(i, i) = 1000;
-        break;
-      case HEADINGONLY:
-        Q(0, 0) = 100;
-        Q(1, 1) = 100;
-        Q(2, 2) = 2000;
-        break;
-      case AUTOMATIC:
-        for (int i = 0; i != n; ++i) Q(i, i) = 1000;
-        break;
-      default:
-        break;
+    if constexpr (index_actuation == FULLYACTUATED) {
+      switch (_cm) {
+        case MANUAL:
+          for (int i = 0; i != n; ++i) Q(i, i) = 1000;
+          break;
+        case HEADINGONLY:
+          Q(0, 0) = 100;
+          Q(1, 1) = 100;
+          Q(2, 2) = 2000;
+          break;
+        case AUTOMATIC:
+          for (int i = 0; i != n; ++i) Q(i, i) = 1000;
+          break;
+        default:
+          break;
+      }
+    } else {  // underactuated
+      switch (_cm) {
+        case MANUAL:
+          Q(0, 0) = 100;
+          // Q(1, 1) = 0;  The penalty for sway error is zero
+          Q(2, 2) = 1000;
+          break;
+        case HEADINGONLY:
+          Q(0, 0) = 100;
+          // Q(1, 1) = 0;  The penalty for sway error is zero
+          Q(2, 2) = 2000;
+          break;
+        case AUTOMATIC:
+          Q(0, 0) = 1000;
+          // Q(1, 1) = 0;  The penalty for sway error is zero
+          Q(2, 2) = 1000;
+          break;
+        default:
+          break;
+      }
     }
   }
 
@@ -240,16 +270,47 @@ class thrustallocation {
     for (int i = 0; i != num_tunnel; ++i) {
       lx(i) = v_tunnelthrusterdata[i].lx;
       ly(i) = v_tunnelthrusterdata[i].ly;
-
       Omega(i, i) = 1;
+      // re-calculate the max thrust of tunnel thruser
+      v_tunnelthrusterdata[i].max_thrust_positive =
+          v_tunnelthrusterdata[i].K_positive *
+          std::pow(v_tunnelthrusterdata[i].max_rotation, 2);
+      v_tunnelthrusterdata[i].max_thrust_negative =
+          v_tunnelthrusterdata[i].K_negative *
+          std::pow(v_tunnelthrusterdata[i].max_rotation, 2);
     }
     for (int i = 0; i != num_azimuth; ++i) {
       int index_azimuth = num_tunnel + i;
       lx(index_azimuth) = v_azimuththrusterdata[i].lx;
       ly(index_azimuth) = v_azimuththrusterdata[i].ly;
       Omega(index_azimuth, index_azimuth) = 20;
+      // re-calculate the max thrust of azimuth thruser
+      v_azimuththrusterdata[i].max_thrust =
+          v_azimuththrusterdata[i].K *
+          std::pow(v_azimuththrusterdata[i].max_rotation, 2);
+      v_azimuththrusterdata[i].min_thrust =
+          v_azimuththrusterdata[i].K *
+          std::pow(v_azimuththrusterdata[i].min_rotation, 2);
     }
-
+    for (int i = 0; i != num_mainrudder; ++i) {
+      int index_rudder = num_tunnel + num_azimuth + i;
+      lx(index_rudder) = v_ruddermaindata[i].lx;
+      ly(index_rudder) = v_ruddermaindata[i].ly;
+      Omega(index_rudder, index_rudder) = 20;
+      // re-calculate the max thrust of main thruser with rudder
+      v_ruddermaindata[i].max_thrust =
+          v_ruddermaindata[i].K * std::pow(v_ruddermaindata[i].max_rotation, 2);
+      v_ruddermaindata[i].min_thrust =
+          v_ruddermaindata[i].K * std::pow(v_ruddermaindata[i].min_rotation, 2);
+      v_ruddermaindata[i].max_alpha =
+          std::atan(v_ruddermaindata[i].Cy * v_ruddermaindata[i].max_varphi /
+                    (1 - 0.02 * v_ruddermaindata[i].Cy *
+                             std::pow(v_ruddermaindata[i].max_varphi, 2)));
+      v_ruddermaindata[i].min_alpha =
+          std::atan(v_ruddermaindata[i].Cy * v_ruddermaindata[i].min_varphi /
+                    (1 - 0.02 * v_ruddermaindata[i].Cy *
+                             std::pow(v_ruddermaindata[i].min_varphi, 2)));
+    }
     // quadratic penality matrix for error
     setQ(MANUAL);
 
@@ -430,29 +491,85 @@ class thrustallocation {
   void calculateconstraints_rudder(const controllerRTdata<m, n> &_RTdata) {
     for (int k = 0; k != num_mainrudder; ++k) {
       int index_rudder = k + num_tunnel + num_azimuth;
-      /* contraints on the increment of thrust */
       double K = v_ruddermaindata[k].K;
       int _maxdeltar = v_ruddermaindata[k].max_delta_rotation;
+      double Cy = v_ruddermaindata[k].Cy;
+      /* contraints on the rudder angle */
+      double rudderangle = static_cast<double>(_RTdata.alpha_deg(index_rudder));
+      double rudderangle_upper =
+          std::min(rudderangle + v_ruddermaindata[k].max_delta_varphi,
+                   v_ruddermaindata[k].max_varphi);
+      double rudderangle_lower =
+          std::max(rudderangle - v_ruddermaindata[k].max_delta_varphi,
+                   v_ruddermaindata[k].min_varphi);
+
+      /* contraints on the increment of alpha */
+      upper_delta_alpha(index_rudder) =
+          std::atan(Cy * rudderangle_upper /
+                    (1 - 0.02 * Cy * std::pow(rudderangle_upper, 2))) -
+          _RTdata.alpha(index_rudder);
+      lower_delta_alpha(index_rudder) =
+          std::atan(Cy * rudderangle_upper /
+                    (1 - 0.02 * Cy * std::pow(rudderangle_lower, 2))) -
+          _RTdata.alpha(index_rudder);
+      /* contraints on the increment of thrust */
+      // max and min of effective thrust
       double _max_u = std::min(
           v_ruddermaindata[k].max_thrust,
           K * std::pow(_RTdata.rotation(index_rudder) + _maxdeltar, 2));
-      double _min_u = std::max(
-          v_ruddermaindata[k].min_thrust,
-          K * std::pow(_RTdata.rotation(index_rudder) - _maxdeltar, 2));
 
-      upper_delta_u(index_azimuth) =
-          std::min(
-              v_azimuththrusterdata[j].max_thrust,
-              K * std::pow(_RTdata.rotation(index_azimuth) + _maxdeltar, 2)) -
-          _thrust;
+      double _min_u = 0;
+      if (_RTdata.rotation(index_rudder) < _maxdeltar)
+        _min_u = v_ruddermaindata[k].min_thrust;
+      else
+        _min_u = std::max(
+            K * std::pow(_RTdata.rotation(index_rudder) - _maxdeltar, 2),
+            v_ruddermaindata[k].min_thrust);
 
-      lower_delta_u(index_azimuth) =
-          std::max(
-              K * std::pow(_RTdata.rotation(index_azimuth) - _maxdeltar, 2),
-              v_azimuththrusterdata[j].min_thrust) -
-          _thrust;
+      // max and min of sqrt root
+      double max_squrevarphi = 0;
+      double min_squrevarphi = 0;
+      if (rudderangle_upper > 0 && rudderangle_lower > 0) {
+        max_squrevarphi = std::pow(rudderangle_upper, 2);
+        min_squrevarphi = std::pow(rudderangle_lower, 2);
+
+      } else if (rudderangle_upper < 0 && rudderangle_lower < 0) {
+        max_squrevarphi = std::pow(rudderangle_lower, 2);
+        min_squrevarphi = std::pow(rudderangle_upper, 2);
+      } else {
+        max_squrevarphi = std::max(std::pow(rudderangle_lower, 2),
+                                   std::pow(rudderangle_upper, 2));
+        min_squrevarphi = 0;
+      }
+      double min_point_x = 100.0 / Cy - 2500.0;
+      double _max_usqrtterm = 0;
+      double _min_usqrtterm = 0;
+      double _a = 0.0004 * std::pow(Cy, 2);
+      double _b = std::pow(Cy, 2) - 0.04 * Cy;
+      double _c = 1.0;
+      if (min_squrevarphi > min_point_x) {
+        _max_usqrtterm =
+            std::sqrt(computeabcvalue(_a, _b, _c, max_squrevarphi));
+        _min_usqrtterm =
+            std::sqrt(computeabcvalue(_a, _b, _c, min_squrevarphi));
+      } else if (max_squrevarphi < min_point_x) {
+        _max_usqrtterm =
+            std::sqrt(computeabcvalue(_a, _b, _c, min_squrevarphi));
+        _min_usqrtterm =
+            std::sqrt(computeabcvalue(_a, _b, _c, max_squrevarphi));
+      } else {
+        _max_usqrtterm =
+            std::sqrt(std::max(computeabcvalue(_a, _b, _c, min_squrevarphi),
+                               computeabcvalue(_a, _b, _c, max_squrevarphi)));
+        _min_usqrtterm = std::sqrt(computeabcvalue(_a, _b, _c, min_point_x));
+      }
+      upper_delta_u(index_rudder) =
+          _max_u * _max_usqrtterm - _RTdata.u(index_rudder);
+
+      lower_delta_u(index_rudder) =
+          _min_u * _min_usqrtterm - _RTdata.u(index_rudder);
     }
-  }
+  }  // calculateconstraints_rudder
 
   // calculate vessel parameters at the next time step
   void updateNextstep(controllerRTdata<m, n> &_RTdata) {
@@ -534,14 +651,32 @@ class thrustallocation {
 
       t_rotation = static_cast<int>(
           sqrt(abs(_RTdata.u(index_azimuth)) / v_azimuththrusterdata[j].K));
-      if (t_rotation == 0) {
-        _RTdata.rotation(index_azimuth) = 1;
-        _RTdata.u(index_azimuth) = v_azimuththrusterdata[j].K;
+      if (t_rotation < v_azimuththrusterdata[j].min_rotation) {
+        _RTdata.rotation(index_azimuth) = v_azimuththrusterdata[j].min_rotation;
+        _RTdata.u(index_azimuth) = v_azimuththrusterdata[j].min_thrust;
       } else
         _RTdata.rotation(index_azimuth) = t_rotation;
     }
 
     // thruster with rudder
+    for (int k = 0; k != num_mainrudder; ++k) {
+      int index_rudder = k + num_tunnel + num_azimuth;
+      double Cy = v_ruddermaindata[k].Cy;
+      double _a = 0.0004 * std::pow(Cy, 2);
+      double _b = std::pow(Cy, 2) - 0.04 * Cy;
+      double _c = 1.0;
+      double sqrtrootterm = std::sqrt(computeabcvalue(
+          _a, _b, _c, std::pow(_RTdata.alpha_deg(index_rudder), 2)));
+
+      int t_rotation =
+          static_cast<int>(sqrt(abs(_RTdata.u(index_rudder)) /
+                                (sqrtrootterm * v_ruddermaindata[k].K)));
+      if (t_rotation < v_ruddermaindata[k].min_rotation) {
+        _RTdata.rotation(index_rudder) = v_ruddermaindata[k].min_rotation;
+        _RTdata.u(index_rudder) = v_ruddermaindata[k].min_thrust;
+      } else
+        _RTdata.rotation(index_rudder) = t_rotation;
+    }
   }
 
   // calculate Balpha as function of alpha
@@ -612,12 +747,14 @@ class thrustallocation {
   // update parameters in thruster allocation for each time step
   void updateTAparameters(const controllerRTdata<m, n> &_RTdata) {
     B_alpha = calculateBalpha(_RTdata.alpha);
-    calculateJocobianRhoTerm(_RTdata.alpha);
+    if constexpr (index_actuation == FULLYACTUATED)
+      calculateJocobianRhoTerm(_RTdata.alpha);
     calculateJocobianBalphaU(_RTdata.alpha, _RTdata.u);
     calculateDeltauQ(_RTdata.u);
     calculateb(_RTdata.tau, _RTdata.BalphaU);
     calculateconstraints_tunnel(_RTdata, _RTdata.tau(2));
     calculateconstraints_azimuth(_RTdata);
+    calculateconstraints_rudder(_RTdata);
   }
   // update parameters in QP for each time step
   void updateMosekparameters() {
@@ -646,6 +783,11 @@ class thrustallocation {
       g[i + m] = d_rho(i);
       qval[i] = Q_deltau(i, i);
     }
+  }
+
+  // 一元二次方程
+  double computeabcvalue(double a, double b, double c, double x) {
+    return a * x * x + b * x + c;
   }
   // solve QP using Mosek solver
   void onestepmosek() {

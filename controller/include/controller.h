@@ -22,7 +22,7 @@
 // n: # of dimension of control space
 // m: # of all thrusters on the vessel
 // L: # of integral length of PID controller
-template <int L, int m, int n = 3>
+template <int L, int m, ACTUATION index_actuation, int n = 3>
 class controller {
   using vectornd = Eigen::Matrix<double, n, 1>;
   using matrixnld = Eigen::Matrix<double, n, L>;
@@ -141,7 +141,7 @@ class controller {
   CONTROLMODE controlmode;
   WINDCOMPENSATION windstatus;
   windcompensation<n> _windcompensation;
-  thrustallocation<m, n> _thrustallocation;
+  thrustallocation<m, index_actuation, n> _thrustallocation;
 
   void initializepidcontroller(
       const std::vector<pidcontrollerdata> &_vcontrollerdata) {

@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.5)
 
 # 项目信息
 project (testestimator)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 # UNIX, WIN32, WINRT, CYGWIN, APPLE are environment 
 # variables as flags set by default system

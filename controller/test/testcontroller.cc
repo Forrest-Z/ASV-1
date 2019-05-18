@@ -18,6 +18,7 @@ void test_multiplecontroller() {
   const int L = 30;
   const int m = 3;
   const int n = 3;
+  constexpr ACTUATION index_actuation = FULLYACTUATED;
 
   std::vector<int> index_thrusters{1, 2, 2};
 
@@ -98,9 +99,9 @@ void test_multiplecontroller() {
       Eigen::Matrix<double, 2, 1>::Zero(),  // wind_global
   };
 
-  controller<L, m, n> _controller(_controllerdata, v_pidcontrollerdata,
-                                  _thrustallocationdata, v_tunnelthrusterdata,
-                                  v_azimuththrusterdata, v_ruddermaindata);
+  controller<L, m, index_actuation, n> _controller(
+      _controllerdata, v_pidcontrollerdata, _thrustallocationdata,
+      v_tunnelthrusterdata, v_azimuththrusterdata, v_ruddermaindata);
   _controller.initializecontroller(_controllerRTdata);
   Eigen::Matrix<double, n, 1> error;
   Eigen::Matrix<double, n, 1> derror;
