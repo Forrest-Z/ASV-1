@@ -17,7 +17,6 @@
 #include <vector>
 #include "controllerdata.h"
 #include "thrustallocation.h"
-#include "windcompensation.h"
 
 // n: # of dimension of control space
 // m: # of all thrusters on the vessel
@@ -50,7 +49,7 @@ class controller {
     setPIDmatrix(_piddata);
     initializepidcontroller(_piddata);
   }
-
+  controller() = delete;
   ~controller() {}
 
   void initializecontroller(controllerRTdata<m, n> &_RTdata) {
@@ -62,11 +61,9 @@ class controller {
     _thrustallocation.setQ(_controlmode);
   }
 
-  void estimatewind() {}
-
   // automatic control using pid controller and QP-based thrust allocation
   void controlleronestep(controllerRTdata<m, n> &_controllerdata,
-                         windestimation<n> &_wind, const vectornd &_error,
+                         const vectornd &_windload, const vectornd &_error,
                          const vectornd &_derror, const vectornd &_command) {
     // PID controller
     vectornd d_tau = vectornd::Zero();
@@ -78,14 +75,11 @@ class controller {
                    + pids(2, i) * _derror(i);                 // derivative term
     }
 
-    // wind compensation
-    _wind.load =
-        _windcompensation.computewindload(_wind.wind_body).getwindload();
     switch (windstatus) {
       case WINDOFF:
         break;
       case WINDON:  // TODO
-        d_tau += _wind.load;
+        d_tau += _windload;
         break;
       default:
         break;
@@ -123,8 +117,6 @@ class controller {
     }
   }
 
-  // TODO
-
   WINDCOMPENSATION getwindstatus() const { return windstatus; }
   void setwindstatus(WINDCOMPENSATION _windstatus) { windstatus = _windstatus; }
 
@@ -140,7 +132,7 @@ class controller {
   double sample_time;
   CONTROLMODE controlmode;
   WINDCOMPENSATION windstatus;
-  windcompensation<n> _windcompensation;
+
   thrustallocation<m, index_actuation, n> _thrustallocation;
 
   void initializepidcontroller(

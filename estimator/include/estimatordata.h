@@ -47,8 +47,7 @@ struct estimatorRTdata {
 
 /********************* constant ***********************************/
 struct estimatordata {
-  double sample_time;    // sample time of estimator((unit: second)),
-  USEKALMAN kalman_use;  //
+  double sample_time;  // sample time of estimator((unit: second)),
 };
 
 #endif /*_ESTIMATORDATA_H_*/

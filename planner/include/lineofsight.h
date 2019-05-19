@@ -24,6 +24,7 @@ class lineofsight {
         pos_p0(Eigen::Vector2d::Zero()),
         pos_p1(Eigen::Vector2d::Zero()),
         trackerror(Eigen::Vector2d::Zero()) {}
+  lineofsight() = delete;
   ~lineofsight() {}
 
   void testlos(double _vesselx, double _vessely) {
@@ -33,6 +34,7 @@ class lineofsight {
     std::cout << test << std::endl;
   }
 
+  Eigen::Vector2d gettrackerror() const { return trackerror; }
   void setcaptureradius(double _captureradius) {
     capture_radius = _captureradius;
   }
@@ -69,7 +71,7 @@ class lineofsight {
     else
       thetar = std::asin(-e / los_radius);
     return thetar + thetaK;
-  }
+  }  // computelospoint
   // compute the rotation matrix
   Eigen::Matrix2d computeR(double theta) {
     double svalue = std::sin(theta);

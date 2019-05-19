@@ -792,7 +792,7 @@ class thrustallocation {
   // solve QP using Mosek solver
   void onestepmosek() {
     MSKint32t i, j;
-    double t_results[numvar];
+    double t_results[2 * m + n];
     results.setZero();
     if (r == MSK_RES_OK) {
       for (j = 0; j < numvar; ++j) {

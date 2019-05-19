@@ -379,7 +379,7 @@ void testrudder() {
 int main() {
   el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);
   LOG(INFO) << "The program has started!";
-  testrudder();
+  test_multiplethrusterallocation();
 
   LOG(INFO) << "Shutting down.";
   return 0;

@@ -77,14 +77,13 @@ void test_multiplecontroller() {
       (Eigen::Matrix<double, m, 1>() << M_PI / 2, M_PI / 10, -M_PI / 4)
           .finished(),                  // alpha
       Eigen::Matrix<int, m, 1>::Zero()  // alpha_deg
-
   };
 
   controllerdata _controllerdata{
-      0.1,           // sample_time
-      AUTOMATIC,     // controlmode
-      WINDON,        // windstatus
-      FULLYACTUATED  // index_actuation
+      0.1,             // sample_time
+      AUTOMATIC,       // controlmode
+      WINDON,          // windstatus
+      index_actuation  // index_actuation
   };
 
   std::vector<pidcontrollerdata> v_pidcontrollerdata;
@@ -93,12 +92,6 @@ void test_multiplecontroller() {
   v_pidcontrollerdata.push_back({1, 2, 3, 0.1, -1, 3});
   v_pidcontrollerdata.push_back({1, 2, 10, 0.1, -2, 4});
 
-  windestimation<n> _windestimation{
-      Eigen::Matrix<double, n, 1>::Zero(),  // load
-      Eigen::Matrix<double, 2, 1>::Zero(),  // wind_body
-      Eigen::Matrix<double, 2, 1>::Zero(),  // wind_global
-  };
-
   controller<L, m, index_actuation, n> _controller(
       _controllerdata, v_pidcontrollerdata, _thrustallocationdata,
       v_tunnelthrusterdata, v_azimuththrusterdata, v_ruddermaindata);
@@ -106,10 +99,12 @@ void test_multiplecontroller() {
   Eigen::Matrix<double, n, 1> error;
   Eigen::Matrix<double, n, 1> derror;
   Eigen::Matrix<double, n, 1> command;
+  Eigen::Matrix<double, n, 1> windload;
+
   error << 1, 3, 4;
   derror << 0.9, 1, 4;
   command << 0.0, 0, 0;
-
+  windload << 0, 0, 0;
   const int totalstep = 10;
 
   Eigen::MatrixXd save_u = Eigen::MatrixXd::Zero(m, totalstep);
@@ -120,14 +115,14 @@ void test_multiplecontroller() {
   Eigen::MatrixXi save_rotation = Eigen::MatrixXi::Zero(n, totalstep);
 
   for (int i = 0; i != 10; ++i) {
-    _controller.controlleronestep(_controllerRTdata, _windestimation, error,
-                                  derror, command);
+    _controller.controlleronestep(_controllerRTdata, windload, error, derror,
+                                  command);
 
     std::cout << "step " << i << std::endl;
     std::cout << _controllerRTdata.tau << std::endl;
     std::cout << _controllerRTdata.u << std::endl;
   }
-};
+}
 
 int main() {
   el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);

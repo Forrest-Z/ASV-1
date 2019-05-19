@@ -1,0 +1,85 @@
+{
+  "vesselname": "Biling",
+  "project_directory":"/home/scar1et/Coding/ASV/examples/los_simulation/",
+  "dbpath": "data/dbsave.db",
+  "property": {
+    "Mass": [540, 0, 0, 0, 540, 200, 0, 200, 1000],
+    "AddedMass": [83, 0, 0, 0, 166, 244, 0, 244, 298],
+    "Damping": [17, 0, 0, 0, 20, 0, 0, 0, 100],
+    "CoG": [2.013, 0],
+    "velocity_limit": {
+      "surge": [-4, 3],
+      "sway": [-0.5, 0.5],
+      "yaw": [-1, 2],
+      "roll": [-1.5, 1]
+    }
+  },
+  "controller": {
+    "sample_time": 0.1,
+    "surge": {
+      "P": 10,
+      "I": 2,
+      "D": 1,
+      "allowed_error": 1,
+      "min_output": -5,
+      "max_output": 6
+    },
+    "sway": {
+      "P": 13,
+      "I": 2.1,
+      "D": 0.1,
+      "allowed_error": 0.1,
+      "min_output": -1,
+      "max_output": 1
+    },
+    "yaw": {
+      "P": 10,
+      "I": 20,
+      "D": 1,
+      "allowed_error": 11,
+      "min_output": -4,
+      "max_output": 5
+    }
+  },
+  "thruster1": {
+    "type": "tunnel",
+    "position": [1.9, 0],
+    "thrust_contant": [5.5E-7, 1.3E-7],
+    "max_delta_rotation": 100,
+    "max_rotation": 3000
+  },
+  "thruster2": {
+    "type": "tunnel",
+    "position": [1.8, 0],
+    "thrust_contant": [3.7E-7, 1.7E-7],
+    "max_delta_rotation": 100,
+    "max_rotation": 3000
+  },
+  "thruster3": {
+    "type": "azimuth",
+    "position": [-1.893, -0.216],
+    "thrust_contant": 0.00002,
+    "max_delta_rotation": 20,
+    "max_rotation": 1000,
+    "min_rotation": 50,
+    "max_delta_alpha": 7,
+    "max_alpha": 180,
+    "min_alpha": 0
+  },
+  "thruster4": {
+    "type": "azimuth",
+    "position": [-1.893, 0.216],
+    "thrust_contant": 0.00002,
+    "max_delta_rotation": 20,
+    "max_rotation": 1000,
+    "min_rotation": 50,
+    "max_delta_alpha": 7,
+    "max_alpha": 0,
+    "min_alpha": -180
+  },
+  "estimator": {
+    "sample_time": 1,
+    "KALMANON": true
+  },
+  "nothing": null
+}

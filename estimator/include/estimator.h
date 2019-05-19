@@ -13,6 +13,7 @@
 #include "lowpass.h"
 #include "outlierremove.h"
 
+template <USEKALMAN indicator_kalman>
 class estimator {
  public:
   explicit estimator(const vessel& _vessel, const estimatordata& _estimatordata)
@@ -26,8 +27,7 @@ class estimator {
                             _estimatordata.sample_time),
         _kalmanfilterv(_vessel, _estimatordata.sample_time),
         former_heading(0),
-        sample_time(_estimatordata.sample_time),
-        kalman_use(_estimatordata.kalman_use) {}
+        sample_time(_estimatordata.sample_time) {}
   ~estimator() {}
 
   // setvalue after the initialization
@@ -71,17 +71,11 @@ class estimator {
     calculateCoordinateTransform(_RTdata.CTG2B, _RTdata.CTB2G,
                                  _RTdata.Measurement(2), _desiredheading);
 
-    switch (kalman_use) {
-      case KALMANOFF:
-        _RTdata.State = _RTdata.Measurement;  // use low-pass filtering only
-        break;
-      case KALMANON:
-        _RTdata.State = _kalmanfilterv.kalmanonestep(_RTdata)
-                            .getState();  // kalman filtering
-        break;
-      default:
-        break;
-    }
+    if constexpr (indicator_kalman == KALMANON)
+      _RTdata.State =
+          _kalmanfilterv.kalmanonestep(_RTdata).getState();  // kalman filtering
+    else
+      _RTdata.State = _RTdata.Measurement;  // use low-pass filtering only
   }
   // realtime calculation of position and velocity errors
   void estimateerror(estimatorRTdata& _RTdata,
@@ -113,7 +107,6 @@ class estimator {
   double former_heading;  // heading rate estimation
   double sample_time;
 
-  const USEKALMAN kalman_use;  // use kalman filtering or not:
   // calculate the real time coordinate transform matrix
   void calculateCoordinateTransform(Eigen::Matrix3d& _CTG2B,
                                     Eigen::Matrix3d& _CTB2G, double _rtheading,

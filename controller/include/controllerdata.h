@@ -56,17 +56,6 @@ struct controllerRTdata {
   Eigen::Matrix<int, m, 1> alpha_deg;
 };
 
-// real time wind compensation
-template <int n = 3>
-struct windestimation {
-  // Fx, Fy, Mz (wind force) in the body coordinate
-  Eigen::Matrix<double, n, 1> load;
-  // wind direction and speed in body
-  Eigen::Matrix<double, 2, 1> wind_body;  // direction, speed
-  // wind direction and speed in global
-  Eigen::Matrix<double, 2, 1> wind_global;  // direction, speed
-};
-
 struct thrustallocationdata {
   int num_tunnel;      // # of tunnel thruster
   int num_azimuth;     // # of azimuth thruster
