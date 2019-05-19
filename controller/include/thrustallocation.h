@@ -210,7 +210,6 @@ class thrustallocation {
   std::vector<azimuththrusterdata> v_azimuththrusterdata;
   // constant value of all tunnel thrusters
   std::vector<ruddermaindata> v_ruddermaindata;
-
   // location of each thruster
   vectormd lx;
   vectormd ly;
@@ -298,18 +297,17 @@ class thrustallocation {
       ly(index_rudder) = v_ruddermaindata[i].ly;
       Omega(index_rudder, index_rudder) = 20;
       // re-calculate the max thrust of main thruser with rudder
+      double Cy = v_ruddermaindata[i].Cy;
       v_ruddermaindata[i].max_thrust =
           v_ruddermaindata[i].K * std::pow(v_ruddermaindata[i].max_rotation, 2);
       v_ruddermaindata[i].min_thrust =
           v_ruddermaindata[i].K * std::pow(v_ruddermaindata[i].min_rotation, 2);
-      v_ruddermaindata[i].max_alpha =
-          std::atan(v_ruddermaindata[i].Cy * v_ruddermaindata[i].max_varphi /
-                    (1 - 0.02 * v_ruddermaindata[i].Cy *
-                             std::pow(v_ruddermaindata[i].max_varphi, 2)));
-      v_ruddermaindata[i].min_alpha =
-          std::atan(v_ruddermaindata[i].Cy * v_ruddermaindata[i].min_varphi /
-                    (1 - 0.02 * v_ruddermaindata[i].Cy *
-                             std::pow(v_ruddermaindata[i].min_varphi, 2)));
+      v_ruddermaindata[i].max_alpha = std::atan(
+          Cy * v_ruddermaindata[i].max_varphi /
+          (1 - 0.02 * Cy * std::pow(v_ruddermaindata[i].max_varphi, 2)));
+      v_ruddermaindata[i].min_alpha = std::atan(
+          Cy * v_ruddermaindata[i].min_varphi /
+          (1 - 0.02 * Cy * std::pow(v_ruddermaindata[i].min_varphi, 2)));
     }
     // quadratic penality matrix for error
     setQ(MANUAL);
@@ -509,7 +507,7 @@ class thrustallocation {
                     (1 - 0.02 * Cy * std::pow(rudderangle_upper, 2))) -
           _RTdata.alpha(index_rudder);
       lower_delta_alpha(index_rudder) =
-          std::atan(Cy * rudderangle_upper /
+          std::atan(Cy * rudderangle_lower /
                     (1 - 0.02 * Cy * std::pow(rudderangle_lower, 2))) -
           _RTdata.alpha(index_rudder);
       /* contraints on the increment of thrust */
@@ -541,12 +539,14 @@ class thrustallocation {
                                    std::pow(rudderangle_upper, 2));
         min_squrevarphi = 0;
       }
-      double min_point_x = 100.0 / Cy - 2500.0;
+
       double _max_usqrtterm = 0;
       double _min_usqrtterm = 0;
+
       double _a = 0.0004 * std::pow(Cy, 2);
       double _b = std::pow(Cy, 2) - 0.04 * Cy;
       double _c = 1.0;
+      double min_point_x = 100.0 / Cy - 2500.0;
       if (min_squrevarphi > min_point_x) {
         _max_usqrtterm =
             std::sqrt(computeabcvalue(_a, _b, _c, max_squrevarphi));
@@ -601,7 +601,7 @@ class thrustallocation {
     for (int k = 0; k != num_mainrudder; ++k) {
       int r_index = num_tunnel + num_azimuth + k;
 
-      if (static_cast<int>(180 * _alpha(r_index) / M_PI) == 0) {
+      if (std::round(180 * _alpha(r_index) / M_PI) == 0) {
         _alpha_deg(r_index) = 0;
         continue;
       }
@@ -614,7 +614,7 @@ class thrustallocation {
         varphi = 25 * (sqrtterm - cytan) / v_ruddermaindata[k].Cy;
       else
         varphi = 25 * (-sqrtterm - cytan) / v_ruddermaindata[k].Cy;
-      _alpha_deg(r_index) = static_cast<int>(varphi);
+      _alpha_deg(r_index) = static_cast<int>(std::round(varphi));
     }
   }
 
@@ -625,7 +625,7 @@ class thrustallocation {
       int t_rotation = 0;
       if (_RTdata.alpha(i) < 0) {
         t_rotation = static_cast<int>(
-            sqrt(abs(_RTdata.u(i)) / v_tunnelthrusterdata[i].K_negative));
+            std::sqrt(abs(_RTdata.u(i)) / v_tunnelthrusterdata[i].K_negative));
         if (t_rotation == 0) {
           _RTdata.rotation(i) = -1;  // prevent zero
           _RTdata.u(i) = v_tunnelthrusterdata[i].K_negative;
@@ -634,7 +634,7 @@ class thrustallocation {
 
       } else {
         t_rotation = static_cast<int>(
-            sqrt(abs(_RTdata.u(i)) / v_tunnelthrusterdata[i].K_positive));
+            std::sqrt(abs(_RTdata.u(i)) / v_tunnelthrusterdata[i].K_positive));
 
         if (t_rotation == 0) {
           _RTdata.rotation(i) = 1;  // prevent zero
@@ -646,10 +646,9 @@ class thrustallocation {
 
     // azimuth thruster
     for (int j = 0; j != num_azimuth; ++j) {
-      int t_rotation = 0;
       int index_azimuth = j + num_tunnel;
 
-      t_rotation = static_cast<int>(
+      int t_rotation = static_cast<int>(
           sqrt(abs(_RTdata.u(index_azimuth)) / v_azimuththrusterdata[j].K));
       if (t_rotation < v_azimuththrusterdata[j].min_rotation) {
         _RTdata.rotation(index_azimuth) = v_azimuththrusterdata[j].min_rotation;
@@ -665,6 +664,7 @@ class thrustallocation {
       double _a = 0.0004 * std::pow(Cy, 2);
       double _b = std::pow(Cy, 2) - 0.04 * Cy;
       double _c = 1.0;
+
       double sqrtrootterm = std::sqrt(computeabcvalue(
           _a, _b, _c, std::pow(_RTdata.alpha_deg(index_rudder), 2)));
 

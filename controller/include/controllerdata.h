@@ -76,12 +76,12 @@ struct thrustallocationdata {
 
 // constant data of tunnel thruster, index = 1
 struct tunnelthrusterdata {
-  double lx;  // m
-  double ly;  // m
-  double K_positive;
-  double K_negative;
-  int max_delta_rotation;
-  int max_rotation;
+  double lx;                   // m
+  double ly;                   // m
+  double K_positive;           // positive value
+  double K_negative;           // positive value
+  int max_delta_rotation;      // rpm(no less than 1)
+  int max_rotation;            // rpm
   double max_thrust_positive;  // positive value
   double max_thrust_negative;  // positive value
 };
@@ -92,7 +92,7 @@ struct azimuththrusterdata {
   double lx;               // m
   double ly;               // m
   double K;                //
-  int max_delta_rotation;  // rpm
+  int max_delta_rotation;  // rpm (no less than 1)
   int max_rotation;        // rpm
   int min_rotation;        // rpm
   double max_delta_alpha;  // rad
@@ -108,14 +108,14 @@ struct ruddermaindata {
   double ly;                  // m
   double K;                   //
   double Cy;                  // Cx=0.02Cy
-  double max_delta_rotation;  // rpm
+  double max_delta_rotation;  // rpm (no less than 1)
   double max_rotation;        // rpm
   double min_rotation;        // rpm
   double max_thrust;          // N
   double min_thrust;          // N
   double max_alpha;           // rad
   double min_alpha;           // rad
-  double max_delta_varphi;    // deg(rudder)
+  double max_delta_varphi;    // deg(rudder angle: no less than 1)
   double max_varphi;          // deg(rudder)
   double min_varphi;          // deg(rudder)
 };

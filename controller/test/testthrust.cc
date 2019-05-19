@@ -283,14 +283,14 @@ void testrudder() {
       0,       // ly
       2e-5,    // K
       0.0126,  // Cy
-      20,      // max_delta_rotation
+      20,      // max_delta_rotation (no less than 1)
       500,     // max rotation
       1,       // min_rotation
       50,      // max_thrust (effective thrust)
       2e-4,    // min_thrust
       M_PI,    // max_alpha
       -M_PI,   // min_alpha
-      5,       // max_delta_varphi
+      5,       // max_delta_varphi (no less than 1)
       30,      // max_varphi
       -30      // min_varphi
   });
@@ -345,7 +345,7 @@ void testrudder() {
                                  0.0 * Eigen::MatrixXd::Random(1, 100);
   // save_tau.block(0, 100, 1, 100) = Eigen::MatrixXd::Constant(1, 100, -0.2) +
   //                                  0.0 * Eigen::MatrixXd::Random(1, 100);
-  save_tau.row(0) = 0.01 * Eigen::MatrixXd::Random(1, totalstep);
+  save_tau.row(1) = 0.01 * Eigen::MatrixXd::Random(1, totalstep);
   for (int i = 0; i != totalstep; ++i) {
     // update tau
     _controllerRTdata.tau = save_tau.col(i);
