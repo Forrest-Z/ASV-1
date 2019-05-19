@@ -42,11 +42,13 @@ class windcompensation {
   // TODO
   Eigen::Vector2d convertbwind2global(const Eigen::Vector2d& _windbody,
                                       double v_heading, double v_speed) {
+    v_heading = 0;
+    v_speed = 0;
     Eigen::Vector2d wind_global = Eigen::Vector2d::Zero();
+    wind_global = _windbody;
     return wind_global;
   }
 
-  // TODO
   Eigen::Vector3d getwindload() const { return load; }
 
  private:

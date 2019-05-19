@@ -53,6 +53,9 @@ class jsonparse {
   std::vector<azimuththrusterdata> getazimuthdata() const noexcept {
     return azimuththrusterdata_input;
   }
+  std::vector<ruddermaindata> getmainrudderdata() const noexcept {
+    return ruddermaindata_input;
+  }
   std::vector<pidcontrollerdata> getpiddata() const noexcept {
     return pidcontrollerdata_input;
   }
@@ -109,12 +112,13 @@ class jsonparse {
   };
   std::vector<tunnelthrusterdata> tunnelthrusterdata_input;
   std::vector<azimuththrusterdata> azimuththrusterdata_input;
+  std::vector<ruddermaindata> ruddermaindata_input;
+
   std::vector<pidcontrollerdata> pidcontrollerdata_input;
 
   // estimatordata
   estimatordata estimatordata_input{
-      0.1,       // sample_time
-      KALMANOFF  // kalman_use
+      0.1,  // sample_time
   };
 
   void parsejson() {
@@ -177,16 +181,16 @@ class jsonparse {
         std::vector<double> _position = file[str_thruster]["position"];
         _thrusterdata_input.lx = _position[0];
         _thrusterdata_input.ly = _position[1];
-        // thrust_contant
+        // thrust_constant
         std::vector<double> _thrustconstant =
-            file[str_thruster]["thrust_contant"];
+            file[str_thruster]["thrust_constant"];
         _thrusterdata_input.K_positive = _thrustconstant[0];
         _thrusterdata_input.K_negative = _thrustconstant[1];
 
         // rotation
         _thrusterdata_input.max_delta_rotation = static_cast<int>(
-            controllerdata_input.sample_time *
-            file[str_thruster]["max_delta_rotation"].get<double>());
+            std::round(controllerdata_input.sample_time *
+                       file[str_thruster]["max_delta_rotation"].get<double>()));
         _thrusterdata_input.max_rotation =
             file[str_thruster]["max_rotation"].get<int>();
         // thrust
@@ -210,14 +214,14 @@ class jsonparse {
         std::vector<double> _position = file[str_thruster]["position"];
         _thrusterdata_input.lx = _position[0];
         _thrusterdata_input.ly = _position[1];
-        // thrust_contant
+        // thrust_constant
         _thrusterdata_input.K =
-            file[str_thruster]["thrust_contant"].get<double>();
+            file[str_thruster]["thrust_constant"].get<double>();
 
         // rotation
         _thrusterdata_input.max_delta_rotation = static_cast<int>(
-            controllerdata_input.sample_time *
-            file[str_thruster]["max_delta_rotation"].get<double>());
+            std::round(controllerdata_input.sample_time *
+                       file[str_thruster]["max_delta_rotation"].get<double>()));
         _thrusterdata_input.max_rotation =
             file[str_thruster]["max_rotation"].get<int>();
         _thrusterdata_input.min_rotation =
@@ -245,6 +249,47 @@ class jsonparse {
       } else if (str_type == "rudder") {
         ++thrustallocationdata_input.num_mainrudder;
         thrustallocationdata_input.index_thrusters.push_back(3);
+
+        ruddermaindata _thrusterdata_input;
+
+        // position
+        std::vector<double> _position = file[str_thruster]["position"];
+        _thrusterdata_input.lx = _position[0];
+        _thrusterdata_input.ly = _position[1];
+        // thrust_constant
+        _thrusterdata_input.K =
+            file[str_thruster]["thrust_constant"].get<double>();
+        _thrusterdata_input.Cy =
+            file[str_thruster]["rudder_constant"].get<double>();
+        // rotation
+        _thrusterdata_input.max_delta_rotation = static_cast<int>(
+            std::round(controllerdata_input.sample_time *
+                       file[str_thruster]["max_delta_rotation"].get<double>()));
+        _thrusterdata_input.max_rotation =
+            file[str_thruster]["max_rotation"].get<int>();
+        _thrusterdata_input.min_rotation =
+            file[str_thruster]["min_rotation"].get<int>();
+
+        // varphi
+        _thrusterdata_input.max_delta_varphi = static_cast<int>(
+            std::round(controllerdata_input.sample_time *
+                       file[str_thruster]["max_delta_varphi"].get<double>()));
+
+        _thrusterdata_input.max_varphi =
+            file[str_thruster]["max_varphi"].get<int>();
+        _thrusterdata_input.min_varphi =
+            file[str_thruster]["min_varphi"].get<int>();
+        // thrust
+        _thrusterdata_input.max_thrust =
+            _thrusterdata_input.K *
+            std::pow(_thrusterdata_input.max_rotation, 2);
+        _thrusterdata_input.min_thrust =
+            _thrusterdata_input.K *
+            std::pow(_thrusterdata_input.min_rotation, 2);
+
+        //
+        ruddermaindata_input.push_back(_thrusterdata_input);
+
       } else {
         std::cout << "unknow thruster type!\n";
       }
@@ -255,11 +300,11 @@ class jsonparse {
   void parseestimatordata() {
     estimatordata_input.sample_time =
         file["estimator"]["sample_time"].get<double>();
-    bool kalman_on = file["estimator"]["KALMANON"];
-    if (kalman_on)
-      estimatordata_input.kalman_use = KALMANON;
-    else
-      estimatordata_input.kalman_use = KALMANOFF;
+    // bool kalman_on = file["estimator"]["KALMANON"];
+    // if (kalman_on)
+    //   estimatordata_input.kalman_use = KALMANON;
+    // else
+    //   estimatordata_input.kalman_use = KALMANOFF;
   }  // parseestimatordata
 
   void parsevesselpropertydata() {
@@ -337,6 +382,20 @@ std::ostream& operator<<(std::ostream& os, const jsonparse<_m, _n>& _jp) {
     os << _jp.azimuththrusterdata_input[i].min_thrust << std::endl;
   }
 
+  os << "info of each main thruster with rudder:\n";
+  for (unsigned int i = 0; i != _jp.ruddermaindata_input.size(); ++i) {
+    os << _jp.ruddermaindata_input[i].lx << std::endl;
+    os << _jp.ruddermaindata_input[i].ly << std::endl;
+    os << _jp.ruddermaindata_input[i].K << std::endl;
+    os << _jp.ruddermaindata_input[i].Cy << std::endl;
+    os << _jp.ruddermaindata_input[i].max_delta_rotation << std::endl;
+    os << _jp.ruddermaindata_input[i].max_rotation << std::endl;
+    os << _jp.ruddermaindata_input[i].min_rotation << std::endl;
+    os << _jp.ruddermaindata_input[i].max_delta_varphi << std::endl;
+    os << _jp.ruddermaindata_input[i].max_varphi << std::endl;
+    os << _jp.ruddermaindata_input[i].min_varphi << std::endl;
+  }
+
   os << "pid controller:\n";
   for (unsigned int i = 0; i != _jp.pidcontrollerdata_input.size(); ++i) {
     os << _jp.pidcontrollerdata_input[i].P << std::endl;
@@ -348,7 +407,6 @@ std::ostream& operator<<(std::ostream& os, const jsonparse<_m, _n>& _jp) {
   }
   os << "estimator:\n";
   os << _jp.estimatordata_input.sample_time << std::endl;
-  os << _jp.estimatordata_input.kalman_use << std::endl;
 
   os << "Mass property:\n";
   os << _jp.vesseldata_input.Mass << std::endl;

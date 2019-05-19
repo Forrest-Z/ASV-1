@@ -12,8 +12,8 @@
 
 int main() {
   // read a JSON file
-  jsonparse<4, 3> _jsonparse("../data/test.json");
-  _jsonparse.tets();
+  jsonparse<5, 3> _jsonparse("../data/test.json");
+  _jsonparse.readjson();
   std::cout << _jsonparse << std::endl;
   // json file = json::parse(in);
 

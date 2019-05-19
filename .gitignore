@@ -5,6 +5,6 @@ debug/
 Release/
 release/
 BUILD/
-.csv
+*.csv
 .txt
 *.db

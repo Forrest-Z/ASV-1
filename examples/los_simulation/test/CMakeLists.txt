@@ -50,7 +50,7 @@ set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY}
 # 指定生成目标
 set(SOURCE_FILES ${SOURCE_FILES} 
 	"${PROJECT_DIRECTORY}/logging/src/easylogging++.cc"                            
-	"${CMAKE_CURRENT_SOURCE_DIR}/testbiling.cc")
+	"${CMAKE_CURRENT_SOURCE_DIR}/testlos.cc")
 add_executable (testlos ${SOURCE_FILES})
 target_include_directories(testlos PRIVATE ${HEADER_DIRECTORY})
 find_library(SQLITE3_LIBRARY sqlite3 HINTS ${LIBRARY_DIRECTORY})
