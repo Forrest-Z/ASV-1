@@ -17,9 +17,17 @@
 
 // real time data in planner
 struct plannerRTdata {
-  Eigen::Vector3d setpoint;       // x, y, theta in the global coordinate
-  Eigen::Vector3d setpoint_body;  // x, y, theta in the body-fixed coordinate
-  Eigen::Vector3d command;        // command from joystick (human)
+  Eigen::Vector3d setpoint;    // x, y, theta in the global coordinate
+  Eigen::Vector3d v_setpoint;  // u, v, r in the body coordinate
+  Eigen::Vector2d waypoint0;   // x, y in the global coordinate
+  Eigen::Vector2d waypoint1;   // x, y in the global coordinate
+  Eigen::Vector3d command;     // command from joystick (human)
+};
+
+struct plannerdata {
+  double sample_time;
+  double los_radius;
+  double los_capture_radius;
 };
 
 #endif /*_PLANNERDATA_H_*/

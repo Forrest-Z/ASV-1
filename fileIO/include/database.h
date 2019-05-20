@@ -102,6 +102,20 @@ class database {
       CLOG(ERROR, "sql") << e.what();
     }
   }
+  // insert a bow into estimator table
+  void update_planner_table(const plannerRTdata &_RTdata) {
+    try {
+      std::string str =
+          "INSERT INTO planner"
+          "(DATETIME, set_x, set_y, set_theta, set_u, set_v, set_r,"
+          "command_x, command_y, command_theta) VALUES(julianday('now')";
+      convert2string(_RTdata, str);
+      str += ");";
+      db << str;
+    } catch (sqlite::sqlite_exception e) {
+      CLOG(ERROR, "sql") << e.what();
+    }
+  }
 
  private:
   sqlite::database db;
@@ -236,8 +250,30 @@ class database {
     }
   }
 
-  // create planner table (TODO)
-  void create_planner_table() {}
+  // create planner table
+  void create_planner_table() {
+    try {
+      // real-time data in the estimator
+      std::string str =
+          "CREATE TABLE planner"
+          "(ID            INTEGER PRIMARY KEY AUTOINCREMENT,"
+          " DATETIME      TEXT       NOT NULL,"
+          " set_x         DOUBLE, "
+          " set_y         DOUBLE, "
+          " set_theta     DOUBLE, " /* setpoint */
+          " set_u         DOUBLE, "
+          " set_v         DOUBLE, "
+          " set_r         DOUBLE, " /* v_setpoint */
+          " command_x     DOUBLE, "
+          " command_y     DOUBLE, "
+          " command_theta DOUBLE);"; /* command */
+
+      db << str;
+
+    } catch (sqlite::sqlite_exception e) {
+      CLOG(ERROR, "sql") << e.what();
+    }
+  }
 
   // convert real time GPS data to sql string
   void convert2string(const gpsRTdata &_gpsRTdata, std::string &_str) {
@@ -321,6 +357,24 @@ class database {
     for (int i = 0; i != 3; ++i) {
       _str += ", ";
       _str += std::to_string(_RTdata.v_error(i));
+    }
+  }
+
+  void convert2string(const plannerRTdata &_RTdata, std::string &_str) {
+    // setpoint
+    for (int i = 0; i != 3; ++i) {
+      _str += ", ";
+      _str += std::to_string(_RTdata.setpoint(i));
+    }
+    // v_setpoint
+    for (int i = 0; i != 3; ++i) {
+      _str += ", ";
+      _str += std::to_string(_RTdata.v_setpoint(i));
+    }
+    // command
+    for (int i = 0; i != 3; ++i) {
+      _str += ", ";
+      _str += std::to_string(_RTdata.command(i));
     }
   }
 };

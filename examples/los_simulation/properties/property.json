@@ -3,14 +3,16 @@
   "project_directory":"/home/scar1et/Coding/ASV/examples/los_simulation/",
   "dbpath": "data/dbsave.db",
   "property": {
-    "Mass": [540, 0, 0, 0, 540, 200, 0, 200, 1000],
-    "AddedMass": [83, 0, 0, 0, 166, 244, 0, 244, 298],
-    "Damping": [17, 0, 0, 0, 20, 0, 0, 0, 100],
+    "L":1.255,
+    "B":1,
+    "Mass": [24, 0, 0, 0, 24, 0, 0, 0, 2.76],
+    "AddedMass": [1.8, 0, 0, 0, 9.8, 1, 0, 1, 0],
+    "Damping": [2, 0, 0, 0, 7, 0.1, 0, 0.1, 0.5],
     "CoG": [2.013, 0],
     "velocity_limit": {
-      "surge": [-4, 3],
+      "surge": [-4, 4],
       "sway": [-0.5, 0.5],
-      "yaw": [-1, 2],
+      "yaw": [-2, 2],
       "roll": [-1.5, 1]
     }
   },
@@ -33,9 +35,9 @@
       "max_output": 1
     },
     "yaw": {
-      "P": 10,
-      "I": 20,
-      "D": 1,
+      "P": 5,
+      "I": 1,
+      "D": 0,
       "allowed_error": 11,
       "min_output": -4,
       "max_output": 5
@@ -43,7 +45,7 @@
   },
   "thruster1": {
     "type": "rudder",
-    "position": [-1.9, 0.0],
+    "position": [-0.8, 0.0],
     "thrust_constant": 2e-5,
     "rudder_constant":0.0126,
     "max_delta_rotation": 100,
@@ -56,6 +58,13 @@
   "estimator": {
     "sample_time": 0.1,
     "KALMANON": true
+  },
+  "planner": {
+    "sample_time": 0.1,
+    "LOS": {
+      "los_radius_co":1,
+      "capture_radius_co":0.7
+    }
   },
   "nothing": null
 }

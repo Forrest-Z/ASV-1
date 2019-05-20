@@ -33,6 +33,10 @@ struct vessel {
   Eigen::Vector2d sway_v;   // min, max
   Eigen::Vector2d yaw_v;    // min, max
   Eigen::Vector2d roll_v;   // min, max
+
+  // geometry
+  double L;  // total length of vessel
+  double B;  // total width of vessel
 };
 
 #endif /* _VESSELDATA_H_ */

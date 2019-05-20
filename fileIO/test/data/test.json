@@ -3,6 +3,8 @@
   "project_directory":"/home/scar1et/Coding/ASV",
   "dbpath": "data/dbsave.db",
   "property": {
+    "L":3,
+    "B":1,
     "Mass": [540, 0, 0, 0, 540, 200, 0, 200, 1000],
     "AddedMass": [83, 0, 0, 0, 166, 244, 0, 244, 298],
     "Damping": [17, 0, 0, 0, 20, 0, 0, 0, 100],
@@ -92,6 +94,13 @@
   "estimator": {
     "sample_time": 1,
     "KALMANON": true
+  },
+  "planner": {
+    "sample_time": 0.1,
+    "LOS": {
+      "los_radius_co":1,
+      "capture_radius_co":0.7
+    }
   },
   "nothing": null,
   "list": [1, 0, 2],

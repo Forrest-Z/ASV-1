@@ -17,7 +17,8 @@ int main() {
   wp1 << 0.372, -0.181;
   wp2 << -0.628, 1.320;
   lineofsight _lineofsight(L, 0);
-  _lineofsight.setpos_p0(wp1);
-  _lineofsight.setpos_p1(wp2);
-  _lineofsight.testlos(-0.2, 0);
+
+  Eigen::Vector2d vp = Eigen::Vector2d::Zero();
+  vp << -0.2, 0;
+  std::cout << _lineofsight.computelospoint(vp, wp1, wp2) << std::endl;
 }

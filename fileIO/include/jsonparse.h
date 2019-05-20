@@ -62,13 +62,16 @@ class jsonparse {
   estimatordata getestimatordata() const noexcept {
     return estimatordata_input;
   }
+  plannerdata getplannerdata() const noexcept { return plannerdata_input; }
+
   std::string getsqlitedata() const noexcept { return dbpath; }
 
   void readjson() {
     parsejson();
+    parsevesselpropertydata();
+    parseplannerdata();
     parsecontrollerdata();
     parseestimatordata();
-    parsevesselpropertydata();
     parsesqlitedata();
   }
 
@@ -94,7 +97,9 @@ class jsonparse {
       Eigen::Vector2d::Zero(),  // surge_v
       Eigen::Vector2d::Zero(),  // sway_v
       Eigen::Vector2d::Zero(),  // yaw_v
-      Eigen::Vector2d::Zero()   // roll_v
+      Eigen::Vector2d::Zero(),  // roll_v
+      0,                        // L
+      0                         // B
   };
 
   // controllerdata
@@ -104,6 +109,13 @@ class jsonparse {
       WINDON,        // windstatus
       FULLYACTUATED  // index_actuation
   };
+  // plannerdata
+  plannerdata plannerdata_input{
+      0.1,  // sample_time
+      0,    // los_radius
+      0,    // los_capture_radius
+  };
+  // thrustallocationdata
   thrustallocationdata thrustallocationdata_input{
       0,  // num_tunnel
       0,  // num_azimuth
@@ -306,7 +318,16 @@ class jsonparse {
     // else
     //   estimatordata_input.kalman_use = KALMANOFF;
   }  // parseestimatordata
-
+  void parseplannerdata() {
+    plannerdata_input.sample_time =
+        file["planner"]["sample_time"].get<double>();
+    plannerdata_input.los_radius =
+        vesseldata_input.L *
+        file["planner"]["LOS"]["los_radius_co"].get<double>();
+    plannerdata_input.los_capture_radius =
+        vesseldata_input.L *
+        file["planner"]["LOS"]["capture_radius_co"].get<double>();
+  }  // parseplannerdata
   void parsevesselpropertydata() {
     vesseldata_input.Mass = _utilityio.convertstdvector2EigenMat<double, 3, 3>(
         file["property"]["Mass"].get<std::vector<double>>());
@@ -340,6 +361,10 @@ class jsonparse {
     vesseldata_input
         .roll_v = _utilityio.convertstdvector2EigenMat<double, 2, 1>(
         file["property"]["velocity_limit"]["roll"].get<std::vector<double>>());
+
+    vesseldata_input.L = file["property"]["L"].get<double>();
+    vesseldata_input.B = file["property"]["B"].get<double>();
+
   }  // parsevesselpropertydata
 
   void parsesqlitedata() {
@@ -407,6 +432,10 @@ std::ostream& operator<<(std::ostream& os, const jsonparse<_m, _n>& _jp) {
   }
   os << "estimator:\n";
   os << _jp.estimatordata_input.sample_time << std::endl;
+  os << "planner:\n";
+  os << _jp.plannerdata_input.sample_time << std::endl;
+  os << _jp.plannerdata_input.los_radius << std::endl;
+  os << _jp.plannerdata_input.los_capture_radius << std::endl;
 
   os << "Mass property:\n";
   os << _jp.vesseldata_input.Mass << std::endl;

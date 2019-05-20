@@ -18,6 +18,7 @@
 #include "database.h"
 #include "easylogging++.h"
 #include "estimator.h"
+#include "planner.h"
 #include "windcompensation.h"
 // #include "gps.h"(
 #include "jsonparse.h"
@@ -34,6 +35,7 @@ class threadloop {
       : _jsonparse(
             "/home/scar1et/Coding/ASV/examples/los_simulation/properties/"
             "property.json"),
+        _planner(_jsonparse.getplannerdata()),
         _estimator(_jsonparse.getvessel(), _jsonparse.getestimatordata()),
         _controller(_jsonparse.getcontrollerdata(), _jsonparse.getpiddata(),
                     _jsonparse.getthrustallocationdata(),
@@ -45,10 +47,12 @@ class threadloop {
   ~threadloop() {}
 
   void testthread() {
+    std::thread planner_thread(&threadloop::plannerloop, this);
     std::thread estimator_thread(&threadloop::estimatorloop, this);
     std::thread controller_thread(&threadloop::controllerloop, this);
     std::thread sql_thread(&threadloop::sqlloop, this);
 
+    planner_thread.detach();
     controller_thread.detach();
     estimator_thread.detach();
     sql_thread.detach();
@@ -57,6 +61,13 @@ class threadloop {
  private:
   // json
   jsonparse<num_thruster, dim_controlspace> _jsonparse;
+  plannerRTdata _plannerRTdata{
+      Eigen::Vector3d::Zero(),  // setpoint
+      Eigen::Vector3d::Zero(),  // v_setpoint
+      Eigen::Vector2d::Zero(),  // waypoint0
+      Eigen::Vector2d::Zero(),  // waypoint1
+      Eigen::Vector3d::Zero()   // command
+  };
 
   controllerRTdata<num_thruster, dim_controlspace> _controllerRTdata{
       Eigen::Matrix<double, dim_controlspace, 1>::Zero(),  // tau
@@ -79,6 +90,7 @@ class threadloop {
       Eigen::Matrix<double, 6, 1>::Zero()   // motiondata_6dof
   };
 
+  planner _planner;
   estimator<indicator_kalman> _estimator;
 
   controller<10, num_thruster, indicator_actuation, dim_controlspace>
@@ -91,23 +103,40 @@ class threadloop {
     _sqlite.initializetables();
   }
 
-  void controllerloop() {
-    Eigen::Matrix<double, dim_controlspace, 1> command =
-        Eigen::Matrix<double, dim_controlspace,
-                      1>::Zero();  // TODO: command from planner
-    _controller.setcontrolmode(MANUAL);
+  void plannerloop() {
+    Eigen::MatrixXd wpts(2, 8);
+    wpts.col(0) << 0.372, -0.181;
+    wpts.col(1) << -0.628, 1.320;
+    wpts.col(2) << 0.372, 2.820;   //
+    wpts.col(3) << 1.872, 3.320;   //
+    wpts.col(4) << 6.872, -0.681;  //
+    wpts.col(5) << 8.372, -0.181;  //
+    wpts.col(6) << 9.372, 1.320;   //
+    wpts.col(7) << 8.372, 2.820;
 
-    int counter = 0;
-    double angle = 0;
+    _planner.setconstantspeed(_plannerRTdata, 0.1);
+
+    int index_wpt = 1;
     while (1) {
-      ++counter;
-      angle = (counter + 1) * M_PI / 60;
-      command(0) = 0.2;
-      command(1) = 0.2;
-      command(2) = 0.5 * sin(angle) + 0.1 * std::rand() / RAND_MAX;
+      if (_planner.switchwaypoint(_plannerRTdata,
+                                  _estimatorRTdata.State.head(2),
+                                  wpts.col(index_wpt))) {
+        ++index_wpt;
+      }
+      if (index_wpt == 8) break;
+      _planner.pathfollowLOS(_plannerRTdata, _estimatorRTdata.State.head(2));
+    }
+  }
+  // plannerloop
+
+  void controllerloop() {
+    _controller.setcontrolmode(AUTOMATIC);
+
+    while (1) {
       _controller.controlleronestep(
           _controllerRTdata, _windcompensation.getwindload(),
-          _estimatorRTdata.p_error, _estimatorRTdata.v_error, command);
+          _estimatorRTdata.p_error, _estimatorRTdata.v_error,
+          _plannerRTdata.command);
 
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
@@ -118,16 +147,14 @@ class threadloop {
     _estimator.setvalue(_estimatorRTdata, -0.2, 0, 0, 0, 0, 1.78, 0.1, 0);
     CLOG(INFO, "GPS") << "initialation successful!";
 
-    double desiredheading = 0;                             // TODO: planner
-    Eigen::Vector3d setpoints = Eigen::Vector3d::Zero();   // TODO: planner
-    Eigen::Vector3d vsetpoints = Eigen::Vector3d::Zero();  // TODO: planner
     while (1) {
       _estimator.updateestimatedforce(
           _estimatorRTdata, _controllerRTdata.BalphaU,
           _windcompensation.computewindload(0, 0).getwindload());
       _estimator.estimatestate(_estimatorRTdata, 0, 0, 0, 0, 0, 0, 0, 0,
-                               desiredheading);
-      _estimator.estimateerror(_estimatorRTdata, setpoints, vsetpoints);
+                               _plannerRTdata.setpoint(2));
+      _estimator.estimateerror(_estimatorRTdata, _plannerRTdata.setpoint,
+                               _plannerRTdata.v_setpoint);
       // std::cout << _estimatorRTdata.Measurement << std::endl;
       // std::cout << _estimatorRTdata.CTB2G << std::endl;
       // std::cout << _estimatorRTdata.Measurement << std::endl;
@@ -138,6 +165,7 @@ class threadloop {
   // loop to save real time data using sqlite3
   void sqlloop() {
     while (1) {
+      _sqlite.update_planner_table(_plannerRTdata);
       _sqlite.update_estimator_table(_estimatorRTdata);
       _sqlite.update_controller_table(_controllerRTdata);
     }
