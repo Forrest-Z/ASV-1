@@ -114,49 +114,53 @@ class threadloop {
     wpts.col(6) << 9.372, 1.320;   //
     wpts.col(7) << 8.372, 2.820;
 
+    _plannerRTdata.waypoint0 = wpts.col(0);
+    _plannerRTdata.waypoint1 = wpts.col(1);
     _planner.setconstantspeed(_plannerRTdata, 0.1);
 
     int index_wpt = 1;
     while (1) {
-      if (_planner.switchwaypoint(_plannerRTdata,
-                                  _estimatorRTdata.State.head(2),
-                                  wpts.col(index_wpt))) {
-        ++index_wpt;
-      }
+      // if (_planner.switchwaypoint(_plannerRTdata,
+      //                             _estimatorRTdata.State.head(2),
+      //                             wpts.col(index_wpt))) {
+      //   ++index_wpt;
+      //   std::cout << index_wpt << std::endl;
+      // }
       if (index_wpt == 8) break;
       _planner.pathfollowLOS(_plannerRTdata, _estimatorRTdata.State.head(2));
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   }
   // plannerloop
 
   void controllerloop() {
     _controller.setcontrolmode(AUTOMATIC);
-
+    timecounter timer_controler;
+    long int elapsed_time = 0;
     while (1) {
       _controller.controlleronestep(
           _controllerRTdata, _windcompensation.getwindload(),
           _estimatorRTdata.p_error, _estimatorRTdata.v_error,
           _plannerRTdata.command);
 
+      elapsed_time = timer_controler.timeelapsed();
+      // std::cout << elapsed_time << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   }  // controllerloop
 
   // loop to give real time state estimation
   void estimatorloop() {
-    _estimator.setvalue(_estimatorRTdata, -0.2, 0, 0, 0, 0, 1.78, 0.1, 0);
+    _estimator.setvalue(_estimatorRTdata, -0.2, 0, 0, 0, 0, 102, 0, 0);
     CLOG(INFO, "GPS") << "initialation successful!";
 
     while (1) {
       _estimator.updateestimatedforce(
           _estimatorRTdata, _controllerRTdata.BalphaU,
           _windcompensation.computewindload(0, 0).getwindload());
-      _estimator.estimatestate(_estimatorRTdata, 0, 0, 0, 0, 0, 0, 0, 0,
-                               _plannerRTdata.setpoint(2));
+      _estimator.estimatestate(_estimatorRTdata, _plannerRTdata.setpoint(2));
       _estimator.estimateerror(_estimatorRTdata, _plannerRTdata.setpoint,
                                _plannerRTdata.v_setpoint);
-      // std::cout << _estimatorRTdata.Measurement << std::endl;
-      // std::cout << _estimatorRTdata.CTB2G << std::endl;
       // std::cout << _estimatorRTdata.Measurement << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
@@ -168,6 +172,7 @@ class threadloop {
       _sqlite.update_planner_table(_plannerRTdata);
       _sqlite.update_estimator_table(_estimatorRTdata);
       _sqlite.update_controller_table(_controllerRTdata);
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   }  // sqlloop()
 };

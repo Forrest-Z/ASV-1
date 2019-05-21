@@ -28,6 +28,7 @@ class estimator {
         _kalmanfilterv(_vessel, _estimatordata.sample_time),
         former_heading(0),
         sample_time(_estimatordata.sample_time) {}
+  estimator() = delete;
   ~estimator() {}
 
   // setvalue after the initialization
@@ -77,6 +78,15 @@ class estimator {
     else
       _RTdata.State = _RTdata.Measurement;  // use low-pass filtering only
   }
+  // read sensor data and perform state estimation (simulation)
+  void estimatestate(estimatorRTdata& _RTdata, double _desiredheading) {
+    // calculate the coordinate transform matrix
+    _RTdata.Measurement = _RTdata.State;
+    calculateCoordinateTransform(_RTdata.CTG2B, _RTdata.CTB2G,
+                                 _RTdata.Measurement(2), _desiredheading);
+    _RTdata.State =
+        _kalmanfilterv.kalmanonestep(_RTdata).getState();  // kalman filtering
+  }
   // realtime calculation of position and velocity errors
   void estimateerror(estimatorRTdata& _RTdata,
                      const Eigen::Vector3d& _setpoints,
@@ -90,13 +100,21 @@ class estimator {
 
  private:
   // variable for low passing
-  lowpass<5> x_lowpass;
-  lowpass<5> y_lowpass;
-  lowpass<10> heading_lowpass;
-  lowpass<10> roll_lowpass;
-  lowpass<5> surgev_lowpass;
-  lowpass<5> swayv_lowpass;
-  lowpass<5> yawv_lowpass;
+  // lowpass<5> x_lowpass;
+  // lowpass<5> y_lowpass;
+  // lowpass<10> heading_lowpass;
+  // lowpass<10> roll_lowpass;
+  // lowpass<5> surgev_lowpass;
+  // lowpass<5> swayv_lowpass;
+  // lowpass<5> yawv_lowpass;
+
+  lowpass<1> x_lowpass;
+  lowpass<1> y_lowpass;
+  lowpass<1> heading_lowpass;
+  lowpass<1> roll_lowpass;
+  lowpass<1> surgev_lowpass;
+  lowpass<1> swayv_lowpass;
+  lowpass<1> yawv_lowpass;
   // variable for outlier removal
   outlierremove roll_outlierremove;
   outlierremove surgev_outlierremove;

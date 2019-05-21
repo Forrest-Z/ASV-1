@@ -19,10 +19,10 @@
   "controller": {
     "sample_time": 0.1,
     "surge": {
-      "P": 10,
-      "I": 2,
-      "D": 1,
-      "allowed_error": 1,
+      "P": 0,
+      "I": 0,
+      "D": 10,
+      "allowed_error": 0.01,
       "min_output": -5,
       "max_output": 6
     },
@@ -38,7 +38,7 @@
       "P": 5,
       "I": 1,
       "D": 0,
-      "allowed_error": 11,
+      "allowed_error": 0.001,
       "min_output": -4,
       "max_output": 5
     }

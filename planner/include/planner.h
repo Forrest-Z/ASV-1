@@ -35,10 +35,10 @@ class planner {
   }
 
   // path following using LOS
-  planner &pathfollowLOS(plannerRTdata &_plannerRTdata,
-                         const Eigen::Vector2d &_vesselposition) {
-    _plannerRTdata.setpoint(2) = _lineofsight.computelospoint(
-        _vesselposition, _plannerRTdata.waypoint0, _plannerRTdata.waypoint1);
+  planner &pathfollowLOS(plannerRTdata &_RTdata, const Eigen::Vector2d &_vp) {
+    _RTdata.setpoint(2) =
+        _lineofsight.computelospoint(_vp, _RTdata.waypoint0, _RTdata.waypoint1)
+            .getdesired_theta();
     return *this;
   }
   planner &setconstantspeed(plannerRTdata &_plannerRTdata,

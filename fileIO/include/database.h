@@ -83,7 +83,7 @@ class database {
 
       db << str;
     } catch (sqlite::sqlite_exception e) {
-      CLOG(ERROR, "sql") << e.what();
+      CLOG(ERROR, "sql-controller") << e.what();
     }
   }
   // insert a bow into estimator table
@@ -99,7 +99,7 @@ class database {
       str += ");";
       db << str;
     } catch (sqlite::sqlite_exception e) {
-      CLOG(ERROR, "sql") << e.what();
+      CLOG(ERROR, "sql-estimator") << e.what();
     }
   }
   // insert a bow into estimator table
@@ -113,7 +113,7 @@ class database {
       str += ");";
       db << str;
     } catch (sqlite::sqlite_exception e) {
-      CLOG(ERROR, "sql") << e.what();
+      CLOG(ERROR, "sql-planner") << e.what();
     }
   }
 

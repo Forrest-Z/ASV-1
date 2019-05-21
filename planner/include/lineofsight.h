@@ -13,13 +13,16 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <iostream>
+#include <stdexcept>
 #include <vector>
+#include "easylogging++.h"
 
 class lineofsight {
  public:
   explicit lineofsight(double _los_radius, double _capture_radius = 0)
       : los_radius(_los_radius),
         capture_radius(_capture_radius),
+        desired_theta(0),
         trackerror(Eigen::Vector2d::Zero()),
         R(Eigen::Matrix2d::Zero()) {}
   lineofsight() = delete;
@@ -30,37 +33,45 @@ class lineofsight {
     Eigen::Vector2d _error = _vesselposition - _wp1;
     double _distance =
         std::sqrt(std::pow(_error(0), 2) + std::pow(_error(1), 2));
-    if (_distance > capture_radius) return true;
+    if (_distance < capture_radius) return true;
     return false;
   }
 
   // compute the orientation of LOS vector and cross-track error
-  double computelospoint(const Eigen::Vector2d &_vesselposition,
-                         const Eigen::Vector2d &_wp0,
-                         const Eigen::Vector2d &_wp1) {
+  lineofsight &computelospoint(const Eigen::Vector2d &_vesselposition,
+                               const Eigen::Vector2d &_wp0,
+                               const Eigen::Vector2d &_wp1) {
     //
     auto delta_pos = _wp1 - _wp0;
+    double _distance =
+        std::sqrt(std::pow(delta_pos(0), 2) + std::pow(delta_pos(1), 2));
+    if (_distance < 2 * capture_radius)
+      CLOG(ERROR, "LOS") << "waypoints too close!";
+    else {
+      double thetaK = std::atan(delta_pos(1) / delta_pos(0));
+      if (delta_pos(0) < 0) thetaK += M_PI;
 
-    double thetaK = std::atan(delta_pos(1) / delta_pos(0));
-    if (delta_pos(0) < 0) thetaK += M_PI;
+      // rotation matrix
+      computeR(thetaK);
 
-    // rotation matrix
-    computeR(thetaK);
+      // track error
+      trackerror = R.transpose() * (_vesselposition - _wp0);
 
-    // track error
-    trackerror = R.transpose() * (_vesselposition - _wp0);
+      double e = trackerror(1);  // cross-track error
+      double thetar = 0;
+      if (e > los_radius)
+        thetar = -M_PI / 2;
+      else if (e < -los_radius)
+        thetar = M_PI / 2;
+      else
+        thetar = std::asin(-e / los_radius);
+      desired_theta = thetar + thetaK;
+    }
+    return *this;
 
-    double e = trackerror(1);  // cross-track error
-    double thetar = 0;
-    if (e > los_radius)
-      thetar = -M_PI / 2;
-    else if (e < -los_radius)
-      thetar = M_PI / 2;
-    else
-      thetar = std::asin(-e / los_radius);
-    return thetar + thetaK;
   }  // computelospoint
 
+  double getdesired_theta() const { return desired_theta; }
   Eigen::Vector2d gettrackerror() const { return trackerror; }
 
   void setcaptureradius(double _captureradius) {
@@ -71,6 +82,7 @@ class lineofsight {
  private:
   double los_radius;
   double capture_radius;
+  double desired_theta;
   Eigen::Vector2d trackerror;
   Eigen::Matrix2d R;
 
