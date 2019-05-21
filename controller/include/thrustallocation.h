@@ -168,11 +168,15 @@ class thrustallocation {
         case AUTOMATIC:
           Q(0, 0) = 1000;
           // Q(1, 1) = 0;  The penalty for sway error is zero
-          Q(2, 2) = 1000;
+          Q(2, 2) = 100;
           break;
         default:
           break;
       }
+    }
+    // update mosek
+    for (int j = 0; j != n; ++j) {
+      qval[j + 2 * m] = Q(j, j);
     }
   }
 
@@ -736,7 +740,8 @@ class thrustallocation {
     d_utemp = t_u.cwiseSqrt();
     g_deltau = 1.5 * d_utemp;
     vectormd Q_temp = vectormd::Zero();
-    Q_temp = 0.75 * d_utemp.cwiseInverse();
+    // Q_temp = 0.75 * d_utemp.cwiseInverse();
+    Q_temp = 7.5 * d_utemp.cwiseInverse();
     Q_deltau = Q_temp.asDiagonal();
   }
   // calculate the BalphaU and b

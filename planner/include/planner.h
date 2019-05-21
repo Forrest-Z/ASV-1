@@ -51,6 +51,7 @@ class planner {
                               double tau_y, double tau_theta) {
     _plannerRTdata.command << tau_x, tau_y, tau_theta;
   }
+  double getsampletime() const noexcept { return sample_time; }
 
  private:
   double sample_time;

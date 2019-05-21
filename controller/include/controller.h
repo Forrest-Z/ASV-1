@@ -17,6 +17,7 @@
 #include <vector>
 #include "controllerdata.h"
 #include "thrustallocation.h"
+#include "vesseldata.h"
 
 // n: # of dimension of control space
 // m: # of all thrusters on the vessel
@@ -30,7 +31,7 @@ class controller {
  public:
   // fully actuated
   explicit controller(
-      const controllerdata &_controllerdata,
+      const controllerdata &_controllerdata, const vessel &_vessel,
       const std::vector<pidcontrollerdata> &_piddata,
       const thrustallocationdata &_thrustallocationdata,
       const std::vector<tunnelthrusterdata> &_v_tunnelthrusterdata,
@@ -41,6 +42,7 @@ class controller {
         v_max_output(vectornd::Zero()),
         v_min_output(vectornd::Zero()),
         error_integralmatrix(matrixnld::Zero()),
+        damping(_vessel.Damping),
         sample_time(_controllerdata.sample_time),
         controlmode(_controllerdata.controlmode),
         windstatus(_controllerdata.windstatus),
@@ -64,7 +66,8 @@ class controller {
   // automatic control using pid controller and QP-based thrust allocation
   void controlleronestep(controllerRTdata<m, n> &_controllerdata,
                          const vectornd &_windload, const vectornd &_error,
-                         const vectornd &_derror, const vectornd &_command) {
+                         const vectornd &_derror, const vectornd &_command,
+                         double _desired_u = 0) {
     // PID controller
     vectornd d_tau = vectornd::Zero();
     vectornd position_error_integral = updateIntegralMatrix(_error);
@@ -74,6 +77,9 @@ class controller {
                    + pids(1, i) * position_error_integral(i)  // integral term
                    + pids(2, i) * _derror(i);                 // derivative term
     }
+
+    // Drag in the x direction
+    d_tau(0) += damping(0, 0) * _desired_u;
 
     switch (windstatus) {
       case WINDOFF:
@@ -119,8 +125,7 @@ class controller {
 
   WINDCOMPENSATION getwindstatus() const { return windstatus; }
   void setwindstatus(WINDCOMPENSATION _windstatus) { windstatus = _windstatus; }
-
-  // underactuated
+  double getsampletime() const noexcept { return sample_time; }
 
  private:
   matrixpid pids;                  // pid matrix
@@ -128,7 +133,7 @@ class controller {
   vectornd v_max_output;           // max_output
   vectornd v_min_output;           // min_output
   matrixnld error_integralmatrix;  // I
-
+  Eigen::Matrix3d damping;         //
   double sample_time;
   CONTROLMODE controlmode;
   WINDCOMPENSATION windstatus;

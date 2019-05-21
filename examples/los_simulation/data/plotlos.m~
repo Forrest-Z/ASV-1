@@ -146,3 +146,13 @@ plot(estimator.timestamp,estimator.Verror(:,3),'linewidth', 2);
 ylabel('R-error');
 
 
+figure(8);
+subplot(311);
+plot(planner.timestamp,planner.setpoint(:,1),'linewidth', 2);
+ylabel('set-x');
+subplot(312);
+plot(planner.timestamp,planner.setpoint(:,2),'linewidth', 2);
+ylabel('set-y');
+subplot(313);
+plot(planner.timestamp,planner.setpoint(:,3),'linewidth', 2);
+ylabel('set-theta');

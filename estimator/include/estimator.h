@@ -98,6 +98,8 @@ class estimator {
     _RTdata.v_error = _vsetpoints - _RTdata.State.tail(3);
   }
 
+  double getsampletime() const noexcept { return sample_time; }
+
  private:
   // variable for low passing
   // lowpass<5> x_lowpass;
@@ -162,7 +164,7 @@ class estimator {
     double _gps_z = -gps_z;
     double _gps_roll = roll_outlierremove.removeoutlier(gps_roll * M_PI / 180);
     double _gps_pitch = gps_pitch * M_PI / 180;
-    double _gps_heading = gps_heading * M_PI / 180;
+    double _gps_heading = restrictheadingangle(gps_heading * M_PI / 180);
     double _gps_Ve = surgev_outlierremove.removeoutlier(gps_Ve);
     double _gps_Vn = swayv_outlierremove.removeoutlier(gps_Vn);
     // update raw measured data from GPS/IMU sensors
@@ -196,6 +198,11 @@ class estimator {
     double delta_yaw = shortestheading(_newvalue - former_heading);
     former_heading = _newvalue;
     return delta_yaw / sample_time;
+  }
+  // restrict heading angle (0-2PI) to (-PI ~ PI)
+  double restrictheadingangle(double _heading) noexcept {
+    if (_heading > M_PI) _heading -= (2 * M_PI);
+    return _heading;
   }
 };
 

@@ -21,10 +21,10 @@
     "surge": {
       "P": 0,
       "I": 0,
-      "D": 10,
+      "D": 2,
       "allowed_error": 0.01,
-      "min_output": -5,
-      "max_output": 6
+      "min_output": 0,
+      "max_output": 2
     },
     "sway": {
       "P": 13,
@@ -35,12 +35,12 @@
       "max_output": 1
     },
     "yaw": {
-      "P": 5,
-      "I": 1,
-      "D": 0,
+      "P": 2,
+      "I": 0,
+      "D": 1,
       "allowed_error": 0.001,
-      "min_output": -4,
-      "max_output": 5
+      "min_output": -0.6,
+      "max_output": 0.6
     }
   },
   "thruster1": {
@@ -49,9 +49,9 @@
     "thrust_constant": 2e-5,
     "rudder_constant":0.0126,
     "max_delta_rotation": 100,
-    "max_rotation": 500,
+    "max_rotation": 320,
     "min_rotation": 1,
-    "max_delta_varphi": 10,
+    "max_delta_varphi": 20,
     "max_varphi": 30,
     "min_varphi": -30
   },
@@ -63,7 +63,7 @@
     "sample_time": 0.1,
     "LOS": {
       "los_radius_co":1,
-      "capture_radius_co":0.7
+      "capture_radius_co":0.5
     }
   },
   "nothing": null

@@ -3,7 +3,7 @@
 close all;
 clear;
 
-sampletime=0.01;
+sampletime=0.1;
 % mass and damping matrix
 M=[25.8 0 0;
     0 33.8 1;
@@ -28,7 +28,7 @@ wpt=[0.372 -0.181;
     ];
 
 % capture radius
-captureradius=0.6*L;
+captureradius=0.8*L;
 
 ud=0.1; 
 

@@ -37,7 +37,8 @@ class threadloop {
             "property.json"),
         _planner(_jsonparse.getplannerdata()),
         _estimator(_jsonparse.getvessel(), _jsonparse.getestimatordata()),
-        _controller(_jsonparse.getcontrollerdata(), _jsonparse.getpiddata(),
+        _controller(_jsonparse.getcontrollerdata(), _jsonparse.getvessel(),
+                    _jsonparse.getpiddata(),
                     _jsonparse.getthrustallocationdata(),
                     _jsonparse.gettunneldata(), _jsonparse.getazimuthdata(),
                     _jsonparse.getmainrudderdata()),
@@ -104,6 +105,10 @@ class threadloop {
   }
 
   void plannerloop() {
+    timecounter timer_planner;
+    long int elapsed_time = 0;
+    long int sample_time =
+        static_cast<long int>(1000 * _planner.getsampletime());
     Eigen::MatrixXd wpts(2, 8);
     wpts.col(0) << 0.372, -0.181;
     wpts.col(1) << -0.628, 1.320;
@@ -120,15 +125,20 @@ class threadloop {
 
     int index_wpt = 1;
     while (1) {
-      // if (_planner.switchwaypoint(_plannerRTdata,
-      //                             _estimatorRTdata.State.head(2),
-      //                             wpts.col(index_wpt))) {
-      //   ++index_wpt;
-      //   std::cout << index_wpt << std::endl;
-      // }
-      if (index_wpt == 8) break;
+      if (_planner.switchwaypoint(_plannerRTdata,
+                                  _estimatorRTdata.State.head(2),
+                                  wpts.col(index_wpt))) {
+        ++index_wpt;
+      }
+      if (index_wpt == 8) {
+        CLOG(INFO, "waypoints") << "reach the last waypoint!";
+        break;
+      }
       _planner.pathfollowLOS(_plannerRTdata, _estimatorRTdata.State.head(2));
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+      elapsed_time = timer_planner.timeelapsed();
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(sample_time - elapsed_time));
     }
   }
   // plannerloop
@@ -137,20 +147,28 @@ class threadloop {
     _controller.setcontrolmode(AUTOMATIC);
     timecounter timer_controler;
     long int elapsed_time = 0;
+    long int sample_time =
+        static_cast<long int>(1000 * _controller.getsampletime());
     while (1) {
       _controller.controlleronestep(
           _controllerRTdata, _windcompensation.getwindload(),
           _estimatorRTdata.p_error, _estimatorRTdata.v_error,
-          _plannerRTdata.command);
+          _plannerRTdata.command, _plannerRTdata.v_setpoint(0));
 
       elapsed_time = timer_controler.timeelapsed();
       // std::cout << elapsed_time << std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(sample_time - elapsed_time));
     }
   }  // controllerloop
 
   // loop to give real time state estimation
   void estimatorloop() {
+    timecounter timer_estimator;
+    long int elapsed_time = 0;
+    long int sample_time =
+        static_cast<long int>(1000 * _estimator.getsampletime());
+
     _estimator.setvalue(_estimatorRTdata, -0.2, 0, 0, 0, 0, 102, 0, 0);
     CLOG(INFO, "GPS") << "initialation successful!";
 
@@ -162,7 +180,10 @@ class threadloop {
       _estimator.estimateerror(_estimatorRTdata, _plannerRTdata.setpoint,
                                _plannerRTdata.v_setpoint);
       // std::cout << _estimatorRTdata.Measurement << std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      elapsed_time = timer_estimator.timeelapsed();
+      // std::cout << elapsed_time << std::endl;
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(sample_time - elapsed_time));
     }
   }  // estimatorloop()
 
