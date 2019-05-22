@@ -93,7 +93,7 @@ class estimator {
                      const Eigen::Vector3d& _vsetpoints) {
     Eigen::Vector3d _perror = Eigen::Vector3d::Zero();
     for (int i = 0; i != 2; ++i) _perror(i) = _setpoints(i) - _RTdata.State(i);
-    _perror(2) = shortestheading(_setpoints(2) - _RTdata.State(2));
+    _perror(2) = restrictheadingangle(_setpoints(2) - _RTdata.State(2));
     _RTdata.p_error = _RTdata.CTG2B * _perror;
     _RTdata.v_error = _vsetpoints - _RTdata.State.tail(3);
   }
@@ -134,7 +134,7 @@ class estimator {
     double cvalue = 0.0;
     double svalue = 0.0;
 
-    if (abs(shortestheading(_rtheading - desired_heading)) < M_PI / 36) {
+    if (abs(restrictheadingangle(_rtheading - desired_heading)) < M_PI / 36) {
       // use the fixed setpoint orientation to prevent measurement noise
       cvalue = std::cos(desired_heading);
       svalue = std::sin(desired_heading);
@@ -182,27 +182,24 @@ class estimator {
     _RTdata.motiondata_6dof(4) = _gps_pitch;
     _RTdata.motiondata_6dof(5) = _RTdata.Measurement(2);
   }
-  // find the shortest way to rotate
-  double shortestheading(double _deltaheading) {
-    double deltaheading = 0;
-    if (_deltaheading > M_PI)
-      deltaheading = _deltaheading - 2 * M_PI;
-    else if (_deltaheading < -M_PI)
-      deltaheading = _deltaheading + 2 * M_PI;
-    else
-      deltaheading = _deltaheading;
-    return deltaheading;
-  }
+
   // calculate the heading rate
   double calheadingrate(double _newvalue) {
-    double delta_yaw = shortestheading(_newvalue - former_heading);
+    double delta_yaw = restrictheadingangle(_newvalue - former_heading);
     former_heading = _newvalue;
     return delta_yaw / sample_time;
   }
-  // restrict heading angle (0-2PI) to (-PI ~ PI)
+  // restrict heading angle or delta heading to (-PI ~ PI)
+  // compute the delta heading to find the shortest way to rotate
   double restrictheadingangle(double _heading) noexcept {
-    if (_heading > M_PI) _heading -= (2 * M_PI);
-    return _heading;
+    double heading = 0;
+    if (_heading > M_PI)
+      heading = _heading - 2 * M_PI;
+    else if (_heading < -M_PI)
+      heading = _heading + 2 * M_PI;
+    else
+      heading = _heading;
+    return heading;
   }
 };
 

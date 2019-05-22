@@ -80,24 +80,6 @@ class thrustallocation {
     MSK_deleteenv(&env);
   }
 
-  // TODO
-  void testrudder(controllerRTdata<m, n> &_RTdata) {
-    _RTdata.alpha << -M_PI / 180, -M_PI / 10;
-    convertalpharadian2int(_RTdata.alpha, _RTdata.alpha_deg);
-    std::cout << _RTdata.alpha << std::endl;
-    std::cout << _RTdata.alpha_deg << std::endl;
-
-    for (int i = 0; i != num_mainrudder; ++i) {
-      int index_rudder = num_tunnel + num_azimuth + i;
-
-      // re-calculate the max thrust of main thruser with rudder
-      std::cout << v_ruddermaindata[i].max_thrust << std::endl;
-      std::cout << v_ruddermaindata[i].min_thrust << std::endl;
-      std::cout << v_ruddermaindata[i].max_alpha << std::endl;
-      std::cout << v_ruddermaindata[i].min_alpha << std::endl;
-    }
-  }
-
   // perform the thrust allocation using QP solver (one step)
   void onestepthrustallocation(controllerRTdata<m, n> &_RTdata) {
     updateTAparameters(_RTdata);

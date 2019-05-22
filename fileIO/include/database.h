@@ -26,7 +26,7 @@ class database {
  public:
   explicit database(const std::string &_savepath)
       : db(_savepath),
-        clientset({"controller", "estimator", "planner", "GPS"}) {}
+        clientset({"controller", "estimator", "planner", "GPS", "wind"}) {}
 
   ~database() {}
 
@@ -108,7 +108,8 @@ class database {
       std::string str =
           "INSERT INTO planner"
           "(DATETIME, set_x, set_y, set_theta, set_u, set_v, set_r,"
-          "command_x, command_y, command_theta) VALUES(julianday('now')";
+          "command_x, command_y, command_theta, wp0_x, wp0_y, wp1_x, wp1_y) "
+          "VALUES(julianday('now')";
       convert2string(_RTdata, str);
       str += ");";
       db << str;
@@ -266,7 +267,11 @@ class database {
           " set_r         DOUBLE, " /* v_setpoint */
           " command_x     DOUBLE, "
           " command_y     DOUBLE, "
-          " command_theta DOUBLE);"; /* command */
+          " command_theta DOUBLE, " /* command */
+          " wp0_x         DOUBLE, "
+          " wp0_y         DOUBLE, "
+          " wp1_x         DOUBLE, "
+          " wp1_y         DOUBLE);"; /* waypoints */
 
       db << str;
 
@@ -375,6 +380,16 @@ class database {
     for (int i = 0; i != 3; ++i) {
       _str += ", ";
       _str += std::to_string(_RTdata.command(i));
+    }
+    // waypoint0
+    for (int i = 0; i != 2; ++i) {
+      _str += ", ";
+      _str += std::to_string(_RTdata.waypoint0(i));
+    }
+    // waypoint1
+    for (int i = 0; i != 2; ++i) {
+      _str += ", ";
+      _str += std::to_string(_RTdata.waypoint1(i));
     }
   }
 };
