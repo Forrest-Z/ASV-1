@@ -109,28 +109,25 @@ class threadloop {
     long int elapsed_time = 0;
     long int sample_time =
         static_cast<long int>(1000 * _planner.getsampletime());
-    Eigen::MatrixXd wpts(2, 8);
-    wpts.col(0) << 0.372, -0.181;
-    wpts.col(1) << -0.628, 1.320;
-    wpts.col(2) << 0.372, 2.820;   //
-    wpts.col(3) << 1.872, 3.320;   //
-    wpts.col(4) << 6.872, -0.681;  //
-    wpts.col(5) << 8.372, -0.181;  //
-    wpts.col(6) << 9.372, 1.320;   //
-    wpts.col(7) << 8.372, 2.820;
 
-    _plannerRTdata.waypoint0 = wpts.col(0);
-    _plannerRTdata.waypoint1 = wpts.col(1);
+    double radius = 3;
+    Eigen::Vector2d startposition = (Eigen::Vector2d() << 2, 0.1).finished();
+    Eigen::Vector2d endposition = (Eigen::Vector2d() << 5, 2).finished();
     _planner.setconstantspeed(_plannerRTdata, 0.1);
+
+    auto waypoints = _planner.followcircle(startposition, endposition, radius,
+                                           _estimatorRTdata.State(2),
+                                           _plannerRTdata.v_setpoint(0));
+    _planner.initializewaypoint(_plannerRTdata, waypoints);
 
     int index_wpt = 1;
     while (1) {
       if (_planner.switchwaypoint(_plannerRTdata,
                                   _estimatorRTdata.State.head(2),
-                                  wpts.col(index_wpt))) {
+                                  waypoints.col(index_wpt))) {
         ++index_wpt;
       }
-      if (index_wpt == 8) {
+      if (index_wpt == waypoints.cols()) {
         CLOG(INFO, "waypoints") << "reach the last waypoint!";
         break;
       }

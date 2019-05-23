@@ -27,6 +27,8 @@ planner.timestamp=tplanner(:,2);
 planner.setpoint=tplanner(:,3:5);
 planner.vsetpoint=tplanner(:,6:8);
 planner.command=tplanner(:,9:11);
+planner.waypoints0=tplanner(:,12:13);
+planner.waypoints1=tplanner(:,14:15);
 
 time0=min(planner.timestamp(1),controller.timestamp(1));
 
@@ -96,24 +98,12 @@ ylabel('r');
 
 
 
-wpt=[0.372 -0.181;
-    -0.628 1.320;
-    0.372 2.820;
-    1.872 3.320;
-    6.872 -0.681;
-    8.372 -0.181;
-    9.372 1.320;
-    8.372 2.820
-    ];
 
-totalpnum=size(wpt,1);
+
 
 figure(5)
-for i=1:(totalpnum-1)
-    plot(wpt(i,2), wpt(i,1),'r*');hold on;
-    plot([wpt(i,2) wpt(i+1,2)], [wpt(i,1) wpt(i+1,1)],':b'); hold on;
-end
-plot(wpt(totalpnum,2), wpt(totalpnum,1),'r*');hold on;
+plot(planner.waypoints0(:,2), planner.waypoints0(:,1),'r*');hold on;
+plot(planner.waypoints1(:,2), planner.waypoints1(:,1),'r*');hold on;
 plot(estimator.State(:,2), estimator.State(:,1),'k.');hold on;
 xlabel('East[m]');
 ylabel('North[m]');

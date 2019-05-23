@@ -10,7 +10,11 @@
 
 #include "lineofsight.h"
 
+INITIALIZE_EASYLOGGINGPP
+
 int main() {
+  el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);
+
   double L = 1.255;
   Eigen::Vector2d wp1 = Eigen::Vector2d::Zero();
   Eigen::Vector2d wp2 = Eigen::Vector2d::Zero();
@@ -20,5 +24,6 @@ int main() {
 
   Eigen::Vector2d vp = Eigen::Vector2d::Zero();
   vp << -0.2, 0;
-  std::cout << _lineofsight.computelospoint(vp, wp1, wp2) << std::endl;
+  std::cout << _lineofsight.computelospoint(vp, wp1, wp2).getdesired_theta()
+            << std::endl;
 }

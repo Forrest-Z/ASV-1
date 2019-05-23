@@ -15,7 +15,7 @@ if(delta(1)<0)
 end
 
 gamma = acos(L/(2*r));
-
+    
 
 center1=wp0 + r*[cos(thetaK+gamma);sin(thetaK+gamma)];
 center2=wp0 + r*[cos(thetaK-gamma);sin(thetaK-gamma)];

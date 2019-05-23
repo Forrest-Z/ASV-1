@@ -21,7 +21,7 @@
     "surge": {
       "P": 0,
       "I": 0,
-      "D": 2,
+      "D": 1,
       "allowed_error": 0.01,
       "min_output": 0,
       "max_output": 2
@@ -37,7 +37,7 @@
     "yaw": {
       "P": 2,
       "I": 0,
-      "D": 1,
+      "D": 2,
       "allowed_error": 0.001,
       "min_output": -0.6,
       "max_output": 0.6
@@ -63,7 +63,7 @@
     "sample_time": 0.1,
     "LOS": {
       "los_radius_co":1,
-      "capture_radius_co":0.5
+      "capture_radius_co":0.06
     }
   },
   "nothing": null

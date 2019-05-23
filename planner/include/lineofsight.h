@@ -45,7 +45,7 @@ class lineofsight {
     auto delta_pos = _wp1 - _wp0;
     double _distance =
         std::sqrt(std::pow(delta_pos(0), 2) + std::pow(delta_pos(1), 2));
-    if (_distance < 2 * capture_radius)
+    if (_distance < capture_radius)
       CLOG(ERROR, "LOS") << "waypoints too close!";
     else {
       double thetaK = std::atan(delta_pos(1) / delta_pos(0));
