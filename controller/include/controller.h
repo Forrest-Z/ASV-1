@@ -67,7 +67,7 @@ class controller {
   void controlleronestep(controllerRTdata<m, n> &_controllerdata,
                          const vectornd &_windload, const vectornd &_error,
                          const vectornd &_derror, const vectornd &_command,
-                         double _desired_u = 0) {
+                         const vectornd &_desired_speed) {
     // PID controller
     vectornd d_tau = vectornd::Zero();
     vectornd position_error_integral = updateIntegralMatrix(_error);
@@ -78,32 +78,9 @@ class controller {
                    + pids(2, i) * _derror(i);                 // derivative term
     }
 
-    // Drag in the x direction
-    d_tau(0) += damping(0, 0) * _desired_u;
-
-    switch (windstatus) {
-      case WINDOFF:
-        break;
-      case WINDON:  // TODO
-        d_tau += _windload;
-        break;
-      default:
-        break;
-    }
-
-    // controller mode
-    switch (controlmode) {
-      case MANUAL:
-        d_tau = _command;
-        break;
-      case HEADINGONLY:
-        for (int i = 0; i != 2; ++i) d_tau(i) = _command(i);
-        break;
-      case AUTOMATIC:
-        break;
-      default:
-        break;
-    }
+    compensatelineardamping(d_tau, _desired_speed);
+    windcompensation(d_tau, _windload);
+    commandfromjoystick(d_tau, _command);
 
     // restrict desired force
     restrictdesiredforce(d_tau);
@@ -176,6 +153,40 @@ class controller {
     for (int i = 0; i != n; ++i)
       if (std::abs(_error(i)) > v_allowed_error(i)) return false;
     return true;
+  }
+
+  // command from joystick
+  void commandfromjoystick(vectornd &_tau, const vectornd &_command) {
+    switch (controlmode) {  // controller mode
+      case MANUAL:
+        _tau = _command;
+        break;
+      case HEADINGONLY:
+        _tau.head(n - 1) = _command.head(n - 1);
+        break;
+      case AUTOMATIC:
+        break;
+      default:
+        break;
+    }
+  }
+
+  // wind compensation
+  void windcompensation(vectornd &_tau, const vectornd &_windload) {
+    switch (windstatus) {
+      case WINDOFF:
+        break;
+      case WINDON:  // TODO, negative or positive
+        _tau -= _windload;
+        break;
+      default:
+        break;
+    }
+  }
+
+  // linear damping
+  void compensatelineardamping(vectornd &_tau, const vectornd &_desired_speed) {
+    for (int i = 0; i != n; ++i) _tau(i) += damping(i, i) * _desired_speed(i);
   }
 };
 

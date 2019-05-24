@@ -34,6 +34,7 @@ set(HEADER_DIRECTORY ${HEADER_DIRECTORY}
 	"/usr/include" 
 	"${PROJECT_DIRECTORY}/fileIO/include"
 	"${PROJECT_DIRECTORY}/logging/include"
+	"${PROJECT_DIRECTORY}/property/include"
 	"${PROJECT_DIRECTORY}/third_party/eigen"
 	"/opt/mosek/8/tools/platform/linux64x86/h")
 

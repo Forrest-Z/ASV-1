@@ -37,9 +37,7 @@ class planner {
       waypoints.col(1) = _endposition;
     } else {
       double gamma = std::acos(length / (2 * _radius));
-      int n = static_cast<int>(std::floor((M_PI - 2 * gamma) * _radius /
-                                          (9 * _desiredspeed * sample_time)));
-      std::cout << n << std::endl;
+      int n = static_cast<int>(std::floor((M_PI - 2 * gamma) * 10));
       waypoints.resize(Eigen::NoChange, n);
 
       double _clockwise_angle = thetaK + gamma;
@@ -90,9 +88,11 @@ class planner {
             .getdesired_theta();
     return *this;
   }
-  planner &setconstantspeed(plannerRTdata &_plannerRTdata,
-                            double _forwardspeed) {
+  planner &setconstantspeed(plannerRTdata &_plannerRTdata, double _forwardspeed,
+                            double _headingrate, double _swayspeed = 0.0) {
     _plannerRTdata.v_setpoint(0) = _forwardspeed;
+    _plannerRTdata.v_setpoint(1) = _swayspeed;
+    _plannerRTdata.v_setpoint(2) = _headingrate;
     return *this;
   }
 

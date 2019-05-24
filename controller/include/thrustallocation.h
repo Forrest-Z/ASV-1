@@ -268,7 +268,7 @@ class thrustallocation {
       int index_azimuth = num_tunnel + i;
       lx(index_azimuth) = v_azimuththrusterdata[i].lx;
       ly(index_azimuth) = v_azimuththrusterdata[i].ly;
-      Omega(index_azimuth, index_azimuth) = 20;
+      Omega(index_azimuth, index_azimuth) = 50;
       // re-calculate the max thrust of azimuth thruser
       v_azimuththrusterdata[i].max_thrust =
           v_azimuththrusterdata[i].K *
@@ -281,7 +281,7 @@ class thrustallocation {
       int index_rudder = num_tunnel + num_azimuth + i;
       lx(index_rudder) = v_ruddermaindata[i].lx;
       ly(index_rudder) = v_ruddermaindata[i].ly;
-      Omega(index_rudder, index_rudder) = 20;
+      Omega(index_rudder, index_rudder) = 50;
       // re-calculate the max thrust of main thruser with rudder
       double Cy = v_ruddermaindata[i].Cy;
       v_ruddermaindata[i].max_thrust =

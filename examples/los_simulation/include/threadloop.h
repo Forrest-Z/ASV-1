@@ -110,21 +110,22 @@ class threadloop {
     long int sample_time =
         static_cast<long int>(1000 * _planner.getsampletime());
 
-    double radius = 3;
+    double radius = 2;
     Eigen::Vector2d startposition = (Eigen::Vector2d() << 2, 0.1).finished();
     Eigen::Vector2d endposition = (Eigen::Vector2d() << 5, 2).finished();
-    _planner.setconstantspeed(_plannerRTdata, 0.1);
+    _planner.setconstantspeed(_plannerRTdata, 0.1, 0.06);
 
     auto waypoints = _planner.followcircle(startposition, endposition, radius,
                                            _estimatorRTdata.State(2),
                                            _plannerRTdata.v_setpoint(0));
     _planner.initializewaypoint(_plannerRTdata, waypoints);
 
-    int index_wpt = 1;
+    int index_wpt = 2;
     while (1) {
       if (_planner.switchwaypoint(_plannerRTdata,
                                   _estimatorRTdata.State.head(2),
                                   waypoints.col(index_wpt))) {
+        std::cout << index_wpt << std::endl;
         ++index_wpt;
       }
       if (index_wpt == waypoints.cols()) {
@@ -150,7 +151,7 @@ class threadloop {
       _controller.controlleronestep(
           _controllerRTdata, _windcompensation.getwindload(),
           _estimatorRTdata.p_error, _estimatorRTdata.v_error,
-          _plannerRTdata.command, _plannerRTdata.v_setpoint(0));
+          _plannerRTdata.command, _plannerRTdata.v_setpoint);
 
       elapsed_time = timer_controler.timeelapsed();
       // std::cout << elapsed_time << std::endl;
@@ -166,7 +167,7 @@ class threadloop {
     long int sample_time =
         static_cast<long int>(1000 * _estimator.getsampletime());
 
-    _estimator.setvalue(_estimatorRTdata, -0.2, 0, 0, 0, 0, 102, 0, 0);
+    _estimator.setvalue(_estimatorRTdata, 2, 0.1, 0, 0, 0, -10, 0, 0);
     CLOG(INFO, "GPS") << "initialation successful!";
 
     while (1) {

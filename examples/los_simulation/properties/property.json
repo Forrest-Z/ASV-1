@@ -37,7 +37,7 @@
     "yaw": {
       "P": 2,
       "I": 0,
-      "D": 2,
+      "D": 4,
       "allowed_error": 0.001,
       "min_output": -0.6,
       "max_output": 0.6
@@ -62,8 +62,8 @@
   "planner": {
     "sample_time": 0.1,
     "LOS": {
-      "los_radius_co":1,
-      "capture_radius_co":0.06
+      "los_radius_co":0.8,
+      "capture_radius_co":0.1
     }
   },
   "nothing": null

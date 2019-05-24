@@ -79,6 +79,23 @@ void test_multiplecontroller() {
       Eigen::Matrix<int, m, 1>::Zero()  // alpha_deg
   };
 
+  vessel _vessel{
+      (Eigen::Matrix3d() << 100, 0, 1, 0, 100, 1, 0, 1000).finished(),  // Mass
+      Eigen::Matrix3d::Zero(),  // AddedMass
+      (Eigen::Matrix3d() << 100, 0, 0, 0, 200, 0, 0, 0, 300)
+          .finished(),          // Damping
+      Eigen::Vector2d::Zero(),  // cog
+      Eigen::Vector2d::Zero(),  // x_thrust
+      Eigen::Vector2d::Zero(),  // y_thrust
+      Eigen::Vector2d::Zero(),  // mz_thrust
+      Eigen::Vector2d::Zero(),  // surge_v
+      Eigen::Vector2d::Zero(),  // sway_v
+      Eigen::Vector2d::Zero(),  // yaw_v
+      Eigen::Vector2d::Zero(),  // roll_v
+      0,                        // L
+      0                         // B
+  };
+
   controllerdata _controllerdata{
       0.1,             // sample_time
       AUTOMATIC,       // controlmode
@@ -93,18 +110,20 @@ void test_multiplecontroller() {
   v_pidcontrollerdata.push_back({1, 2, 10, 0.1, -2, 4});
 
   controller<L, m, index_actuation, n> _controller(
-      _controllerdata, v_pidcontrollerdata, _thrustallocationdata,
+      _controllerdata, _vessel, v_pidcontrollerdata, _thrustallocationdata,
       v_tunnelthrusterdata, v_azimuththrusterdata, v_ruddermaindata);
   _controller.initializecontroller(_controllerRTdata);
   Eigen::Matrix<double, n, 1> error;
   Eigen::Matrix<double, n, 1> derror;
   Eigen::Matrix<double, n, 1> command;
   Eigen::Matrix<double, n, 1> windload;
+  Eigen::Matrix<double, n, 1> v_setpoint;
 
   error << 1, 3, 4;
   derror << 0.9, 1, 4;
   command << 0.0, 0, 0;
   windload << 0, 0, 0;
+  v_setpoint << 0, 0, 0;
   const int totalstep = 10;
 
   Eigen::MatrixXd save_u = Eigen::MatrixXd::Zero(m, totalstep);
@@ -116,7 +135,7 @@ void test_multiplecontroller() {
 
   for (int i = 0; i != 10; ++i) {
     _controller.controlleronestep(_controllerRTdata, windload, error, derror,
-                                  command);
+                                  command, v_setpoint);
 
     std::cout << "step " << i << std::endl;
     std::cout << _controllerRTdata.tau << std::endl;
