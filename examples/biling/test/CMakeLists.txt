@@ -1,9 +1,9 @@
 # CMake 最低版本号要求
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.8)
 
 # 项目信息
 project (testbiling)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 # UNIX, WIN32, WINRT, CYGWIN, APPLE are environment 
 # variables as flags set by default system
@@ -37,6 +37,7 @@ set(HEADER_DIRECTORY ${HEADER_DIRECTORY}
 	"${PROJECT_DIRECTORY}/fileIO/include"
 	"${PROJECT_DIRECTORY}/property/include"
 	"${PROJECT_DIRECTORY}/logging/include"
+	"${PROJECT_DIRECTORY}/GUI_communication/include"
 	"${PROJECT_DIRECTORY}/third_party/eigen"
 	"${PROJECT_DIRECTORY}/third_party/serial/include"
 	"/opt/mosek/8/tools/platform/linux64x86/h"

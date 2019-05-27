@@ -29,53 +29,26 @@ class guiserver {
 
  public:
   guiserver()
-      : my_serial("/dev/ttyUSB0", 19200, serial::Timeout::simpleTimeout(500)),
+      : my_serial("/dev/ttyUSB1", 19200, serial::Timeout::simpleTimeout(500)),
         send_buffer(""),
-        recv_buffer(""),
-        count(0) {
+        recv_buffer("") {
     judgeserialstatus();
   }
   ~guiserver() {}
 
-  void convertalldata2string(const controllerRTdata<m, n> &_controllerRTdata,
-                             const estimatorRTdata &_estimatorRTdata,
-                             const plannerRTdata &_plannerRTdata,
-                             const gpsRTdata &_gpsRTdata) {
-    send_buffer.clear();
-    recv_buffer.clear();
-    send_buffer = "$TEST" + std::to_string(++count);
-    convert2string(_controllerRTdata, send_buffer);
-    convert2string(_estimatorRTdata, send_buffer);
-    convert2string(_plannerRTdata, send_buffer);
-    convert2string(_gpsRTdata, send_buffer);
-    send_buffer += "\n";
-
-    size_t bytes_wrote = my_serial.write(send_buffer);
-    my_serial.flush();
-    if (my_serial.waitReadable()) recv_buffer = my_serial.readline(20);
-    my_serial.flush();
-  }
-
-  void convertalldata2string(const controllerRTdata<m, n> &_controllerRTdata,
-                             const estimatorRTdata &_estimatorRTdata,
-                             const plannerRTdata &_plannerRTdata) {
-    send_buffer.clear();
-    recv_buffer.clear();
-    send_buffer = "$TEST" + std::to_string(++count);
-    convert2string(_controllerRTdata, send_buffer);
-    convert2string(_estimatorRTdata, send_buffer);
-    convert2string(_plannerRTdata, send_buffer);
-    send_buffer += "\n";
-
-    size_t bytes_wrote = my_serial.write(send_buffer);
-    if (my_serial.waitReadable()) recv_buffer = my_serial.readline(20);
+  void guicommunication(const controllerRTdata<m, n> &_controllerRTdata,
+                        const estimatorRTdata &_estimatorRTdata,
+                        const plannerRTdata &_plannerRTdata,
+                        const gpsRTdata &_gpsRTdata) {
+    senddata2gui(_controllerRTdata, _estimatorRTdata, _plannerRTdata,
+                 _gpsRTdata);
+    // parsedatafromgui();
   }
 
  private:
   serial::Serial my_serial;
   std::string send_buffer;
   std::string recv_buffer;
-  int count;
   void enumerate_ports() {
     std::vector<serial::PortInfo> devices_found = serial::list_ports();
 
@@ -125,10 +98,6 @@ class guiserver {
     _str += std::to_string(_gpsRTdata.NSV1);
     _str += ", ";
     _str += std::to_string(_gpsRTdata.NSV2);
-    _str += ", '";
-    _str += std::string(1, _gpsRTdata.status);
-    _str += "' , '";
-    _str += std::string(_gpsRTdata.check);
     _str += "' , ";
     _str += std::to_string(_gpsRTdata.UTM_x);
     _str += ", ";
@@ -171,6 +140,40 @@ class guiserver {
       _str += ", ";
       _str += std::to_string(_RTdata.v_setpoint(i));
     }
+  }
+
+  void parsedatafromgui() {
+    if (my_serial.waitReadable()) recv_buffer = my_serial.readline(20);
+
+    double test_A = 0.0;
+    double test_B = 0.0;
+    double test_C = 0.0;
+    std::size_t pos = recv_buffer.find("$IPAC");
+    if (pos != std::string::npos) {
+      recv_buffer = recv_buffer.substr(pos);
+      sscanf(recv_buffer.c_str(), "$IPAC,%lf,%lf,%lf",
+             &test_A,  // date
+             &test_B,  // time
+             &test_C   // heading
+      );
+
+    } else
+      recv_buffer = "error";
+  }
+
+  void senddata2gui(const controllerRTdata<m, n> &_controllerRTdata,
+                    const estimatorRTdata &_estimatorRTdata,
+                    const plannerRTdata &_plannerRTdata,
+                    const gpsRTdata &_gpsRTdata) {
+    send_buffer.clear();
+    send_buffer = "$IPAC";
+    convert2string(_gpsRTdata, send_buffer);
+    convert2string(_controllerRTdata, send_buffer);
+    convert2string(_estimatorRTdata, send_buffer);
+    convert2string(_plannerRTdata, send_buffer);
+    send_buffer += "\n";
+    size_t bytes_wrote = my_serial.write(send_buffer);
+    std::cout << bytes_wrote << std::endl;
   }
 };
 

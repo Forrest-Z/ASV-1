@@ -47,10 +47,31 @@ int main() {
       Eigen::Matrix<double, 6, 1>::Zero()   // motiondata_6dof
   };
 
+  gpsRTdata gps_data{
+      0,                // date
+      0,                // time
+      0,                // heading
+      0,                // pitch
+      0,                // roll
+      0,                // latitude
+      0,                // longitude
+      0,                // altitude
+      0,                // Ve
+      0,                // Vn
+      0,                // Vu
+      0,                // base_line
+      0,                // NSV1
+      0,                // NSV2
+      'a',              // status
+      {'a', 'b', '0'},  // check
+      0,                // UTM_x
+      0                 // UTM_y
+  };
   timecounter _timer;
   while (1) {
-    _guiserver.convertalldata2string(_controllerRTdata, _estimatorRTdata,
-                                     _plannerRTdata);
+    _guiserver.guicommunication(_controllerRTdata, _estimatorRTdata,
+                                _plannerRTdata, gps_data);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     std::cout << _timer.timeelapsed() << std::endl;
     std::cout << _guiserver;
   }

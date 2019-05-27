@@ -44,6 +44,8 @@ class windcompensation {
                                       double v_heading, double v_speed) {
     v_heading = 0;
     v_speed = 0;
+    double test = v_heading * v_speed;
+    std::cout << test << std::endl;
     Eigen::Vector2d wind_global = Eigen::Vector2d::Zero();
     wind_global = _windbody;
     return wind_global;

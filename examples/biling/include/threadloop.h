@@ -19,10 +19,16 @@
 #include "easylogging++.h"
 #include "estimator.h"
 #include "gps.h"
+#include "guiserver.h"
 #include "jsonparse.h"
+#include "planner.h"
 #include "timecounter.h"
-const int num_thruster = 3;
-const int dim_controlspace = 3;
+#include "windcompensation.h"
+
+constexpr int num_thruster = 4;
+constexpr int dim_controlspace = 3;
+constexpr USEKALMAN indicator_kalman = KALMANON;
+constexpr ACTUATION indicator_actuation = UNDERACTUATED;
 
 class threadloop {
  public:
@@ -30,12 +36,14 @@ class threadloop {
       : _jsonparse(
             "/home/scar1et/Coding/ASV/examples/biling/properties/"
             "property.json"),
+        _planner(_jsonparse.getplannerdata()),
         _estimator(_jsonparse.getvessel(), _jsonparse.getestimatordata()),
         _gpsimu(51, true, 115200),
-        _controller(_controllerRTdata, _jsonparse.getcontrollerdata(),
+        _controller(_jsonparse.getcontrollerdata(), _jsonparse.getvessel(),
                     _jsonparse.getpiddata(),
                     _jsonparse.getthrustallocationdata(),
-                    _jsonparse.gettunneldata(), _jsonparse.getazimuthdata()),
+                    _jsonparse.gettunneldata(), _jsonparse.getazimuthdata(),
+                    _jsonparse.getmainrudderdata()),
         _sqlite(_jsonparse.getsqlitedata()) {
     intializethreadloop();
   }
@@ -43,40 +51,41 @@ class threadloop {
 
   void testthread() {
     std::thread gps_thread(&threadloop::gpsimuloop, this);
+    std::thread planner_thread(&threadloop::plannerloop, this);
     std::thread estimator_thread(&threadloop::estimatorloop, this);
     std::thread controller_thread(&threadloop::controllerloop, this);
     std::thread sql_thread(&threadloop::sqlloop, this);
+    std::thread guiserver_thread(&threadloop::guicommunicationloop, this);
 
     gps_thread.detach();
+    planner_thread.detach();
     controller_thread.detach();
     estimator_thread.detach();
     sql_thread.detach();
+    guiserver_thread.detach();
   }
 
  private:
   // json
   jsonparse<num_thruster, dim_controlspace> _jsonparse;
 
+  plannerRTdata _plannerRTdata{
+      Eigen::Vector3d::Zero(),  // setpoint
+      Eigen::Vector3d::Zero(),  // v_setpoint
+      Eigen::Vector2d::Zero(),  // waypoint0
+      Eigen::Vector2d::Zero(),  // waypoint1
+      Eigen::Vector3d::Zero()   // command
+  };
+
   controllerRTdata<num_thruster, dim_controlspace> _controllerRTdata{
-      (Eigen::Matrix<double, dim_controlspace, 1>() << 0, 0, 1)
-          .finished(),                                     // tau
+      Eigen::Matrix<double, dim_controlspace, 1>::Zero(),  // tau
       Eigen::Matrix<double, dim_controlspace, 1>::Zero(),  // BalphaU
-      (Eigen::Matrix<double, num_thruster, 1>() << 0.01, 0.2, 0.2)
-          .finished(),  // u
-      (Eigen::Matrix<int, num_thruster, 1>() << 0, 0, 0)
-          .finished(),  // rotation
-      (Eigen::Matrix<double, num_thruster, 1>() << M_PI / 2, M_PI / 10,
-       -M_PI / 4)
-          .finished(),                             // alpha
-      Eigen::Matrix<int, num_thruster, 1>::Zero()  // alpha_deg
-
+      Eigen::Matrix<double, num_thruster, 1>::Zero(),      // u
+      Eigen::Matrix<int, num_thruster, 1>::Zero(),         // rotation
+      Eigen::Matrix<double, num_thruster, 1>::Zero(),      // alpha
+      Eigen::Matrix<int, num_thruster, 1>::Zero()          // alpha_deg
   };
 
-  windestimation<dim_controlspace> _windestimation{
-      Eigen::Matrix<double, dim_controlspace, 1>::Zero(),  // load
-      Eigen::Matrix<double, 2, 1>::Zero(),                 // wind_body
-      Eigen::Matrix<double, 2, 1>::Zero(),                 // wind_global
-  };
   // realtime parameters of the estimators
   estimatorRTdata _estimatorRTdata{
       Eigen::Matrix3d::Identity(),          // CTB2G
@@ -111,26 +120,66 @@ class threadloop {
       0                 // UTM_y
   };
 
-  estimator _estimator;
+  planner _planner;
+  guiserver<num_thruster, dim_controlspace> _guiserver;
+  estimator<indicator_kalman> _estimator;
   gpsimu _gpsimu;
-  controller<10, num_thruster, dim_controlspace> _controller;
-
+  controller<10, num_thruster, indicator_actuation, dim_controlspace>
+      _controller;
+  windcompensation _windcompensation;
   database<num_thruster, dim_controlspace> _sqlite;
 
-  void intializethreadloop() { _sqlite.initializetables(); }
+  void intializethreadloop() {
+    _controller.initializecontroller(_controllerRTdata);
+    _sqlite.initializetables();
+  }
+
+  void plannerloop() {
+    timecounter timer_planner;
+    long int elapsed_time = 0;
+    long int sample_time =
+        static_cast<long int>(1000 * _planner.getsampletime());
+
+    double radius = 2;
+    Eigen::Vector2d startposition = (Eigen::Vector2d() << 2, 0.1).finished();
+    Eigen::Vector2d endposition = (Eigen::Vector2d() << 5, 2).finished();
+    _planner.setconstantspeed(_plannerRTdata, 0.1, 0.06);
+
+    auto waypoints = _planner.followcircle(startposition, endposition, radius,
+                                           _estimatorRTdata.State(2),
+                                           _plannerRTdata.v_setpoint(0));
+    _planner.initializewaypoint(_plannerRTdata, waypoints);
+
+    int index_wpt = 2;
+    while (1) {
+      if (_planner.switchwaypoint(_plannerRTdata,
+                                  _estimatorRTdata.State.head(2),
+                                  waypoints.col(index_wpt))) {
+        std::cout << index_wpt << std::endl;
+        ++index_wpt;
+      }
+      if (index_wpt == waypoints.cols()) {
+        CLOG(INFO, "waypoints") << "reach the last waypoint!";
+        break;
+      }
+      _planner.pathfollowLOS(_plannerRTdata, _estimatorRTdata.State.head(2));
+
+      elapsed_time = timer_planner.timeelapsed();
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(sample_time - elapsed_time));
+    }
+  }  // plannerloop
 
   // GPS/IMU
   void gpsimuloop() {
     std::string buffer;
     timecounter gpstimer;
-    long int mt_elapsed = 0;
 
     try {
       while (1) {
         gps_data = _gpsimu.gpsonestep().getgpsRTdata();
         // std::cout << _gpsimu;
 
-        mt_elapsed = gpstimer.timeelapsed();
         // std::this_thread::sleep_for(
         //     std::chrono::milliseconds(100));  //串口不能sleep?
       }
@@ -141,46 +190,58 @@ class threadloop {
   }  // gpsimuloop()
 
   void controllerloop() {
-    Eigen::Matrix<double, dim_controlspace, 1> command =
-        Eigen::Matrix<double, dim_controlspace,
-                      1>::Zero();  // TODO: command from planner
+    _controller.setcontrolmode(AUTOMATIC);
+    timecounter timer_controler;
+    long int elapsed_time = 0;
+    long int sample_time =
+        static_cast<long int>(1000 * _controller.getsampletime());
     while (1) {
-      _controller.controlleronestep(_controllerRTdata, _windestimation,
-                                    _estimatorRTdata.p_error,
-                                    _estimatorRTdata.v_error, command);
+      _controller.controlleronestep(
+          _controllerRTdata, _windcompensation.getwindload(),
+          _estimatorRTdata.p_error, _estimatorRTdata.v_error,
+          _plannerRTdata.command, _plannerRTdata.v_setpoint);
+
+      elapsed_time = timer_controler.timeelapsed();
+      // std::cout << elapsed_time << std::endl;
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(sample_time - elapsed_time));
     }
   }  // controllerloop
 
   // loop to give real time state estimation
   void estimatorloop() {
+    timecounter timer_estimator;
+    long int elapsed_time = 0;
+    long int sample_time =
+        static_cast<long int>(1000 * _estimator.getsampletime());
+
     while (1) {
       if (gps_data.status == 'B') {
         _estimator.setvalue(_estimatorRTdata, gps_data.UTM_x, gps_data.UTM_y,
                             gps_data.altitude, gps_data.roll, gps_data.pitch,
                             gps_data.heading, gps_data.Ve, gps_data.Vn);
-        std::cout << "initialation successful!" << std::endl;
+        CLOG(INFO, "GPS") << "initialation successful!";
         break;
       }
-      std::cout << "initialation....." << std::endl;
 
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
-    double desiredheading = 0;                             // TODO: planner
-    Eigen::Vector3d setpoints = Eigen::Vector3d::Zero();   // TODO: planner
-    Eigen::Vector3d vsetpoints = Eigen::Vector3d::Zero();  // TODO: planner
     while (1) {
       _estimator.updateestimatedforce(
-          _estimatorRTdata, _controllerRTdata.BalphaU, _windestimation.load);
+          _estimatorRTdata, _controllerRTdata.BalphaU,
+          _windcompensation.computewindload(0, 0).getwindload());
       _estimator.estimatestate(_estimatorRTdata, gps_data.UTM_x, gps_data.UTM_y,
                                gps_data.altitude, gps_data.roll, gps_data.pitch,
                                gps_data.heading, gps_data.Ve, gps_data.Vn,
-                               desiredheading);
-      _estimator.estimateerror(_estimatorRTdata, setpoints, vsetpoints);
-      // std::cout << _estimatorRTdata.Measurement << std::endl;
-      // std::cout << _estimatorRTdata.CTB2G << std::endl;
-      // std::cout << _estimatorRTdata.Measurement << std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                               _plannerRTdata.setpoint(2));
+      _estimator.estimateerror(_estimatorRTdata, _plannerRTdata.setpoint,
+                               _plannerRTdata.v_setpoint);
+
+      elapsed_time = timer_estimator.timeelapsed();
+      // std::cout << elapsed_time << std::endl;
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(sample_time - elapsed_time));
     }
   }  // estimatorloop()
 
@@ -188,10 +249,22 @@ class threadloop {
   void sqlloop() {
     while (1) {
       _sqlite.update_gps_table(gps_data);
+      _sqlite.update_planner_table(_plannerRTdata);
       _sqlite.update_estimator_table(_estimatorRTdata);
       _sqlite.update_controller_table(_controllerRTdata);
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   }  // sqlloop()
+
+  void guicommunicationloop() {
+    timecounter timer_gui;
+    while (1) {
+      _guiserver.guicommunication(_controllerRTdata, _estimatorRTdata,
+                                  _plannerRTdata, gps_data);
+      std::cout << timer_gui.timeelapsed() << std::endl;
+      std::cout << _guiserver;
+    }
+  }  // guicommunicationloop()
 };
 
 #endif /* _THREADLOOP_H_ */

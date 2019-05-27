@@ -58,11 +58,6 @@ class controller {
     _thrustallocation.initializapropeller(_RTdata);
   }
 
-  void setcontrolmode(CONTROLMODE _controlmode) {
-    controlmode = _controlmode;
-    _thrustallocation.setQ(_controlmode);
-  }
-
   // automatic control using pid controller and QP-based thrust allocation
   void controlleronestep(controllerRTdata<m, n> &_controllerdata,
                          const vectornd &_windload, const vectornd &_error,
@@ -100,6 +95,10 @@ class controller {
     }
   }
 
+  void setcontrolmode(CONTROLMODE _controlmode) {
+    controlmode = _controlmode;
+    _thrustallocation.setQ(_controlmode);
+  }
   WINDCOMPENSATION getwindstatus() const { return windstatus; }
   void setwindstatus(WINDCOMPENSATION _windstatus) { windstatus = _windstatus; }
   double getsampletime() const noexcept { return sample_time; }
