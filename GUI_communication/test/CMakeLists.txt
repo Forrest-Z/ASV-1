@@ -11,17 +11,26 @@ set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
 
 
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
+	"${PROJECT_DIRECTORY}/sensors/gpsimu/include"
+	"${PROJECT_DIRECTORY}/controller/include"
+	"${PROJECT_DIRECTORY}/estimator/include"
+	"${PROJECT_DIRECTORY}/planner/include"
 	"${PROJECT_DIRECTORY}/third_party/eigen"
 	"${PROJECT_DIRECTORY}/third_party/serial/include"
 	"${PROJECT_DIRECTORY}/timer/include"
+	"${PROJECT_DIRECTORY}/fileIO/include"
+	"${PROJECT_DIRECTORY}/logging/include"
     "../include/")
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} 
     "/usr/lib"
    )
-    
+ 
+set(SOURCE_FILES ${SOURCE_FILES} 
+	"${PROJECT_DIRECTORY}/logging/src/easylogging++.cc"                            
+	"${CMAKE_CURRENT_SOURCE_DIR}/testguicommunication.cc")  
 # 指定生成目标
-add_executable (testgui testguicommunication.cc)
+add_executable (testgui ${SOURCE_FILES})
 target_include_directories(testgui PRIVATE ${HEADER_DIRECTORY})
 find_library(SERIAL_LIBRARY serial ${LIBRARY_DIRECTORY})
 target_link_libraries(testgui ${SERIAL_LIBRARY})
