@@ -37,13 +37,14 @@ class guiserver {
   }
   ~guiserver() {}
 
-  void guicommunication(const controllerRTdata<m, n> &_controllerRTdata,
+  void guicommunication(const controllerdata &_controllerdata,
+                        const controllerRTdata<m, n> &_controllerRTdata,
                         const estimatorRTdata &_estimatorRTdata,
                         const plannerRTdata &_plannerRTdata,
                         const gpsRTdata &_gpsRTdata) {
     timecounter _timer;
-    senddata2gui(_controllerRTdata, _estimatorRTdata, _plannerRTdata,
-                 _gpsRTdata);
+    senddata2gui(_controllerdata, _controllerRTdata, _estimatorRTdata,
+                 _plannerRTdata, _gpsRTdata);
     std::this_thread::sleep_for(
         std::chrono::milliseconds(500 - _timer.timeelapsed()));
     parsedatafromgui();
@@ -70,6 +71,15 @@ class guiserver {
       CLOG(INFO, "gui-serial") << " serial port open successful!";
     else
       CLOG(INFO, "gui-serial") << " serial port open failure!";
+  }
+
+  // convert real time GPS data to sql string
+  void convert2string(const controllerdata &_controllerdata,
+                      std::string &_str) {
+    _str += ",";
+    _str += std::to_string(_controllerdata.controlmode);
+    _str += ",";
+    _str += std::to_string(_controllerdata.windstatus);
   }
 
   // convert real time GPS data to sql string
@@ -155,7 +165,7 @@ class guiserver {
     std::size_t pos = recv_buffer.find("$IPAC");
     if (pos != std::string::npos) {
       recv_buffer = recv_buffer.substr(pos);
-      sscanf(recv_buffer.c_str(), "$IPAC,%d,%d,%lf",
+      sscanf(recv_buffer.c_str(), "$IPAC,%d,%d,%lf,%d",
              &_controlmode,    // date
              &_windindicator,  // time
              &test_C           // heading
@@ -165,13 +175,15 @@ class guiserver {
       recv_buffer = "error";
   }
 
-  void senddata2gui(const controllerRTdata<m, n> &_controllerRTdata,
+  void senddata2gui(const controllerdata &_controllerdata,
+                    const controllerRTdata<m, n> &_controllerRTdata,
                     const estimatorRTdata &_estimatorRTdata,
                     const plannerRTdata &_plannerRTdata,
                     const gpsRTdata &_gpsRTdata) {
     send_buffer.clear();
     static int i = 0;
     send_buffer = "$IPAC" + std::to_string(++i);
+    convert2string(_controllerdata, send_buffer);
     convert2string(_gpsRTdata, send_buffer);
     convert2string(_controllerRTdata, send_buffer);
     convert2string(_estimatorRTdata, send_buffer);
