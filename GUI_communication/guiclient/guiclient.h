@@ -15,6 +15,7 @@
 #include <thread>
 #include <vector>
 #include "serial/serial.h"
+#include "timecounter.h"
 
 class guiclient {
  public:
@@ -28,7 +29,10 @@ class guiclient {
   ~guiclient() {}
 
   void guicommunication() {
+    timecounter _timer;
     senddata2gui();
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(500 - _timer.timeelapsed()));
     parsedatafromgui();
     std::cout << "send message:" << send_buffer << std::endl;
     std::cout << "recv message:" << recv_buffer << std::endl;
@@ -38,6 +42,7 @@ class guiclient {
   serial::Serial my_serial;
   std::string send_buffer;
   std::string recv_buffer;
+
   void enumerate_ports() {
     std::vector<serial::PortInfo> devices_found = serial::list_ports();
 
@@ -58,8 +63,7 @@ class guiclient {
   }
 
   void parsedatafromgui() {
-    if (my_serial.waitReadable()) recv_buffer = my_serial.readline(500);
-
+    recv_buffer = my_serial.readline(400, "\n");
     double test_A = 0.0;
     double test_B = 0.0;
     double test_C = 0.0;
@@ -77,8 +81,10 @@ class guiclient {
   }
 
   void senddata2gui() {
+    static int i = 0;
+    ++i;
     send_buffer.clear();
-    send_buffer = "$IPAC, 0.1, 0.2, 0.3";
+    send_buffer = "$IPAC, 0.1, 0.2, 0.3,1111111" + std::to_string(i);
 
     send_buffer += "\n";
 

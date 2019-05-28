@@ -111,9 +111,11 @@ class threadloop {
         static_cast<long int>(1000 * _planner.getsampletime());
 
     double radius = 2;
+    double _desired_speed = 0.1;
     Eigen::Vector2d startposition = (Eigen::Vector2d() << 2, 0.1).finished();
     Eigen::Vector2d endposition = (Eigen::Vector2d() << 5, 2).finished();
-    _planner.setconstantspeed(_plannerRTdata, 0.1, 0.06);
+    _planner.setconstantspeed(_plannerRTdata, _desired_speed,
+                              _desired_speed / radius);
 
     auto waypoints = _planner.followcircle(startposition, endposition, radius,
                                            _estimatorRTdata.State(2),
@@ -142,7 +144,7 @@ class threadloop {
   // plannerloop
 
   void controllerloop() {
-    _controller.setcontrolmode(AUTOMATIC);
+    _controller.setcontrolmode(MANEUVERING);
     timecounter timer_controler;
     long int elapsed_time = 0;
     long int sample_time =

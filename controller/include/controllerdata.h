@@ -16,9 +16,11 @@
 #include <vector>
 
 enum CONTROLMODE {
-  MANUAL = 0,   // manual controller
-  HEADINGONLY,  // heading only controller
-  AUTOMATIC     // automatic control
+  MANUAL = 0,      // manual controller
+  HEADINGONLY,     // heading only controller (autopilot)
+  MANEUVERING,     // maneuvering model
+  DYNAMICPOSITION  // DP (3 DOF, position control: only for fully-actuated
+                   // vessel)
 };
 
 enum WINDCOMPENSATION {
@@ -111,10 +113,12 @@ struct ruddermaindata {
 
 // quasi-static data of pid controller
 struct pidcontrollerdata {
-  double P;
-  double I;
-  double D;
-  double allowed_error;
+  double position_P;
+  double position_I;
+  double velocity_P;
+  double velocity_I;
+  double position_allowed_error;
+  double velocity_allowed_error;
   double min_output;
   double max_output;
 };

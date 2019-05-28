@@ -19,26 +19,32 @@
   "controller": {
     "sample_time": 0.1,
     "surge": {
-      "P": 10,
-      "I": 2,
-      "D": 1,
-      "allowed_error": 1,
+      "position_P": 10,
+      "position_I": 2,
+      "velocity_P": 1,
+      "velocity_I": 1,
+      "position_allowed_error": 1,
+      "velocity_allowed_error": 1,
       "min_output": -5,
       "max_output": 6
     },
     "sway": {
-      "P": 13,
-      "I": 2.1,
-      "D": 0.1,
-      "allowed_error": 0.1,
+      "position_P": 10,
+      "position_I": 2,
+      "velocity_P": 1,
+      "velocity_I": 1,
+      "position_allowed_error": 0.1,
+      "velocity_allowed_error": 1,
       "min_output": -1,
       "max_output": 1
     },
     "yaw": {
-      "P": 10,
-      "I": 20,
-      "D": 1,
-      "allowed_error": 11,
+      "position_P": 10,
+      "position_I": 2,
+      "velocity_P": 1,
+      "velocity_I": 1,
+      "position_allowed_error": 0.1,
+      "velocity_allowed_error": 1,
       "min_output": -4,
       "max_output": 5
     }

@@ -10,6 +10,7 @@
 #ifndef _GUISERVER_H_
 #define _GUISERVER_H_
 
+#include <boost/lexical_cast.hpp>
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -40,9 +41,12 @@ class guiserver {
                         const estimatorRTdata &_estimatorRTdata,
                         const plannerRTdata &_plannerRTdata,
                         const gpsRTdata &_gpsRTdata) {
+    timecounter _timer;
     senddata2gui(_controllerRTdata, _estimatorRTdata, _plannerRTdata,
                  _gpsRTdata);
-    // parsedatafromgui();
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(500 - _timer.timeelapsed()));
+    parsedatafromgui();
   }
 
  private:
@@ -70,61 +74,61 @@ class guiserver {
 
   // convert real time GPS data to sql string
   void convert2string(const gpsRTdata &_gpsRTdata, std::string &_str) {
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.date);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.time);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.heading);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.pitch);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.roll);
-    _str += ", ";
-    _str += std::to_string(_gpsRTdata.latitude);
-    _str += ", ";
-    _str += std::to_string(_gpsRTdata.longitude);
-    _str += ", ";
+    _str += ",";
+    _str += boost::lexical_cast<std::string>(_gpsRTdata.latitude);
+    _str += ",";
+    _str += boost::lexical_cast<std::string>(_gpsRTdata.longitude);
+    _str += ",";
     _str += std::to_string(_gpsRTdata.altitude);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.Ve);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.Vn);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.Vu);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.base_line);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.NSV1);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.NSV2);
-    _str += "' , ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.UTM_x);
-    _str += ", ";
+    _str += ",";
     _str += std::to_string(_gpsRTdata.UTM_y);
   }
   void convert2string(const controllerRTdata<m, n> &_RTdata,
                       std::string &_str) {
     // the angle of each propeller
     for (int i = 0; i != m; ++i) {
-      _str += ", ";
+      _str += ",";
       _str += std::to_string(_RTdata.alpha_deg(i));
     }
     // the speed of each propeller
     for (int i = 0; i != m; ++i) {
-      _str += ", ";
+      _str += ",";
       _str += std::to_string(_RTdata.rotation(i));
     }
   }
   void convert2string(const estimatorRTdata &_RTdata, std::string &_str) {
     // Measurement
     for (int i = 0; i != 6; ++i) {
-      _str += ", ";
+      _str += ",";
       _str += std::to_string(_RTdata.Measurement(i));
     }
     // State
     for (int i = 0; i != 6; ++i) {
-      _str += ", ";
+      _str += ",";
       _str += std::to_string(_RTdata.State(i));
     }
   }
@@ -132,29 +136,29 @@ class guiserver {
   void convert2string(const plannerRTdata &_RTdata, std::string &_str) {
     // setpoint
     for (int i = 0; i != 3; ++i) {
-      _str += ", ";
+      _str += ",";
       _str += std::to_string(_RTdata.setpoint(i));
     }
     // v_setpoint
     for (int i = 0; i != 3; ++i) {
-      _str += ", ";
+      _str += ",";
       _str += std::to_string(_RTdata.v_setpoint(i));
     }
   }
 
   void parsedatafromgui() {
-    if (my_serial.waitReadable()) recv_buffer = my_serial.readline(20);
+    recv_buffer = my_serial.readline(40, "\n");
 
-    double test_A = 0.0;
-    double test_B = 0.0;
+    int _controlmode = 0;
+    int _windindicator = 0;
     double test_C = 0.0;
     std::size_t pos = recv_buffer.find("$IPAC");
     if (pos != std::string::npos) {
       recv_buffer = recv_buffer.substr(pos);
-      sscanf(recv_buffer.c_str(), "$IPAC,%lf,%lf,%lf",
-             &test_A,  // date
-             &test_B,  // time
-             &test_C   // heading
+      sscanf(recv_buffer.c_str(), "$IPAC,%d,%d,%lf",
+             &_controlmode,    // date
+             &_windindicator,  // time
+             &test_C           // heading
       );
 
     } else
@@ -166,14 +170,14 @@ class guiserver {
                     const plannerRTdata &_plannerRTdata,
                     const gpsRTdata &_gpsRTdata) {
     send_buffer.clear();
-    send_buffer = "$IPAC";
+    static int i = 0;
+    send_buffer = "$IPAC" + std::to_string(++i);
     convert2string(_gpsRTdata, send_buffer);
     convert2string(_controllerRTdata, send_buffer);
     convert2string(_estimatorRTdata, send_buffer);
     convert2string(_plannerRTdata, send_buffer);
     send_buffer += "\n";
     size_t bytes_wrote = my_serial.write(send_buffer);
-    std::cout << bytes_wrote << std::endl;
   }
 };
 

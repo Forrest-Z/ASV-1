@@ -26,7 +26,7 @@ template <int L, int m, ACTUATION index_actuation, int n = 3>
 class controller {
   using vectornd = Eigen::Matrix<double, n, 1>;
   using matrixnld = Eigen::Matrix<double, n, L>;
-  using matrixpid = Eigen::Matrix<double, 3, n>;
+  using matrixpid = Eigen::Matrix<double, 2, n>;
 
  public:
   // fully actuated
@@ -37,19 +37,21 @@ class controller {
       const std::vector<tunnelthrusterdata> &_v_tunnelthrusterdata,
       const std::vector<azimuththrusterdata> &_v_azimuththrusterdata,
       const std::vector<ruddermaindata> &_v_ruddermaindata)
-      : pids(matrixpid::Zero()),
-        v_allowed_error(vectornd::Zero()),
+      : position_pids(matrixpid::Zero()),
+        velocity_pids(matrixpid::Zero()),
+        position_allowed_error(vectornd::Zero()),
+        velocity_allowed_error(vectornd::Zero()),
         v_max_output(vectornd::Zero()),
         v_min_output(vectornd::Zero()),
-        error_integralmatrix(matrixnld::Zero()),
+        positionerror_integralmatrix(matrixnld::Zero()),
+        velocityerror_integralmatrix(matrixnld::Zero()),
         damping(_vessel.Damping),
         sample_time(_controllerdata.sample_time),
         controlmode(_controllerdata.controlmode),
         windstatus(_controllerdata.windstatus),
         _thrustallocation(_thrustallocationdata, _v_tunnelthrusterdata,
                           _v_azimuththrusterdata, _v_ruddermaindata) {
-    setPIDmatrix(_piddata);
-    initializepidcontroller(_piddata);
+    setuppidcontroller(_piddata);
   }
   controller() = delete;
   ~controller() {}
@@ -63,35 +65,38 @@ class controller {
                          const vectornd &_windload, const vectornd &_error,
                          const vectornd &_derror, const vectornd &_command,
                          const vectornd &_desired_speed) {
-    // PID controller
     vectornd d_tau = vectornd::Zero();
-    vectornd position_error_integral = updateIntegralMatrix(_error);
-    if (!compareerror(_error)) {
-      for (int i = 0; i != n; ++i)
-        d_tau(i) = pids(0, i) * _error(i)  // proportional term
-                   + pids(1, i) * position_error_integral(i)  // integral term
-                   + pids(2, i) * _derror(i);                 // derivative term
-    }
 
+    // position control
+    positionloop(d_tau, _error);
+
+    // velocity control
+    velocityloop(d_tau, _derror);
+
+    // linear damping compensation
     compensatelineardamping(d_tau, _desired_speed);
+
+    // wind compensation (TODO)
     windcompensation(d_tau, _windload);
+
     commandfromjoystick(d_tau, _command);
 
     // restrict desired force
     restrictdesiredforce(d_tau);
-    _controllerdata.tau = d_tau;
 
     // thrust allocation
+    _controllerdata.tau = d_tau;
     _thrustallocation.onestepthrustallocation(_controllerdata);
   }
 
-  // assign value to pid controller
+  // assign value to pid controller (from GUI)
   void setPIDmatrix(
       const std::vector<pidcontrollerdata> &_v_pidcontrollerdata) {
     for (int i = 0; i != n; ++i) {
-      pids(0, i) = _v_pidcontrollerdata[i].P;
-      pids(1, i) = _v_pidcontrollerdata[i].I;
-      pids(2, i) = _v_pidcontrollerdata[i].D;
+      position_pids(0, i) = _v_pidcontrollerdata[i].position_P;
+      position_pids(1, i) = _v_pidcontrollerdata[i].position_I;
+      velocity_pids(0, i) = _v_pidcontrollerdata[i].velocity_P;
+      velocity_pids(1, i) = _v_pidcontrollerdata[i].velocity_I;
     }
   }
 
@@ -104,24 +109,56 @@ class controller {
   double getsampletime() const noexcept { return sample_time; }
 
  private:
-  matrixpid pids;                  // pid matrix
-  vectornd v_allowed_error;        // allowed_error
-  vectornd v_max_output;           // max_output
-  vectornd v_min_output;           // min_output
-  matrixnld error_integralmatrix;  // I
-  Eigen::Matrix3d damping;         //
+  matrixpid position_pids;  // pid matrix for position control
+  matrixpid velocity_pids;  // pid matrix for velocity control
+
+  vectornd position_allowed_error;  // allowed_error for position control
+  vectornd velocity_allowed_error;  // allowed_error for position control
+
+  vectornd v_max_output;  // max_output of thruster
+  vectornd v_min_output;  // min_output of thruster
+
+  matrixnld positionerror_integralmatrix;  // I for position control
+  matrixnld velocityerror_integralmatrix;  // I for velocity control
+
+  Eigen::Matrix3d damping;  //
   double sample_time;
   CONTROLMODE controlmode;
   WINDCOMPENSATION windstatus;
 
   thrustallocation<m, index_actuation, n> _thrustallocation;
 
-  void initializepidcontroller(
+  void setuppidcontroller(
       const std::vector<pidcontrollerdata> &_vcontrollerdata) {
     for (int i = 0; i != n; ++i) {
-      v_allowed_error(i) = _vcontrollerdata[i].allowed_error;
+      position_allowed_error(i) = _vcontrollerdata[i].position_allowed_error;
+      velocity_allowed_error(i) = _vcontrollerdata[i].velocity_allowed_error;
       v_max_output(i) = _vcontrollerdata[i].max_output;
       v_min_output(i) = _vcontrollerdata[i].min_output;
+    }
+    setPIDmatrix(_vcontrollerdata);
+  }
+
+  void positionloop(vectornd &_tau, const vectornd &_error) {
+    // position control
+    vectornd position_error_integral = updatepositionIntegralMatrix(_error);
+
+    if (!comparepositionerror(_error)) {
+      for (int i = 0; i != n; ++i)
+        _tau(i) += position_pids(0, i) * _error(i)  // proportional term
+                   + position_pids(1, i) *
+                         position_error_integral(i);  // integral term
+    }
+  }  // positionloop()
+
+  void velocityloop(vectornd &_tau, const vectornd &_derror) {
+    // velocity control
+    vectornd velocity_error_integral = updatevelocityIntegralMatrix(_derror);
+    if (!comparevelocityerror(_derror)) {
+      for (int i = 0; i != n; ++i)
+        _tau(i) += velocity_pids(0, i) * _derror(i)  // proportional term
+                   + velocity_pids(1, i) *
+                         velocity_error_integral(i);  // integral term
     }
   }
   // restrict the desired force to some value
@@ -138,22 +175,40 @@ class controller {
                                               v_max_output(i));
   }
   // calculate the Integral error with moving window
-  vectornd updateIntegralMatrix(const vectornd &_error) {
+  vectornd updatepositionIntegralMatrix(const vectornd &_error) {
     matrixnld t_integralmatrix = matrixnld::Zero();
     int index = L - 1;
-    t_integralmatrix.leftCols(index) = error_integralmatrix.rightCols(index);
+    t_integralmatrix.leftCols(index) =
+        positionerror_integralmatrix.rightCols(index);
     // t_integralmatrix.col(index) = sample_time * _error;
     t_integralmatrix.col(index) = _error;
-    error_integralmatrix = t_integralmatrix;
-    return error_integralmatrix.rowwise().mean();
-  }
-  // compare the real time error with the allowed error
-  bool compareerror(const vectornd &_error) {
-    for (int i = 0; i != n; ++i)
-      if (std::abs(_error(i)) > v_allowed_error(i)) return false;
-    return true;
+    positionerror_integralmatrix = t_integralmatrix;
+    return positionerror_integralmatrix.rowwise().mean();
   }
 
+  // calculate the Integral error with moving window
+  vectornd updatevelocityIntegralMatrix(const vectornd &_derror) {
+    matrixnld t_integralmatrix = matrixnld::Zero();
+    int index = L - 1;
+    t_integralmatrix.leftCols(index) =
+        velocityerror_integralmatrix.rightCols(index);
+    t_integralmatrix.col(index) = _derror;
+    velocityerror_integralmatrix = t_integralmatrix;
+    return velocityerror_integralmatrix.rowwise().mean();
+  }
+
+  // compare the real time position error with the allowed error
+  bool comparepositionerror(const vectornd &_error) {
+    for (int i = 0; i != n; ++i)
+      if (std::abs(_error(i)) > position_allowed_error(i)) return false;
+    return true;
+  }
+  // compare the real time velocity error with the allowed error
+  bool comparevelocityerror(const vectornd &_derror) {
+    for (int i = 0; i != n; ++i)
+      if (std::abs(_derror(i)) > velocity_allowed_error(i)) return false;
+    return true;
+  }
   // command from joystick
   void commandfromjoystick(vectornd &_tau, const vectornd &_command) {
     switch (controlmode) {  // controller mode
@@ -163,7 +218,9 @@ class controller {
       case HEADINGONLY:
         _tau.head(n - 1) = _command.head(n - 1);
         break;
-      case AUTOMATIC:
+      case MANEUVERING:
+        break;
+      case DYNAMICPOSITION:
         break;
       default:
         break;

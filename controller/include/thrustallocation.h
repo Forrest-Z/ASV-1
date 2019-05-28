@@ -129,7 +129,12 @@ class thrustallocation {
           Q(1, 1) = 100;
           Q(2, 2) = 2000;
           break;
-        case AUTOMATIC:
+        case MANEUVERING:
+          Q(0, 0) = 1000;
+          // Q(1, 1) = 0;  The penalty for sway error is zero
+          Q(2, 2) = 100;
+          break;
+        case DYNAMICPOSITION:
           for (int i = 0; i != n; ++i) Q(i, i) = 1000;
           break;
         default:
@@ -147,7 +152,7 @@ class thrustallocation {
           // Q(1, 1) = 0;  The penalty for sway error is zero
           Q(2, 2) = 2000;
           break;
-        case AUTOMATIC:
+        case MANEUVERING:
           Q(0, 0) = 1000;
           // Q(1, 1) = 0;  The penalty for sway error is zero
           Q(2, 2) = 100;

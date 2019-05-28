@@ -97,17 +97,17 @@ void test_multiplecontroller() {
   };
 
   controllerdata _controllerdata{
-      0.1,             // sample_time
-      AUTOMATIC,       // controlmode
-      WINDON,          // windstatus
-      index_actuation  // index_actuation
+      0.1,              // sample_time
+      DYNAMICPOSITION,  // controlmode
+      WINDON,           // windstatus
+      index_actuation   // index_actuation
   };
 
   std::vector<pidcontrollerdata> v_pidcontrollerdata;
   v_pidcontrollerdata.reserve(n);
-  v_pidcontrollerdata.push_back({1, 1, 1, 0.1, -1, 3});
-  v_pidcontrollerdata.push_back({1, 2, 3, 0.1, -1, 3});
-  v_pidcontrollerdata.push_back({1, 2, 10, 0.1, -2, 4});
+  v_pidcontrollerdata.push_back({1, 1, 1, 1, 0.1, 0.1, -1, 3});
+  v_pidcontrollerdata.push_back({1, 2, 3, 1, 0.1, 0.1, -1, 3});
+  v_pidcontrollerdata.push_back({1, 2, 10, 1, 0.1, 0.1, -2, 4});
 
   controller<L, m, index_actuation, n> _controller(
       _controllerdata, _vessel, v_pidcontrollerdata, _thrustallocationdata,

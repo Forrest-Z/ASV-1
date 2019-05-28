@@ -105,7 +105,7 @@ class jsonparse {
   // controllerdata
   controllerdata controllerdata_input{
       0.1,           // sample_time
-      AUTOMATIC,     // controlmode
+      MANUAL,        // controlmode
       WINDON,        // windstatus
       FULLYACTUATED  // index_actuation
   };
@@ -145,33 +145,61 @@ class jsonparse {
         file["controller"]["sample_time"].get<double>();
     pidcontrollerdata _pidcontrollerdata_input;
     // surge-- controller
-    _pidcontrollerdata_input.P = file["controller"]["surge"]["P"].get<double>();
-    _pidcontrollerdata_input.I = file["controller"]["surge"]["I"].get<double>();
-    _pidcontrollerdata_input.D = file["controller"]["surge"]["D"].get<double>();
-    _pidcontrollerdata_input.allowed_error =
-        file["controller"]["surge"]["allowed_error"].get<double>();
+    _pidcontrollerdata_input.position_P =
+        file["controller"]["surge"]["position_P"].get<double>();
+    _pidcontrollerdata_input.position_I =
+        file["controller"]["surge"]["position_I"].get<double>();
+    _pidcontrollerdata_input.velocity_P =
+        file["controller"]["surge"]["velocity_P"].get<double>();
+    _pidcontrollerdata_input.velocity_I =
+        file["controller"]["surge"]["velocity_I"].get<double>();
+
+    _pidcontrollerdata_input.position_allowed_error =
+        file["controller"]["surge"]["position_allowed_error"].get<double>();
+    _pidcontrollerdata_input.velocity_allowed_error =
+        file["controller"]["surge"]["velocity_allowed_error"].get<double>();
     _pidcontrollerdata_input.min_output =
         file["controller"]["surge"]["min_output"].get<double>();
     _pidcontrollerdata_input.max_output =
         file["controller"]["surge"]["max_output"].get<double>();
     pidcontrollerdata_input.push_back(_pidcontrollerdata_input);
+
     // sway-- controller
-    _pidcontrollerdata_input.P = file["controller"]["sway"]["P"].get<double>();
-    _pidcontrollerdata_input.I = file["controller"]["sway"]["I"].get<double>();
-    _pidcontrollerdata_input.D = file["controller"]["sway"]["D"].get<double>();
-    _pidcontrollerdata_input.allowed_error =
-        file["controller"]["sway"]["allowed_error"].get<double>();
+    _pidcontrollerdata_input.position_P =
+        file["controller"]["sway"]["position_P"].get<double>();
+    _pidcontrollerdata_input.position_I =
+        file["controller"]["sway"]["position_I"].get<double>();
+    _pidcontrollerdata_input.velocity_P =
+        file["controller"]["sway"]["velocity_P"].get<double>();
+    _pidcontrollerdata_input.velocity_I =
+        file["controller"]["sway"]["velocity_I"].get<double>();
+
+    _pidcontrollerdata_input.position_allowed_error =
+        file["controller"]["sway"]["position_allowed_error"].get<double>();
+    _pidcontrollerdata_input.velocity_allowed_error =
+        file["controller"]["sway"]["velocity_allowed_error"].get<double>();
+
     _pidcontrollerdata_input.min_output =
         file["controller"]["sway"]["min_output"].get<double>();
     _pidcontrollerdata_input.max_output =
         file["controller"]["sway"]["max_output"].get<double>();
     pidcontrollerdata_input.push_back(_pidcontrollerdata_input);
+
     // yaw-- controller
-    _pidcontrollerdata_input.P = file["controller"]["yaw"]["P"].get<double>();
-    _pidcontrollerdata_input.I = file["controller"]["yaw"]["I"].get<double>();
-    _pidcontrollerdata_input.D = file["controller"]["yaw"]["D"].get<double>();
-    _pidcontrollerdata_input.allowed_error =
-        file["controller"]["yaw"]["allowed_error"].get<double>();
+    _pidcontrollerdata_input.position_P =
+        file["controller"]["yaw"]["position_P"].get<double>();
+    _pidcontrollerdata_input.position_I =
+        file["controller"]["yaw"]["position_I"].get<double>();
+    _pidcontrollerdata_input.velocity_P =
+        file["controller"]["yaw"]["velocity_P"].get<double>();
+    _pidcontrollerdata_input.velocity_I =
+        file["controller"]["yaw"]["velocity_I"].get<double>();
+
+    _pidcontrollerdata_input.position_allowed_error =
+        file["controller"]["yaw"]["position_allowed_error"].get<double>();
+    _pidcontrollerdata_input.velocity_allowed_error =
+        file["controller"]["yaw"]["velocity_allowed_error"].get<double>();
+
     _pidcontrollerdata_input.min_output =
         file["controller"]["yaw"]["min_output"].get<double>();
     _pidcontrollerdata_input.max_output =
@@ -423,10 +451,12 @@ std::ostream& operator<<(std::ostream& os, const jsonparse<_m, _n>& _jp) {
 
   os << "pid controller:\n";
   for (unsigned int i = 0; i != _jp.pidcontrollerdata_input.size(); ++i) {
-    os << _jp.pidcontrollerdata_input[i].P << std::endl;
-    os << _jp.pidcontrollerdata_input[i].I << std::endl;
-    os << _jp.pidcontrollerdata_input[i].D << std::endl;
-    os << _jp.pidcontrollerdata_input[i].allowed_error << std::endl;
+    os << _jp.pidcontrollerdata_input[i].position_P << std::endl;
+    os << _jp.pidcontrollerdata_input[i].position_I << std::endl;
+    os << _jp.pidcontrollerdata_input[i].velocity_P << std::endl;
+    os << _jp.pidcontrollerdata_input[i].velocity_I << std::endl;
+    os << _jp.pidcontrollerdata_input[i].position_allowed_error << std::endl;
+    os << _jp.pidcontrollerdata_input[i].velocity_allowed_error << std::endl;
     os << _jp.pidcontrollerdata_input[i].min_output << std::endl;
     os << _jp.pidcontrollerdata_input[i].max_output << std::endl;
   }
