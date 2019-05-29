@@ -11,4 +11,14 @@
 #ifndef _PRIORITY_H_
 #define _PRIORITY_H_
 
+#include "controllerdata.h"
+#include "estimatordata.h"
+#include "gpsdata.h"
+#include "plannerdata.h"
+
+struct indicators {
+  int indicator_controlmode;
+  int indicator_windstatus;
+};
+
 #endif /* _PRIORITY_H_ */

@@ -30,10 +30,10 @@ class guiclient {
 
   void guicommunication() {
     timecounter _timer;
-    senddata2gui();
+    senddata2vessel();
     std::this_thread::sleep_for(
         std::chrono::milliseconds(500 - _timer.timeelapsed()));
-    parsedatafromgui();
+    parsedatafromvessel();
     std::cout << "send message:" << send_buffer << std::endl;
     std::cout << "recv message:" << recv_buffer << std::endl;
   }
@@ -62,7 +62,7 @@ class guiclient {
       std::cout << " serial port open failure!\n";
   }
 
-  void parsedatafromgui() {
+  void parsedatafromvessel() {
     recv_buffer = my_serial.readline(400, "\n");
     double test_A = 0.0;
     double test_B = 0.0;
@@ -80,7 +80,7 @@ class guiclient {
       recv_buffer = "error";
   }
 
-  void senddata2gui() {
+  void senddata2vessel() {
     static int i = 0;
     ++i;
     send_buffer.clear();

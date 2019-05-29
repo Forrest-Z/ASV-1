@@ -67,10 +67,15 @@ int main() {
       0,                // UTM_x
       0                 // UTM_y
   };
+  indicators _indicators{
+      DYNAMICPOSITION,  // controlmode
+      WINDON,           // windstatus
+  };
+
   timecounter _timer;
   while (1) {
-    _guiserver.guicommunication(_controllerRTdata, _estimatorRTdata,
-                                _plannerRTdata, gps_data);
+    _guiserver.guicommunication(_indicators, _controllerRTdata,
+                                _estimatorRTdata, _plannerRTdata, gps_data);
     std::cout << _timer.timeelapsed() << std::endl;
     std::cout << _guiserver;
   }

@@ -15,11 +15,8 @@
 #include <iostream>
 #include <thread>
 #include <vector>
-#include "controllerdata.h"
 #include "easylogging++.h"
-#include "estimatordata.h"
-#include "gpsdata.h"
-#include "plannerdata.h"
+#include "priority.h"
 #include "serial/serial.h"
 #include "timecounter.h"
 
@@ -37,17 +34,17 @@ class guiserver {
   }
   ~guiserver() {}
 
-  void guicommunication(const controllerdata &_controllerdata,
+  void guicommunication(indicators &_indicators,
                         const controllerRTdata<m, n> &_controllerRTdata,
                         const estimatorRTdata &_estimatorRTdata,
                         const plannerRTdata &_plannerRTdata,
                         const gpsRTdata &_gpsRTdata) {
     timecounter _timer;
-    senddata2gui(_controllerdata, _controllerRTdata, _estimatorRTdata,
+    senddata2gui(_indicators, _controllerRTdata, _estimatorRTdata,
                  _plannerRTdata, _gpsRTdata);
     std::this_thread::sleep_for(
         std::chrono::milliseconds(500 - _timer.timeelapsed()));
-    parsedatafromgui();
+    parsedatafromgui(_indicators);
   }
 
  private:
@@ -72,16 +69,13 @@ class guiserver {
     else
       CLOG(INFO, "gui-serial") << " serial port open failure!";
   }
-
   // convert real time GPS data to sql string
-  void convert2string(const controllerdata &_controllerdata,
-                      std::string &_str) {
+  void convert2string(const indicators &_indicators, std::string &_str) {
     _str += ",";
-    _str += std::to_string(_controllerdata.controlmode);
+    _str += std::to_string(_indicators.indicator_controlmode);
     _str += ",";
-    _str += std::to_string(_controllerdata.windstatus);
+    _str += std::to_string(_indicators.indicator_windstatus);
   }
-
   // convert real time GPS data to sql string
   void convert2string(const gpsRTdata &_gpsRTdata, std::string &_str) {
     _str += ",";
@@ -156,26 +150,27 @@ class guiserver {
     }
   }
 
-  void parsedatafromgui() {
+  void parsedatafromgui(indicators &_indicators) {
     recv_buffer = my_serial.readline(40, "\n");
 
-    int _controlmode = 0;
-    int _windindicator = 0;
-    double test_C = 0.0;
     std::size_t pos = recv_buffer.find("$IPAC");
     if (pos != std::string::npos) {
       recv_buffer = recv_buffer.substr(pos);
-      sscanf(recv_buffer.c_str(), "$IPAC,%d,%d,%lf,%d",
+      int _controlmode = 0;
+      int _windindicator = 0;
+      double test_C = 0.0;
+      sscanf(recv_buffer.c_str(), "$IPAC,%d,%d,%lf",
              &_controlmode,    // date
              &_windindicator,  // time
              &test_C           // heading
       );
-
+      _indicators.indicator_controlmode = _controlmode;
+      _indicators.indicator_windstatus = _windindicator;
     } else
       recv_buffer = "error";
   }
 
-  void senddata2gui(const controllerdata &_controllerdata,
+  void senddata2gui(const indicators &_indicators,
                     const controllerRTdata<m, n> &_controllerRTdata,
                     const estimatorRTdata &_estimatorRTdata,
                     const plannerRTdata &_plannerRTdata,
@@ -183,7 +178,7 @@ class guiserver {
     send_buffer.clear();
     static int i = 0;
     send_buffer = "$IPAC" + std::to_string(++i);
-    convert2string(_controllerdata, send_buffer);
+    convert2string(_indicators, send_buffer);
     convert2string(_gpsRTdata, send_buffer);
     convert2string(_controllerRTdata, send_buffer);
     convert2string(_estimatorRTdata, send_buffer);

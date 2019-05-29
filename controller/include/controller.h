@@ -104,7 +104,39 @@ class controller {
     controlmode = _controlmode;
     _thrustallocation.setQ(_controlmode);
   }
+
+  void setcontrolmode(int _controlmode) {
+    switch (_controlmode) {  // controller mode
+      case 0:
+        controlmode = MANUAL;
+        break;
+      case 1:
+        controlmode = HEADINGONLY;
+        break;
+      case 2:
+        controlmode = MANEUVERING;
+        break;
+      case 3:
+        controlmode = DYNAMICPOSITION;
+        break;
+      default:
+        break;
+    }
+    setcontrolmode(controlmode);
+  }
   WINDCOMPENSATION getwindstatus() const { return windstatus; }
+  void setwindstatus(int _windstatus) {
+    switch (_windstatus) {
+      case 0:
+        windstatus = WINDOFF;
+        break;
+      case 1:
+        windstatus = WINDON;
+        break;
+      default:
+        break;
+    }
+  }
   void setwindstatus(WINDCOMPENSATION _windstatus) { windstatus = _windstatus; }
   double getsampletime() const noexcept { return sample_time; }
 

@@ -5,50 +5,60 @@
   "property": {
     "L":1.255,
     "B":1,
-    "Mass": [540, 0, 0, 0, 540, 200, 0, 200, 1000],
-    "AddedMass": [83, 0, 0, 0, 166, 244, 0, 244, 298],
+    "Mass": [425, 0, 0, 0, 425, 180, 0, 180, 920],
+    "AddedMass": [74, 0, 0, 0, 136, 144, 0, 144, 198],
     "Damping": [17, 0, 0, 0, 20, 0, 0, 0, 100],
     "CoG": [2.013, 0],
     "velocity_limit": {
-      "surge": [-4, 3],
-      "sway": [-0.5, 0.5],
-      "yaw": [-1, 2],
-      "roll": [-1.5, 1]
+      "surge": [-3, 5],
+      "sway": [-1, 1],
+      "yaw": [-1, 1],
+      "roll": [-1, 1]
     }
   },
   "controller": {
     "sample_time": 0.1,
     "surge": {
-      "P": 10,
-      "I": 2,
-      "D": 1,
-      "allowed_error": 0.01,
+      "position_P": 0,
+      "position_I": 0,
+      "velocity_P": 1,
+      "velocity_I": 0,
+      "position_allowed_error": 0.01,
+      "velocity_allowed_error": 0.001,
       "min_output": -5,
       "max_output": 6
     },
     "sway": {
-      "P": 13,
-      "I": 2.1,
-      "D": 0.1,
-      "allowed_error": 0.1,
+      "position_P": 13,
+      "position_I": 2.1,
+      "velocity_P": 0.1,
+      "velocity_I": 1,
+      "position_allowed_error": 0.1,
+      "velocity_allowed_error": 0.1,
       "min_output": -1,
       "max_output": 1
     },
     "yaw": {
-      "P": 10,
-      "I": 20,
-      "D": 1,
-      "allowed_error": 0.01,
+      "position_P": 2,
+      "position_I": 0,
+      "velocity_P": 4,
+      "velocity_I": 0,
+      "position_allowed_error": 0.001,
+      "velocity_allowed_error": 0.001,
       "min_output": -4,
       "max_output": 5
     }
   },
   "thruster1": {
-    "type": "tunnel",
-    "position": [1.9, 0],
-    "thrust_constant": [5.5E-7, 1.3E-7],
-    "max_delta_rotation": 100,
-    "max_rotation": 3000
+    "type": "azimuth",
+    "position": [-1.893, -0.216],
+    "thrust_constant": 0.00002,
+    "max_delta_rotation": 20,
+    "max_rotation": 1000,
+    "min_rotation": 50,
+    "max_delta_alpha": 7,
+    "max_alpha": 180,
+    "min_alpha": 0
   },
   "thruster2": {
     "type": "tunnel",
