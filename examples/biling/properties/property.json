@@ -52,7 +52,7 @@
   "thruster1": {
     "type": "azimuth",
     "position": [-1.893, -0.216],
-    "thrust_constant": 0.00002,
+    "thrust_constant": 0.0000028,
     "max_delta_rotation": 20,
     "max_rotation": 1000,
     "min_rotation": 50,

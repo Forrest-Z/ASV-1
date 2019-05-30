@@ -49,7 +49,7 @@ class database {
       str += ");";
 
       db << str;
-    } catch (sqlite::sqlite_exception e) {
+    } catch (sqlite::sqlite_exception &e) {
       CLOG(ERROR, "sql") << e.what();
     }
   }
@@ -82,7 +82,7 @@ class database {
       str += ");";
 
       db << str;
-    } catch (sqlite::sqlite_exception e) {
+    } catch (sqlite::sqlite_exception &e) {
       CLOG(ERROR, "sql-controller") << e.what();
     }
   }
@@ -98,7 +98,7 @@ class database {
       convert2string(_RTdata, str);
       str += ");";
       db << str;
-    } catch (sqlite::sqlite_exception e) {
+    } catch (sqlite::sqlite_exception &e) {
       CLOG(ERROR, "sql-estimator") << e.what();
     }
   }
@@ -113,7 +113,7 @@ class database {
       convert2string(_RTdata, str);
       str += ");";
       db << str;
-    } catch (sqlite::sqlite_exception e) {
+    } catch (sqlite::sqlite_exception &e) {
       CLOG(ERROR, "sql-planner") << e.what();
     }
   }
@@ -147,7 +147,7 @@ class database {
         str += "' , DATETIME('now'));";
         db << str;
       }
-    } catch (sqlite::sqlite_exception e) {
+    } catch (sqlite::sqlite_exception &e) {
       CLOG(ERROR, "sql") << e.what();
     }
   }
@@ -180,7 +180,7 @@ class database {
           " UTM_y       DOUBLE);";
       db << str;
 
-    } catch (sqlite::sqlite_exception e) {
+    } catch (sqlite::sqlite_exception &e) {
       CLOG(ERROR, "sql") << e.what();
     }
   }
@@ -212,7 +212,7 @@ class database {
       str += ");";
       db << str;
 
-    } catch (sqlite::sqlite_exception e) {
+    } catch (sqlite::sqlite_exception &e) {
       CLOG(ERROR, "sql") << e.what();
     }
   }
@@ -246,7 +246,7 @@ class database {
 
       db << str;
 
-    } catch (sqlite::sqlite_exception e) {
+    } catch (sqlite::sqlite_exception &e) {
       CLOG(ERROR, "sql") << e.what();
     }
   }
@@ -275,7 +275,7 @@ class database {
 
       db << str;
 
-    } catch (sqlite::sqlite_exception e) {
+    } catch (sqlite::sqlite_exception &e) {
       CLOG(ERROR, "sql") << e.what();
     }
   }
