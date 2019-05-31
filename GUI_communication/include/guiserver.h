@@ -38,7 +38,8 @@ class guiserver {
                         const controllerRTdata<m, n> &_controllerRTdata,
                         const estimatorRTdata &_estimatorRTdata,
                         const plannerRTdata &_plannerRTdata,
-                        const gpsRTdata &_gpsRTdata) {
+                        const gpsRTdata &_gpsRTdata,
+                        const motorRTdata<m> &_motorRTdata) {
     timecounter _timer;
     senddata2gui(_indicators, _controllerRTdata, _estimatorRTdata,
                  _plannerRTdata, _gpsRTdata);
@@ -79,10 +80,6 @@ class guiserver {
   // convert real time GPS data to sql string
   void convert2string(const gpsRTdata &_gpsRTdata, std::string &_str) {
     _str += ",";
-    _str += std::to_string(_gpsRTdata.date);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.time);
-    _str += ",";
     _str += std::to_string(_gpsRTdata.heading);
     _str += ",";
     _str += std::to_string(_gpsRTdata.pitch);
@@ -102,10 +99,6 @@ class guiserver {
     _str += std::to_string(_gpsRTdata.Vu);
     _str += ",";
     _str += std::to_string(_gpsRTdata.base_line);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.NSV1);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.NSV2);
     _str += ",";
     _str += std::to_string(_gpsRTdata.UTM_x);
     _str += ",";
@@ -174,7 +167,8 @@ class guiserver {
                     const controllerRTdata<m, n> &_controllerRTdata,
                     const estimatorRTdata &_estimatorRTdata,
                     const plannerRTdata &_plannerRTdata,
-                    const gpsRTdata &_gpsRTdata) {
+                    const gpsRTdata &_gpsRTdata,
+                    const motorRTdata<m> &_motorRTdata) {
     send_buffer.clear();
     static int i = 0;
     send_buffer = "$IPAC" + std::to_string(++i);

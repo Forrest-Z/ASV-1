@@ -73,6 +73,8 @@ class guiclient {
       sscanf(recv_buffer.c_str(), "$IPAC,%lf,%lf,%lf",
              &test_A,  // date
              &test_B,  // time
+             &test_C,  // heading
+             &test_C,  // heading
              &test_C   // heading
       );
 

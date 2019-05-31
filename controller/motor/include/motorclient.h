@@ -13,12 +13,19 @@
 #include <unistd.h>  //delay function
 #include "motorclientdata.h"
 
-#define MAXDATASIZE 1024  // 我们一次可以收到的最大字节数量（number of bytes）
-
 class motorclient {
  public:
   motorclient() {}
   ~motorclient() { close(sockfd); }
+
+  void commandfromcontroller(float *_command_alpha, float *_command_rotation,
+                             const Eigen::Matrix<int, 6, 1> &_alpha_deg,
+                             const Eigen::Matrix<int, 6, 1> &_rotation) {
+    for (int i = 0; i != 6; ++i) {
+      _command_alpha[i] = static_cast<float>(_alpha_deg(i));
+      _command_rotation[i] = static_cast<float>(_rotation(i));
+    }
+  }
 
   void PLCcommunication(motorRTdata<6> &_motorRTdata) {
     commandPLC(_motorRTdata.command_alpha, _motorRTdata.command_rotation);
@@ -132,12 +139,12 @@ class motorclient {
   int sockfd;
   union command_data _command_data;
   union read_data _read_data;
-  char read_buf[1048];
-  char rbuf[1048];
-  char command_buf[1048];
-  char reset_buf[1048];
-  char run_buf[1048];
-  char stop_clean_buf[1048];
+  char read_buf[128];
+  char rbuf[1024];
+  char command_buf[128];
+  char reset_buf[128];
+  char run_buf[128];
+  char stop_clean_buf[128];
 
   void union_transmit(char *_command_buf) {
     for (int i = 0; i < 48; i++) {

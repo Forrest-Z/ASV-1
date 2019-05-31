@@ -1,6 +1,9 @@
 #ifndef _MOTORCLIENTDATA_H_
 #define _MOTORCLIENTDATA_H_
 
+#include <Eigen/Core>
+#include <Eigen/Dense>
+
 union command_data {
   float a[12];
   char b[48];

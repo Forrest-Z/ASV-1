@@ -158,10 +158,10 @@ void test() {
     // thruster allocation
     _thrustallocation.onestepthrustallocation(_controllerRTdata);
 
-    for (int j = 0; j != m; ++j) {
-      testmotorRTdata.command_alpha[j] = _controllerRTdata.alpha_deg(j);
-      testmotorRTdata.command_rotation[j] = _controllerRTdata.rotation(j);
-    }
+    _motorclient.commandfromcontroller(
+        testmotorRTdata.command_alpha, testmotorRTdata.command_rotation,
+        _controllerRTdata.alpha_deg, _controllerRTdata.rotation);
+
     _motorclient.PLCcommunication(testmotorRTdata);
     printf("Positon :");
     for (int j = 0; j < 6; j++) {

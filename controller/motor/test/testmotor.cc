@@ -1,6 +1,6 @@
 #include "motorclient.h"
 
-int main() {
+void test1() {
   motorclient _motorclient;
   motorRTdata<6> testmotorRTdata;
   _motorclient.startup_socket_client();
@@ -30,6 +30,16 @@ int main() {
     printf("\n");
     usleep(100000);
   }
+}
 
+void test2() {
+  motorclient _motorclient;
+  motorRTdata<6> testmotorRTdata;
+  _motorclient.startup_socket_client();
+
+  _motorclient.TerminalPLC();
+}
+int main() {
+  test2();
   return 0;
 }

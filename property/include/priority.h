@@ -14,9 +14,14 @@
 #include "controllerdata.h"
 #include "estimatordata.h"
 #include "gpsdata.h"
+#include "motorclientdata.h"
 #include "plannerdata.h"
 
 struct indicators {
+  // indicator for gui connection: 0 --> disconnect, 1 -->connect
+  int gui_connection;
+  // indicator for joystick connection: 0 --> disconnect, 1 -->connect
+  int joystick_connection;
   int indicator_controlmode;
   int indicator_windstatus;
 };
