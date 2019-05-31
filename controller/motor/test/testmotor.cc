@@ -28,6 +28,13 @@ void test1() {
       printf("%d  ", testmotorRTdata.feedback_torque[i]);
     }
     printf("\n");
+    printf("run/warning/alarm:");
+    for (i = 0; i < 36; i++) {
+      printf("%d  ", testmotorRTdata.feedback_info[i]);
+    }
+    printf("\n");
+    printf("All info of servos:");
+    printf("%d \n", testmotorRTdata.feedback_allinfo);
     usleep(100000);
   }
 }

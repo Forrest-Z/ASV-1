@@ -10,8 +10,8 @@ union command_data {
 };
 
 union read_data {
-  int a[60];
-  char b[240];
+  int a[61];
+  char b[244];
 };
 
 // real-time data in the servo
@@ -23,6 +23,7 @@ struct motorRTdata {
   int feedback_rotation[m];
   int feedback_torque[2 * m];
   int feedback_info[6 * m];  // run/warning/alarm
+  int feedback_allinfo;      // 总的报警 / 复位信息
 };
 
 #endif /* _MOTORCLIENTDATA_H_ */

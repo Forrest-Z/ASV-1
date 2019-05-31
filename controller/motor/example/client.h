@@ -339,7 +339,7 @@ int chk_rsp_command_data(char *read_buf, char *rbuf, int rlen) {
   }
   printf("\n");
 
-  printf("Volecity:");
+  printf("Velocity:");
   for (i = 0; i < 6; i++) {
     printf("%f  ", _read_data.a[i + 6] / 6000.0);
   }

@@ -80,54 +80,50 @@ class guiserver {
   // convert real time GPS data to sql string
   void convert2string(const gpsRTdata &_gpsRTdata, std::string &_str) {
     _str += ",";
-    _str += std::to_string(_gpsRTdata.heading);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.pitch);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.roll);
-    _str += ",";
     _str += boost::lexical_cast<std::string>(_gpsRTdata.latitude);
     _str += ",";
     _str += boost::lexical_cast<std::string>(_gpsRTdata.longitude);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.altitude);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.Ve);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.Vn);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.Vu);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.base_line);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.UTM_x);
-    _str += ",";
-    _str += std::to_string(_gpsRTdata.UTM_y);
+  }
+
+  // convert real time motor data to sql string
+  void convert2string(const motorRTdata<m> &_motorRTdata, std::string &_str) {
+    for (int i = 0; i != m; ++i) {
+      _str += ",";
+      _str += std::to_string(_motorRTdata.feedback_alpha[i]);
+    }
+    for (int i = 0; i != m; ++i) {
+      _str += ",";
+      _str += std::to_string(_motorRTdata.feedback_rotation[i]);
+    }
+    for (int i = 0; i != (2 * m); ++i) {
+      _str += ",";
+      _str += std::to_string(_motorRTdata.feedback_torque[i]);
+    }
   }
   void convert2string(const controllerRTdata<m, n> &_RTdata,
                       std::string &_str) {
-    // the angle of each propeller
+    // the angle of each propeller (command)
     for (int i = 0; i != m; ++i) {
       _str += ",";
       _str += std::to_string(_RTdata.alpha_deg(i));
     }
-    // the speed of each propeller
+    // the speed of each propeller (command)
     for (int i = 0; i != m; ++i) {
       _str += ",";
       _str += std::to_string(_RTdata.rotation(i));
     }
   }
   void convert2string(const estimatorRTdata &_RTdata, std::string &_str) {
-    // Measurement
-    for (int i = 0; i != 6; ++i) {
-      _str += ",";
-      _str += std::to_string(_RTdata.Measurement(i));
-    }
     // State
     for (int i = 0; i != 6; ++i) {
       _str += ",";
       _str += std::to_string(_RTdata.State(i));
     }
+    // Roll and Pitch
+    _str += ",";
+    _str += std::to_string(_RTdata.motiondata_6dof(3));
+    _str += ",";
+    _str += std::to_string(_RTdata.motiondata_6dof(4));
   }
 
   void convert2string(const plannerRTdata &_RTdata, std::string &_str) {

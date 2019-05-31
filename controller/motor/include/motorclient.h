@@ -409,7 +409,7 @@ class motorclient {
     _command_buf[69] = 0x00;
   }
   // 响应数据的检查
-  int chk_rsp_command_data(motorRTdata<6> &_motorRTdata, int rlen) {
+  int chk_parse_command_data(motorRTdata<6> &_motorRTdata, int rlen) {
     // 所有数据长度的检查
     if (rlen != 262)
       return (-1);  // 读取10字对应的响应为40字节,
@@ -444,7 +444,7 @@ class motorclient {
     if ((rbuf[18] != 0x79) || (rbuf[19] != 0x00)) return (-8);  // 非 240 bytes
 
     // 读取寄存器数据 rbuf[20] 以后
-    for (int i = 0; i < 240; i++) {
+    for (int i = 0; i < 241; i++) {
       _read_data.b[i] = rbuf[i + 20];
     }
 
@@ -459,7 +459,8 @@ class motorclient {
       _motorRTdata.feedback_torque[i] = _read_data.a[i + 12];
     for (int i = 0; i < 36; i++)
       _motorRTdata.feedback_info[i] = _read_data.a[i + 24];
-
+    //总的报警 / 复位信息
+    _motorRTdata.feedback_allinfo = _read_data.a[60];
     return 0;
   }
 
@@ -650,7 +651,7 @@ class motorclient {
     }
 
     // 响应数据的检查
-    int rc = chk_rsp_command_data(_motorRTdata, rlen);
+    int rc = chk_parse_command_data(_motorRTdata, rlen);
     printf("rc=%d\n", rc);
     if (rc != 0)  //接收数据异常
     {
