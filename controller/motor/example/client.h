@@ -11,12 +11,21 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>  //delay function
-#include "motorclientdata.h"
 
 #define MAXDATASIZE 1024  // 我们一次可以收到的最大字节数量（number of bytes）
 // socket_setting
 #define SERVER_PORT "10001"  // 提供给用戶连接的 port
 #define SERVER_IP "192.168.1.1"
+
+union command_data {
+  float a[12];
+  char b[48];
+};
+
+union read_data {
+  int a[60];
+  char b[240];
+};
 
 union command_data _command_data;
 union read_data _read_data;
@@ -45,7 +54,7 @@ void min_position(void) {
 }
 
 // 读取扩展 MEMOBUS 协议、保持寄存器的内容 (SFC=09)，制作命令
-void _mk_read_command_data(char *read_buf) {
+void mk_read_command_data(char *read_buf) {
   // 218 标题部的制作
   // 数据类型设定
   read_buf[0] = 0x11;  // 扩展 MEMOBUS (指令命令)
@@ -406,7 +415,7 @@ int startup_socket_client(char *server_IP) {
   char reset_buf[1048];
   char run_buf[1048];
   char stop_clean_buf[1048];
-  _mk_read_command_data(read_buf);
+  mk_read_command_data(read_buf);
   mk_command_command_data(command_buf);
   mk_reset_command_data(reset_buf);
   mk_run_command_data(run_buf);

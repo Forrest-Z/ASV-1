@@ -20,9 +20,15 @@ class motorclient {
   motorclient() {}
   ~motorclient() { close(sockfd); }
 
-  void PLCcommunication() {
+  void PLCcommunication(motorRTdata<6> &_motorRTdata) {
+    commandPLC(_motorRTdata.command_alpha, _motorRTdata.command_rotation);
+    readPLC(_motorRTdata);
+  }
+
+  void TerminalPLC() {
     // printf("%x\n",read_buf[0]);
     printf("sockfd = %d\n", sockfd);
+    motorRTdata<6> _motorRTdata;
     while (1) {
       printf(
           "reset(1) / run(2) / command(3) / read(4) / stop(5) / suspend(6) "
@@ -33,245 +39,39 @@ class motorclient {
 
       switch (flag) {
         case '1':  // reset=1 to 0
-        {
-          reset_buf[22] = 0x01;
-          int slen = send(sockfd, reset_buf, 24, 0);  //发送命令(70字节)
-          if (slen != 24)  // 如果发送成功，则返回发送的字节数 (70字节)。
-          {
-            close(sockfd);
-            printf("Error: Send !! -> %d\n", slen);
-            exit(0);
-          }
-          printf("before recv\n");
-          int rlen =
-              recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-          printf("rlen=%d\n", rlen);
-          if (rlen <= 0)  // 如果接收错误则返回 0 以下
-          {
-            close(sockfd);
-            printf("Error: Recv !! -> %d\n", rlen);
-            perror("recv");
-            exit(0);
-          }
-
-          usleep(200000);
-
-          reset_buf[22] = 0x00;
-          slen = send(sockfd, reset_buf, 24, 0);  //发送命令(70字节)
-          if (slen != 24)  // 如果发送成功，则返回发送的字节数 (70字节)。
-          {
-            close(sockfd);
-            printf("Error: Send !! -> %d\n", slen);
-            exit(0);
-          }
-          printf("before recv\n");
-          rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-          printf("rlen=%d\n", rlen);
-          if (rlen <= 0)  // 如果接收错误则返回 0 以下
-          {
-            close(sockfd);
-            printf("Error: Recv !! -> %d\n", rlen);
-            perror("recv");
-            exit(0);
-          }
-
-          usleep(200000);
-
-          // set 0 value for position and speed
-          for (int i = 0; i < 48; i++) {
-            command_buf[i + 22] = 0x00;
-          }
-          slen = send(sockfd, command_buf, 70, 0);  //发送命令(70字节)
-          if (slen != 70)  // 如果发送成功，则返回发送的字节数 (70字节)。
-          {
-            close(sockfd);
-            printf("Error: Send !! -> %d\n", slen);
-            exit(0);
-          }
-          printf("before recv\n");
-          rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-          printf("rlen=%d\n", rlen);
-          if (rlen <= 0)  // 如果接收错误则返回 0 以下
-          {
-            close(sockfd);
-            printf("Error: Recv !! -> %d\n", rlen);
-            perror("recv");
-            exit(0);
-          }
-
-        } break;
-
+          resetPLC();
+          break;
         case '2':  // run=1 to 0
-        {
-          run_buf[22] = 0x01;
-          int slen = send(sockfd, run_buf, 24, 0);  //发送命令(70字节)
-          if (slen != 24)  // 如果发送成功，则返回发送的字节数 (70字节)。
-          {
-            close(sockfd);
-            printf("Error: Send !! -> %d\n", slen);
-            exit(0);
-          }
-          printf("before recv\n");
-          int rlen =
-              recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-          printf("rlen=%d\n", rlen);
-          if (rlen <= 0)  // 如果接收错误则返回 0 以下
-          {
-            close(sockfd);
-            printf("Error: Recv !! -> %d\n", rlen);
-            perror("recv");
-            exit(0);
-          }
-
-          usleep(200000);
-
-          run_buf[22] = 0x00;
-          slen = send(sockfd, run_buf, 24, 0);  //发送命令(70字节)
-          if (slen != 24)  // 如果发送成功，则返回发送的字节数 (70字节)。
-          {
-            close(sockfd);
-            printf("Error: Send !! -> %d\n", slen);
-            exit(0);
-          }
-          printf("before recv\n");
-          rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-          printf("rlen=%d\n", rlen);
-          if (rlen <= 0)  // 如果接收错误则返回 0 以下
-          {
-            close(sockfd);
-            printf("Error: Recv !! -> %d\n", rlen);
-            perror("recv");
-            exit(0);
-          }
-        } break;
-
+          runPLC();
+          break;
         case '3':  // command
-        {
-          printf("Positon:");
-          scanf("%f %f %f %f %f %f", &_command_data.a[0], &_command_data.a[2],
-                &_command_data.a[4], &_command_data.a[6], &_command_data.a[8],
-                &_command_data.a[10]);
-          getchar();  // get return
-
-          min_position();
+          commandPLC();
+          break;
+        case '4':  // read
+          readPLC(_motorRTdata);
+          printf("Positon :");
+          for (int i = 0; i < 6; i++) {
+            printf("%d  ", _motorRTdata.feedback_alpha[i]);
+          }
+          printf("\n");
 
           printf("Volecity:");
-          scanf("%f %f %f %f %f %f", &_command_data.a[1], &_command_data.a[3],
-                &_command_data.a[5], &_command_data.a[7], &_command_data.a[9],
-                &_command_data.a[11]);
-          getchar();  // get return
-
-          union_transmit(command_buf);
-
-          int slen = send(sockfd, command_buf, 70, 0);  //发送命令(70字节)
-          if (slen != 70)  // 如果发送成功，则返回发送的字节数 (70字节)。
-          {
-            close(sockfd);
-            printf("Error: Send !! -> %d\n", slen);
-            exit(0);
+          for (int i = 0; i < 6; i++) {
+            printf("%d  ", _motorRTdata.feedback_rotation[i]);
           }
-          printf("before recv\n");
-          int rlen =
-              recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-          printf("rlen=%d\n", rlen);
-          if (rlen <= 0)  // 如果接收错误则返回 0 以下
-          {
-            close(sockfd);
-            printf("Error: Recv !! -> %d\n", rlen);
-            perror("recv");
-            exit(0);
+          printf("\n");
+
+          printf("Torque:");
+          for (int i = 0; i < 12; i++) {
+            printf("%d  ", _motorRTdata.feedback_torque[i]);
           }
-        } break;
-
-        case '4':  // read
-        {
-          // 发送命令数据
-          // 主控制器不能发送数据时，该处理不会结束。
-          int slen = send(sockfd, read_buf, 22, 0);  //发送命令(22字节)
-
-          if (slen != 22)  // 如果发送成功，则返回发送的字节数 (22 字节)。
-          {
-            close(sockfd);
-            printf("Error: Send !! -> %d\n", slen);
-            exit(0);
-          }
-
-          // 接收响应数据
-          // 子控制器没有发送数据时，该处理不会结束。
-          printf("before recv\n");
-          int rlen =
-              recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-          printf("rlen=%d\n", rlen);
-          if (rlen <= 0)  // 如果接收错误则返回 0 以下
-          {
-            close(sockfd);
-            printf("Error: Recv !! -> %d\n", rlen);
-            perror("recv");
-            exit(0);
-          }
-
-          // 响应数据的检查
-          int rc = chk_rsp_command_data(read_buf, rbuf, rlen);
-          printf("rc=%d\n", rc);
-          if (rc != 0)  //接收数据异常
-          {
-            close(sockfd);
-            exit(0);
-          }
-          read_buf[1]++;  // 增加 218 标题的串行编号
-        } break;
-
+          printf("\n");
+          break;
         case '5':  // stop=1 to 0
-        {
-          for (int i = 0; i < 24; i++) {
-            stop_clean_buf[i + 22] = 0xFF;
-          }
-          int slen = send(sockfd, stop_clean_buf, 46, 0);  //发送命令(70字节)
-          if (slen != 46)  // 如果发送成功，则返回发送的字节数 (70字节)。
-          {
-            close(sockfd);
-            printf("Error: Send !! -> %d\n", slen);
-            exit(0);
-          }
-          printf("before recv\n");
-          int rlen =
-              recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-          printf("rlen=%d\n", rlen);
-          if (rlen <= 0)  // 如果接收错误则返回 0 以下
-          {
-            close(sockfd);
-            printf("Error: Recv !! -> %d\n", rlen);
-            perror("recv");
-            exit(0);
-          }
-
-          usleep(200000);
-
-          for (int i = 0; i < 24; i++) {
-            stop_clean_buf[i + 22] = 0x00;
-          }
-          slen = send(sockfd, stop_clean_buf, 46, 0);  //发送命令(70字节)
-          if (slen != 46)  // 如果发送成功，则返回发送的字节数 (70字节)。
-          {
-            close(sockfd);
-            printf("Error: Send !! -> %d\n", slen);
-            exit(0);
-          }
-          printf("before recv\n");
-          rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-          printf("rlen=%d\n", rlen);
-          if (rlen <= 0)  // 如果接收错误则返回 0 以下
-          {
-            close(sockfd);
-            printf("Error: Recv !! -> %d\n", rlen);
-            perror("recv");
-            exit(0);
-          }
-        } break;
-
+          stopPLC();
+          break;
         case '6':  // suspend
-        {
-        } break;
+          break;
       }
     }
     //******************************  PLC  ******************************
@@ -322,6 +122,10 @@ class motorclient {
     mk_reset_command_data(reset_buf);
     mk_run_command_data(run_buf);
     mk_stop_clean_command_data(stop_clean_buf);
+
+    resetPLC();
+    sleep(40);
+    runPLC();
   }
 
  private:
@@ -336,11 +140,11 @@ class motorclient {
   char stop_clean_buf[1048];
 
   void union_transmit(char *_command_buf) {
-    int i;
-    for (i = 0; i < 48; i++) {
+    for (int i = 0; i < 48; i++) {
       _command_buf[i + 22] = _command_data.b[i];
     }
   }
+
   void min_position(void) {
     float delta_position[6];
     static float last_position[6];
@@ -385,7 +189,7 @@ class motorclient {
     _read_buf[15] = 0x09;  // SFC 为 0x09 (读取保持寄存器的内容 (扩展))
     _read_buf[16] = 0x10;  // CPU 编号设定
     _read_buf[17] = 0x00;
-    _read_buf[18] = 0xA0;  // start address(WL04000 )
+    _read_buf[18] = (char)0xA0;  // start address(WL04000 )
     _read_buf[19] = 0x0F;
     _read_buf[20] = 0x79;  // 寄存器数设定(from WL04000 to WL04118, total
                            // numuber: 240byte(0xF0)
@@ -420,7 +224,7 @@ class motorclient {
     _reset_buf[15] = 0x0B;  // SFC 为 0x09 (读取保持寄存器的内容 (扩展))
     _reset_buf[16] = 0x10;  // CPU 编号设定
     _reset_buf[17] = 0x00;
-    _reset_buf[18] = 0xD0;  // start address (MF03024-0x0BD0)
+    _reset_buf[18] = (char)0xD0;  // start address (MF03024-0x0BD0)
     _reset_buf[19] = 0x0B;
     _reset_buf[20] = 0x01;  // 寄存器数设定
     _reset_buf[21] = 0x00;
@@ -457,7 +261,7 @@ class motorclient {
     _run_buf[15] = 0x0B;  // SFC 为 0x09 (读取保持寄存器的内容 (扩展))
     _run_buf[16] = 0x10;  // CPU 编号设定
     _run_buf[17] = 0x00;
-    _run_buf[18] = 0xD1;  // start address (MF03025-0x0BD1)
+    _run_buf[18] = (char)0xD1;  // start address (MF03025-0x0BD1)
     _run_buf[19] = 0x0B;
     _run_buf[20] = 0x01;  // 寄存器数设定
     _run_buf[21] = 0x00;
@@ -494,7 +298,7 @@ class motorclient {
     _stop_clean_buf[15] = 0x0B;  // SFC 为 0x09 (读取保持寄存器的内容 (扩展))
     _stop_clean_buf[16] = 0x10;  // CPU 编号设定
     _stop_clean_buf[17] = 0x00;
-    _stop_clean_buf[18] = 0xD2;  // start address (MW03026-0x0BD2)
+    _stop_clean_buf[18] = (char)0xD2;  // start address (MW03026-0x0BD2)
     _stop_clean_buf[19] = 0x0B;
     _stop_clean_buf[20] = 0x0C;  // 寄存器数设定
     _stop_clean_buf[21] = 0x00;
@@ -531,7 +335,7 @@ class motorclient {
     _command_buf[15] = 0x0B;  // SFC 为 0x09 (读取保持寄存器的内容 (扩展))
     _command_buf[16] = 0x10;  // CPU 编号设定
     _command_buf[17] = 0x00;
-    _command_buf[18] = 0xB8;  // start address (MF03000-0x0BB8)
+    _command_buf[18] = (char)0xB8;  // start address (MF03000-0x0BB8)
     _command_buf[19] = 0x0B;
     _command_buf[20] = 0x18;  // 寄存器数设定(24)
     _command_buf[21] = 0x00;
@@ -598,73 +402,58 @@ class motorclient {
     _command_buf[69] = 0x00;
   }
   // 响应数据的检查
-  int chk_rsp_command_data(char *_read_buf, char *_rbuf, int rlen) {
-    int i = 0;
+  int chk_rsp_command_data(motorRTdata<6> &_motorRTdata, int rlen) {
     // 所有数据长度的检查
     if (rlen != 262)
-      return (-1);  // 读取10字对应的响应为40字节 //
+      return (-1);  // 读取10字对应的响应为40字节,
                     // (218标题(12字节)+MEMOBUS数据(28字节))
 
     // 数据包类型检查
-    if (_rbuf[0] != 0x19) return (-2);  // 非 MEMOBUS 响应
+    if (rbuf[0] != 0x19) return (-2);  // 非 MEMOBUS 响应
 
     // 串行编号检查
-    if (_read_buf[1] != _rbuf[1]) return (-3);  // 与命令的串行编号不一致
+    if (read_buf[1] != rbuf[1]) return (-3);  // 与命令的串行编号不一致
 
     // 传送文件中的所有数据长度的检查
-    if ((_rbuf[6] != 0x04) && (_rbuf[7] != 0x01))
+    if ((rbuf[6] != 0x04) && (rbuf[7] != 0x01))
       return (-4);  // 260 字节 = 218 标题 (12 字节 )+MEMOBUS 数据 (8 + 240 =
                     // 248字节 )
 
-    if (_rbuf[12] != -8) {
+    if (rbuf[12] != -8) {
       printf("111\n");
-      printf("%d\n", _rbuf[12]);
+      printf("%d\n", rbuf[12]);
     }
-    if (_rbuf[13] != 0x00) {
-      printf("222\n");
-    }
+    if (rbuf[13] != 0x00) printf("222\n");
 
     // MEMOBUS 数据长度检查
     // if ((rbuf[12] != 0xF6) || (rbuf[13] != 0x00)) return (-5);  // 6+240=246
     // 字节（看手册说明为什么是“6”） MFC 的检查
-    if (_rbuf[14] != 0x20) return (-6);  // MFC 固定为 0x20
+    if (rbuf[14] != 0x20) return (-6);  // MFC 固定为 0x20
 
     // SFC 的检查
-    if (_rbuf[15] != 0x09) return (-7);  // SFC 为 0x09 (读取保持寄存器的内容)
+    if (rbuf[15] != 0x09) return (-7);  // SFC 为 0x09 (读取保持寄存器的内容)
 
     // 寄存器数的检查
-    if ((_rbuf[18] != 0x79) || (_rbuf[19] != 0x00)) return (-8);  // 非 240 bytes
+    if ((rbuf[18] != 0x79) || (rbuf[19] != 0x00)) return (-8);  // 非 240 bytes
 
-    // 读取寄存器数据d rbuf[20] 以后
-    for (i = 0; i < 240; i++) {
-      _read_data.b[i] = _rbuf[i + 20];
+    // 读取寄存器数据 rbuf[20] 以后
+    for (int i = 0; i < 240; i++) {
+      _read_data.b[i] = rbuf[i + 20];
     }
-    printf("want=%x\n", _rbuf[i + 20]);
 
-    printf("Positon :");
-    for (i = 0; i < 6; i++) {
-      printf("%f  ", _read_data.a[i] / 1000.0);
+    for (int i = 0; i < 6; i++) {
+      _motorRTdata.feedback_alpha[i] =
+          static_cast<int>(_read_data.a[i] / 1000.0);
+      _motorRTdata.feedback_rotation[i] =
+          static_cast<int>(_read_data.a[i + 6] / 6000.0);
     }
-    printf("\n");
 
-    printf("Volecity:");
-    for (i = 0; i < 6; i++) {
-      printf("%f  ", _read_data.a[i + 6] / 6000.0);
-    }
-    printf("\n");
+    for (int i = 0; i < 12; i++)
+      _motorRTdata.feedback_torque[i] = _read_data.a[i + 12];
+    for (int i = 0; i < 36; i++)
+      _motorRTdata.feedback_info[i] = _read_data.a[i + 24];
 
-    printf("Torque:");
-    for (i = 0; i < 12; i++) {
-      printf("%d  ", _read_data.a[i + 12]);
-    }
-    printf("\n");
-
-    printf("run/warning/alarm:");
-    for (i = 0; i < 36; i++) {
-      printf("%d  ", _read_data.a[i + 24]);
-    }
-    printf("\n");
-    return (0);
+    return 0;
   }
 
   // 取得 IPv4 或 IPv6 的 sockaddr：
@@ -675,5 +464,236 @@ class motorclient {
     return &(((struct sockaddr_in6 *)sa)->sin6_addr);
   }
 
+  void resetPLC() {
+    reset_buf[22] = 0x01;
+    int slen = send(sockfd, reset_buf, 24, 0);  //发送命令(70字节)
+    if (slen != 24)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    {
+      close(sockfd);
+      printf("Error: Send !! -> %d\n", slen);
+    }
+    printf("before recv\n");
+    int rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
+    printf("rlen=%d\n", rlen);
+    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    {
+      close(sockfd);
+      printf("Error: Recv !! -> %d\n", rlen);
+      perror("recv");
+    }
+
+    usleep(200000);
+
+    reset_buf[22] = 0x00;
+    slen = send(sockfd, reset_buf, 24, 0);  //发送命令(70字节)
+    if (slen != 24)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    {
+      close(sockfd);
+      printf("Error: Send !! -> %d\n", slen);
+    }
+    printf("before recv\n");
+    rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
+    printf("rlen=%d\n", rlen);
+    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    {
+      close(sockfd);
+      printf("Error: Recv !! -> %d\n", rlen);
+      perror("recv");
+    }
+
+    usleep(200000);
+
+    // set 0 value for position and speed
+    for (int i = 0; i < 48; i++) {
+      command_buf[i + 22] = 0x00;
+    }
+    slen = send(sockfd, command_buf, 70, 0);  //发送命令(70字节)
+    if (slen != 70)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    {
+      close(sockfd);
+      printf("Error: Send !! -> %d\n", slen);
+    }
+    printf("before recv\n");
+    rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
+    printf("rlen=%d\n", rlen);
+    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    {
+      close(sockfd);
+      printf("Error: Recv !! -> %d\n", rlen);
+      perror("recv");
+    }
+  }
+
+  void runPLC() {
+    run_buf[22] = 0x01;
+    int slen = send(sockfd, run_buf, 24, 0);  //发送命令(70字节)
+    if (slen != 24)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    {
+      close(sockfd);
+      printf("Error: Send !! -> %d\n", slen);
+    }
+    printf("before recv\n");
+    int rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
+    printf("rlen=%d\n", rlen);
+    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    {
+      close(sockfd);
+      printf("Error: Recv !! -> %d\n", rlen);
+      perror("recv");
+    }
+
+    usleep(200000);
+
+    run_buf[22] = 0x00;
+    slen = send(sockfd, run_buf, 24, 0);  //发送命令(70字节)
+    if (slen != 24)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    {
+      close(sockfd);
+      printf("Error: Send !! -> %d\n", slen);
+    }
+    printf("before recv\n");
+    rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
+    printf("rlen=%d\n", rlen);
+    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    {
+      close(sockfd);
+      printf("Error: Recv !! -> %d\n", rlen);
+      perror("recv");
+    }
+  }
+
+  void commandPLC(float *alpha, float *rotation) {
+    for (int i = 0; i != 6; ++i) _command_data.a[2 * i] = alpha[i];
+    min_position();
+    for (int i = 0; i != 6; ++i) _command_data.a[2 * i + 1] = rotation[i];
+    union_transmit(command_buf);
+
+    int slen = send(sockfd, command_buf, 70, 0);  //发送命令(70字节)
+    if (slen != 70)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    {
+      close(sockfd);
+      printf("Error: Send !! -> %d\n", slen);
+    }
+    printf("before recv\n");
+    int rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
+    printf("rlen=%d\n", rlen);
+    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    {
+      close(sockfd);
+      printf("Error: Recv !! -> %d\n", rlen);
+      perror("recv");
+    }
+  }
+
+  void commandPLC() {
+    printf("Positon:");
+    scanf("%f %f %f %f %f %f", &_command_data.a[0], &_command_data.a[2],
+          &_command_data.a[4], &_command_data.a[6], &_command_data.a[8],
+          &_command_data.a[10]);
+    getchar();  // get return
+
+    min_position();
+
+    printf("Volecity:");
+    scanf("%f %f %f %f %f %f", &_command_data.a[1], &_command_data.a[3],
+          &_command_data.a[5], &_command_data.a[7], &_command_data.a[9],
+          &_command_data.a[11]);
+    getchar();  // get return
+
+    union_transmit(command_buf);
+
+    int slen = send(sockfd, command_buf, 70, 0);  //发送命令(70字节)
+    if (slen != 70)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    {
+      close(sockfd);
+      printf("Error: Send !! -> %d\n", slen);
+    }
+    printf("before recv\n");
+    int rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
+    printf("rlen=%d\n", rlen);
+    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    {
+      close(sockfd);
+      printf("Error: Recv !! -> %d\n", rlen);
+      perror("recv");
+    }
+  }
+
+  void readPLC(motorRTdata<6> &_motorRTdata) {
+    // 发送命令数据
+    // 主控制器不能发送数据时，该处理不会结束。
+    int slen = send(sockfd, read_buf, 22, 0);  //发送命令(22字节)
+
+    if (slen != 22)  // 如果发送成功，则返回发送的字节数 (22 字节)。
+    {
+      close(sockfd);
+      printf("Error: Send !! -> %d\n", slen);
+    }
+
+    // 接收响应数据
+    // 子控制器没有发送数据时，该处理不会结束。
+    printf("before recv\n");
+    int rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
+    printf("rlen=%d\n", rlen);
+    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    {
+      close(sockfd);
+      printf("Error: Recv !! -> %d\n", rlen);
+      perror("recv");
+    }
+
+    // 响应数据的检查
+    int rc = chk_rsp_command_data(_motorRTdata, rlen);
+    printf("rc=%d\n", rc);
+    if (rc != 0)  //接收数据异常
+    {
+      close(sockfd);
+    }
+    read_buf[1]++;  // 增加 218 标题的串行编号
+  }
+
+  void stopPLC() {
+    for (int i = 0; i < 24; i++) {
+      stop_clean_buf[i + 22] = (char)0xFF;
+    }
+    int slen = send(sockfd, stop_clean_buf, 46, 0);  //发送命令(70字节)
+    if (slen != 46)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    {
+      close(sockfd);
+      printf("Error: Send !! -> %d\n", slen);
+    }
+    printf("before recv\n");
+    int rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
+    printf("rlen=%d\n", rlen);
+    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    {
+      close(sockfd);
+      printf("Error: Recv !! -> %d\n", rlen);
+      perror("recv");
+    }
+
+    usleep(200000);
+
+    for (int i = 0; i < 24; i++) {
+      stop_clean_buf[i + 22] = 0x00;
+    }
+    slen = send(sockfd, stop_clean_buf, 46, 0);  //发送命令(70字节)
+    if (slen != 46)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    {
+      close(sockfd);
+      printf("Error: Send !! -> %d\n", slen);
+    }
+    printf("before recv\n");
+    rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
+    printf("rlen=%d\n", rlen);
+    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    {
+      close(sockfd);
+      printf("Error: Recv !! -> %d\n", rlen);
+      perror("recv");
+    }
+  }
+
+
 };
-#endif
+#endif /* _MOTORCLIENTDATA_H_ */
