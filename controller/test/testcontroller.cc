@@ -1,6 +1,6 @@
 /*
 *******************************************************************************
-* testpidcontroller.cc:
+* testcontroller.cc:
 * unit test for thrust allocation
 * This header file can be read by C++ compilers
 *

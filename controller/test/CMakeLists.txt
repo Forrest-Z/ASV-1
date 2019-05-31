@@ -32,6 +32,7 @@ set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
 	"${CMAKE_CURRENT_SOURCE_DIR}/../include"
 	"/usr/include" 
+	"${PROJECT_DIRECTORY}/controller/motor/include"
 	"${PROJECT_DIRECTORY}/fileIO/include"
 	"${PROJECT_DIRECTORY}/logging/include"
 	"${PROJECT_DIRECTORY}/property/include"
@@ -65,3 +66,9 @@ add_executable (testcontroller testcontroller.cc  ${SOURCE_FILES})
 target_include_directories(testcontroller PRIVATE ${HEADER_DIRECTORY})
 target_link_libraries(testcontroller PUBLIC ${MOSEK8_LIBRARY})
 target_link_libraries(testcontroller PUBLIC ${CMAKE_THREAD_LIBS_INIT})
+
+
+add_executable (testmotor testcontrolandmotor.cc ${SOURCE_FILES})
+target_include_directories(testmotor PRIVATE ${HEADER_DIRECTORY})
+target_link_libraries(testmotor PUBLIC ${MOSEK8_LIBRARY})
+target_link_libraries(testmotor PUBLIC ${CMAKE_THREAD_LIBS_INIT})
