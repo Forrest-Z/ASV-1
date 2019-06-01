@@ -2,7 +2,7 @@
 
 void test1() {
   motorclient _motorclient;
-  motorRTdata<6> testmotorRTdata;
+  motorRTdata<6> testmotorRTdata = {};
   _motorclient.startup_socket_client();
   sleep(10);
   for (int i = 0; i != 100; ++i) {

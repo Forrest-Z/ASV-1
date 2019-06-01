@@ -29,7 +29,8 @@ class guiserver {
   guiserver()
       : my_serial("/dev/ttyUSB1", 19200, serial::Timeout::simpleTimeout(500)),
         send_buffer(""),
-        recv_buffer("") {
+        recv_buffer(""),
+        gui_connetion_failure_count(0) {
     judgeserialstatus();
   }
   ~guiserver() {}
@@ -41,8 +42,9 @@ class guiserver {
                         const gpsRTdata &_gpsRTdata,
                         const motorRTdata<m> &_motorRTdata) {
     timecounter _timer;
+    checkguiconnection(_indicators);
     senddata2gui(_indicators, _controllerRTdata, _estimatorRTdata,
-                 _plannerRTdata, _gpsRTdata);
+                 _plannerRTdata, _gpsRTdata, _motorRTdata);
     std::this_thread::sleep_for(
         std::chrono::milliseconds(500 - _timer.timeelapsed()));
     parsedatafromgui(_indicators);
@@ -52,6 +54,8 @@ class guiserver {
   serial::Serial my_serial;
   std::string send_buffer;
   std::string recv_buffer;
+
+  int gui_connetion_failure_count;
   void enumerate_ports() {
     std::vector<serial::PortInfo> devices_found = serial::list_ports();
 
@@ -70,8 +74,19 @@ class guiserver {
     else
       CLOG(INFO, "gui-serial") << " serial port open failure!";
   }
+
+  void checkguiconnection(indicators &_indicators) {
+    if (gui_connetion_failure_count > 10)
+      _indicators.gui_connection = 0;
+    else
+      _indicators.gui_connection = 1;
+  }
   // convert real time GPS data to sql string
   void convert2string(const indicators &_indicators, std::string &_str) {
+    _str += ",";
+    _str += std::to_string(_indicators.gui_connection);
+    _str += ",";
+    _str += std::to_string(_indicators.joystick_connection);
     _str += ",";
     _str += std::to_string(_indicators.indicator_controlmode);
     _str += ",";
@@ -99,6 +114,12 @@ class guiserver {
       _str += ",";
       _str += std::to_string(_motorRTdata.feedback_torque[i]);
     }
+    for (int i = 0; i != (6 * m); ++i) {
+      _str += ",";
+      _str += std::to_string(_motorRTdata.feedback_info[i]);
+    }
+    _str += ",";
+    _str += std::to_string(_motorRTdata.feedback_allinfo);
   }
   void convert2string(const controllerRTdata<m, n> &_RTdata,
                       std::string &_str) {
@@ -155,8 +176,11 @@ class guiserver {
       );
       _indicators.indicator_controlmode = _controlmode;
       _indicators.indicator_windstatus = _windindicator;
-    } else
+      gui_connetion_failure_count = 0;
+    } else {
       recv_buffer = "error";
+      ++gui_connetion_failure_count;
+    }
   }
 
   void senddata2gui(const indicators &_indicators,
@@ -170,9 +194,11 @@ class guiserver {
     send_buffer = "$IPAC" + std::to_string(++i);
     convert2string(_indicators, send_buffer);
     convert2string(_gpsRTdata, send_buffer);
-    convert2string(_controllerRTdata, send_buffer);
     convert2string(_estimatorRTdata, send_buffer);
+    convert2string(_controllerRTdata, send_buffer);
+    convert2string(_motorRTdata, send_buffer);
     convert2string(_plannerRTdata, send_buffer);
+
     send_buffer += "\n";
     size_t bytes_wrote = my_serial.write(send_buffer);
   }

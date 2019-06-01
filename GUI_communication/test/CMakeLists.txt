@@ -14,6 +14,7 @@ set(HEADER_DIRECTORY ${HEADER_DIRECTORY}
 	"${PROJECT_DIRECTORY}/sensors/gpsimu/include"
 	"${PROJECT_DIRECTORY}/property/include"
 	"${PROJECT_DIRECTORY}/controller/include"
+	"${PROJECT_DIRECTORY}/controller/motor/include"
 	"${PROJECT_DIRECTORY}/estimator/include"
 	"${PROJECT_DIRECTORY}/planner/include"
 	"${PROJECT_DIRECTORY}/third_party/eigen"

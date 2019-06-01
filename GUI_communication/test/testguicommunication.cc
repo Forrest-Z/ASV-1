@@ -13,7 +13,7 @@
 INITIALIZE_EASYLOGGINGPP
 
 int main() {
-  constexpr int num_thruster = 1;
+  constexpr int num_thruster = 6;
   constexpr int dim_controlspace = 3;
 
   guiserver<num_thruster, dim_controlspace> _guiserver;
@@ -68,14 +68,18 @@ int main() {
       0                 // UTM_y
   };
   indicators _indicators{
+      0,                // gui_connection
+      0,                // joystick_connection
       DYNAMICPOSITION,  // controlmode
       WINDON,           // windstatus
   };
 
+  motorRTdata<6> testmotorRTdata = {};
   timecounter _timer;
   while (1) {
     _guiserver.guicommunication(_indicators, _controllerRTdata,
-                                _estimatorRTdata, _plannerRTdata, gps_data);
+                                _estimatorRTdata, _plannerRTdata, gps_data,
+                                testmotorRTdata);
     std::cout << _timer.timeelapsed() << std::endl;
     std::cout << _guiserver;
   }
