@@ -130,7 +130,7 @@ void test() {
   motorRTdata<m> testmotorRTdata;
 
   motorclient _motorclient;
-  _motorclient.startup_socket_client();
+  _motorclient.startup_socket_client(testmotorRTdata);
   thrustallocation<m, index_actuation, n> _thrustallocation(
       _thrustallocationdata, v_tunnelthrusterdata, v_azimuththrusterdata,
       v_ruddermaindata);

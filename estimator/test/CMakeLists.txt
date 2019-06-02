@@ -1,5 +1,5 @@
 # CMake 最低版本号要求
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.8)
 
 # 项目信息
 project (testestimator)
@@ -21,14 +21,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
 # 添加 include 子目录
-set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
 
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
 	"${CMAKE_CURRENT_SOURCE_DIR}/../include"
 	"/usr/include" 
-	"${PROJECT_DIRECTORY}/fileIO/include"
-	"${PROJECT_DIRECTORY}/property/include"
-	"${PROJECT_DIRECTORY}/third_party/eigen"
+	"${PROJECT_SOURCE_DIR}/../../fileIO/include"
+	"${PROJECT_SOURCE_DIR}/../../property/include"
+	"${PROJECT_SOURCE_DIR}/../../third_party/eigen"
 	"/opt/mosek/8/tools/platform/linux64x86/h")
 
 

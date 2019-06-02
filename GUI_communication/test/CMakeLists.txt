@@ -7,11 +7,12 @@ set(CMAKE_CXX_STANDARD 17)
 
 
 # 添加 include 子目录
+
 set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
 
 
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
-	"${PROJECT_DIRECTORY}/sensors/gpsimu/include"
+	"${PROJECT_SOURCE_DIR}/sensors/gpsimu/include"
 	"${PROJECT_DIRECTORY}/property/include"
 	"${PROJECT_DIRECTORY}/controller/include"
 	"${PROJECT_DIRECTORY}/controller/motor/include"

@@ -27,19 +27,16 @@ find_package(Threads REQUIRED)
 
 
 # 添加 include 子目录
-set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
-
-
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
-	"${PROJECT_DIRECTORY}/sensors/gpsimu/include"
-	"${PROJECT_DIRECTORY}/controller/include"
-	"${PROJECT_DIRECTORY}/estimator/include"
-	"${PROJECT_DIRECTORY}/planner/include"
-	"${PROJECT_DIRECTORY}/timer/include"
-	"${PROJECT_DIRECTORY}/fileIO/include"
-	"${PROJECT_DIRECTORY}/property/include"
-	"${PROJECT_DIRECTORY}/logging/include"
-	"${PROJECT_DIRECTORY}/third_party/eigen"
+	"${PROJECT_SOURCE_DIR}/../../sensors/gpsimu/include"
+	"${PROJECT_SOURCE_DIR}/../../controller/include"
+	"${PROJECT_SOURCE_DIR}/../../estimator/include"
+	"${PROJECT_SOURCE_DIR}/../../planner/include"
+	"${PROJECT_SOURCE_DIR}/../../timer/include"
+	"${PROJECT_SOURCE_DIR}/../../fileIO/include"
+	"${PROJECT_SOURCE_DIR}/../../property/include"
+	"${PROJECT_SOURCE_DIR}/../../logging/include"
+	"${PROJECT_SOURCE_DIR}/../../third_party/eigen"
 	"/usr/include" )
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} "/usr/lib")
@@ -56,7 +53,7 @@ target_include_directories(testjson PRIVATE ${HEADER_DIRECTORY})
 
 
 set(SOURCE_FILES ${SOURCE_FILES} 
-	"${PROJECT_DIRECTORY}/logging/src/easylogging++.cc"                            
+	"${PROJECT_SOURCE_DIR}/../../logging/src/easylogging++.cc"                            
 	"${CMAKE_CURRENT_SOURCE_DIR}/testsqlite.cc")
 add_executable (testsqlite ${SOURCE_FILES})
 target_include_directories(testsqlite PRIVATE ${HEADER_DIRECTORY})

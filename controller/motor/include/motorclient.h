@@ -11,6 +11,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>  //delay function
+#include <chrono>
+#include <thread>
 #include "motorclientdata.h"
 
 class motorclient {
@@ -33,7 +35,6 @@ class motorclient {
   }
 
   void TerminalPLC() {
-    // printf("%x\n",read_buf[0]);
     printf("sockfd = %d\n", sockfd);
     motorRTdata<6> _motorRTdata;
     while (1) {
@@ -73,6 +74,9 @@ class motorclient {
             printf("%d  ", _motorRTdata.feedback_torque[i]);
           }
           printf("\n");
+
+          printf("All_status:%d\n", _motorRTdata.feedback_allinfo);
+
           break;
         case '5':  // stop=1 to 0
           stopPLC();
@@ -84,7 +88,7 @@ class motorclient {
     //******************************  PLC  ******************************
   }
 
-  void startup_socket_client() {
+  void startup_socket_client(motorRTdata<6> &_motorRTdata) {
     struct addrinfo hints, *servinfo, *p;
     int rv;
     char s[INET6_ADDRSTRLEN];
@@ -131,7 +135,14 @@ class motorclient {
     mk_stop_clean_command_data(stop_clean_buf);
 
     resetPLC();
-    sleep(40);
+    while (1) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+      readPLC(_motorRTdata);
+      if (_motorRTdata.feedback_allinfo == 0) {
+        // successful
+        break;
+      }
+    }
     runPLC();
   }
 
@@ -490,7 +501,7 @@ class motorclient {
       perror("recv");
     }
 
-    usleep(200000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
     reset_buf[22] = 0x00;
     slen = send(sockfd, reset_buf, 24, 0);  //发送命令(70字节)
@@ -509,7 +520,7 @@ class motorclient {
       perror("recv");
     }
 
-    usleep(200000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
     // set 0 value for position and speed
     for (int i = 0; i < 48; i++) {
@@ -550,7 +561,7 @@ class motorclient {
       perror("recv");
     }
 
-    usleep(200000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
     run_buf[22] = 0x00;
     slen = send(sockfd, run_buf, 24, 0);  //发送命令(70字节)
@@ -640,9 +651,7 @@ class motorclient {
 
     // 接收响应数据
     // 子控制器没有发送数据时，该处理不会结束。
-    printf("before recv\n");
     int rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-    printf("rlen=%d\n", rlen);
     if (rlen <= 0)  // 如果接收错误则返回 0 以下
     {
       close(sockfd);
@@ -652,7 +661,6 @@ class motorclient {
 
     // 响应数据的检查
     int rc = chk_parse_command_data(_motorRTdata, rlen);
-    printf("rc=%d\n", rc);
     if (rc != 0)  //接收数据异常
     {
       close(sockfd);
@@ -665,14 +673,13 @@ class motorclient {
       stop_clean_buf[i + 22] = (char)0xFF;
     }
     int slen = send(sockfd, stop_clean_buf, 46, 0);  //发送命令(70字节)
-    if (slen != 46)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    if (slen != 46)  
     {
+      // 如果发送成功，则返回发送的字节数 (70字节)。
       close(sockfd);
       printf("Error: Send !! -> %d\n", slen);
     }
-    printf("before recv\n");
     int rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-    printf("rlen=%d\n", rlen);
     if (rlen <= 0)  // 如果接收错误则返回 0 以下
     {
       close(sockfd);
@@ -680,22 +687,22 @@ class motorclient {
       perror("recv");
     }
 
-    usleep(200000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
     for (int i = 0; i < 24; i++) {
       stop_clean_buf[i + 22] = 0x00;
     }
     slen = send(sockfd, stop_clean_buf, 46, 0);  //发送命令(70字节)
-    if (slen != 46)  // 如果发送成功，则返回发送的字节数 (70字节)。
+    if (slen != 46) 
     {
+       // 如果发送成功，则返回发送的字节数 (70字节)。
       close(sockfd);
       printf("Error: Send !! -> %d\n", slen);
     }
-    printf("before recv\n");
     rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-    printf("rlen=%d\n", rlen);
-    if (rlen <= 0)  // 如果接收错误则返回 0 以下
+    if (rlen <= 0)  
     {
+     // 如果接收错误则返回 0 以下
       close(sockfd);
       printf("Error: Recv !! -> %d\n", rlen);
       perror("recv");
