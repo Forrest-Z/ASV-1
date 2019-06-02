@@ -27,7 +27,6 @@ find_package(Threads MODULE REQUIRED)
 
 
 # 添加 include 子目录
-message("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
 	"${CMAKE_CURRENT_SOURCE_DIR}/../include"
 	"/usr/include" 

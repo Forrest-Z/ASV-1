@@ -1,7 +1,7 @@
 {
   "vesselname": "Biling",
   "project_directory":"/home/scar1et/Coding/ASV/examples/los_simulation/",
-  "dbpath": "data/dbsave.db",
+  "dbpath": "data/dbsave1.db",
   "property": {
     "L":1.255,
     "B":1,

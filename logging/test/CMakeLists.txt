@@ -28,7 +28,7 @@ find_package(Threads REQUIRED)
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
 	"${CMAKE_CURRENT_SOURCE_DIR}/../include"
 	"/usr/include" 
-	 "/home/scar1et/Coding/ASV/third_party/eigen")
+	 "${PROJECT_SOURCE_DIR}/../../third_party/eigen")
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} "/usr/lib")
 set(SOURCE_FILES ${SOURCE_FILES} 

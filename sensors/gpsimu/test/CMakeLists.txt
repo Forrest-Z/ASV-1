@@ -10,12 +10,10 @@ set(CMAKE_CXX_STANDARD 14)
 find_package (GeographicLib 1.49 REQUIRED)
 
 # 添加 include 子目录
-set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
-
 
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
-	"${PROJECT_DIRECTORY}/third_party/eigen"
-	"${PROJECT_DIRECTORY}/third_party/serial/include"
+	"${PROJECT_SOURCE_DIR}/../../../third_party/eigen"
+	"${PROJECT_SOURCE_DIR}/../../../third_party/serial/include"
     "../include/")
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} 

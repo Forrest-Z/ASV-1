@@ -27,11 +27,6 @@ set(HEADER_DIRECTORY ${HEADER_DIRECTORY}
 	"${CMAKE_CURRENT_SOURCE_DIR}/../include"
 	"/usr/include" )
 
-	# "${PROJECT_DIRECTORY}/fileIO/include"
-	# "${PROJECT_DIRECTORY}/property/include"
-	# "${PROJECT_DIRECTORY}/third_party/eigen"
-	# "/opt/mosek/8/tools/platform/linux64x86/h")
-
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} "/usr/lib")
 # 指定生成目标

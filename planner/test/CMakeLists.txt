@@ -26,14 +26,13 @@ find_package(Threads MODULE REQUIRED)
 
 
 # 添加 include 子目录
-set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
 
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
 	"${CMAKE_CURRENT_SOURCE_DIR}/../include"
 	"/usr/include" 
-	"${PROJECT_DIRECTORY}/fileIO/include"
-	"${PROJECT_DIRECTORY}/logging/include"
-	"${PROJECT_DIRECTORY}/third_party/eigen"
+	"${PROJECT_SOURCE_DIR}/../../fileIO/include"
+	"${PROJECT_SOURCE_DIR}/../../logging/include"
+	"${PROJECT_SOURCE_DIR}/../../third_party/eigen"
 	)
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} 
@@ -41,7 +40,7 @@ set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY}
     )
 
 set(SOURCE_FILES ${SOURCE_FILES} 
-	"${PROJECT_DIRECTORY}/logging/src/easylogging++.cc" )
+	"${PROJECT_SOURCE_DIR}/../../logging/src/easylogging++.cc" )
 
 
 # 指定生成目标

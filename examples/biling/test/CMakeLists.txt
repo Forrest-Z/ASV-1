@@ -25,21 +25,19 @@ find_package (GeographicLib 1.49 REQUIRED)
 find_package(Threads REQUIRED)
 
 # 添加 include 子目录
-set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
-
-
+message("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
-	"${PROJECT_DIRECTORY}/sensors/gpsimu/include"
-	"${PROJECT_DIRECTORY}/controller/include"
-	"${PROJECT_DIRECTORY}/estimator/include"
-	"${PROJECT_DIRECTORY}/planner/include"
-	"${PROJECT_DIRECTORY}/timer/include"
-	"${PROJECT_DIRECTORY}/fileIO/include"
-	"${PROJECT_DIRECTORY}/property/include"
-	"${PROJECT_DIRECTORY}/logging/include"
-	"${PROJECT_DIRECTORY}/GUI_communication/include"
-	"${PROJECT_DIRECTORY}/third_party/eigen"
-	"${PROJECT_DIRECTORY}/third_party/serial/include"
+	"${PROJECT_SOURCE_DIR}/../../../sensors/gpsimu/include"
+	"${PROJECT_SOURCE_DIR}/../../../controller/include"
+	"${PROJECT_SOURCE_DIR}/../../../estimator/include"
+	"${PROJECT_SOURCE_DIR}/../../../planner/include"
+	"${PROJECT_SOURCE_DIR}/../../../timer/include"
+	"${PROJECT_SOURCE_DIR}/../../../fileIO/include"
+	"${PROJECT_SOURCE_DIR}/../../../property/include"
+	"${PROJECT_SOURCE_DIR}/../../../logging/include"
+	"${PROJECT_SOURCE_DIR}/../../../GUI_communication/include"
+	"${PROJECT_SOURCE_DIR}/../../../third_party/eigen"
+	"${PROJECT_SOURCE_DIR}/../../../third_party/serial/include"
 	"/opt/mosek/8/tools/platform/linux64x86/h"
 	"/usr/include" 
     "${CMAKE_CURRENT_SOURCE_DIR}/../include")
@@ -51,7 +49,7 @@ set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY}
     
 # 指定生成目标
 set(SOURCE_FILES ${SOURCE_FILES} 
-	"${PROJECT_DIRECTORY}/logging/src/easylogging++.cc"                            
+	"$${PROJECT_SOURCE_DIR}/../../../logging/src/easylogging++.cc"                            
 	"${CMAKE_CURRENT_SOURCE_DIR}/testbiling.cc")
 add_executable (testbiling ${SOURCE_FILES})
 target_include_directories(testbiling PRIVATE ${HEADER_DIRECTORY})
