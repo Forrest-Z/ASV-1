@@ -19,7 +19,7 @@ int main() {
 
     while (1) {
       static int i = 0;
-      _remotecontrol.rconestep(_recontrolRTdata);
+      _remotecontrol.readserialdata(_recontrolRTdata);
       std::cout << ++i << std::endl;
       std::cout << "ppm1=    " << _recontrolRTdata.ppm1 << std::endl;
       std::cout << "ppm2=    " << _recontrolRTdata.ppm2 << std::endl;

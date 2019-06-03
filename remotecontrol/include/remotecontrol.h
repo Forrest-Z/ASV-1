@@ -26,8 +26,8 @@ class remotecontrol {
       : rc_serial(_port, _baud, serial::Timeout::simpleTimeout(2000)) {}
   remotecontrol() = delete;
   ~remotecontrol() {}
-  // read serial data and transform to UTM
-  void rconestep(recontrolRTdata& _recontrolRTdata) {
+  // read serial data
+  void readserialdata(recontrolRTdata& _recontrolRTdata) {
     serial_buffer = rc_serial.readline(200);
     float _ppm1 = 0.0;
     float _ppm2 = 0.0;
@@ -39,7 +39,7 @@ class remotecontrol {
     float _ppm8 = 0.0;
     sscanf(serial_buffer.c_str(),
            "PPM1-01=%f   PPM1-02=%f   PPM1-03=%f   "
-           "PPM1-04=%f   PPM1-05=%f   PPM1-06=%f  "
+           "PPM1-04=%f   PPM1-05=%f   PPM1-06=%f   "
            "PPM1-07=%f   PPM1-08=%f",
            &_ppm1,  //
            &_ppm2,  //
@@ -58,6 +58,18 @@ class remotecontrol {
     _recontrolRTdata.ppm6 = static_cast<int>(_ppm6);
     _recontrolRTdata.ppm7 = static_cast<int>(_ppm7);
     _recontrolRTdata.ppm8 = static_cast<int>(_ppm8);
+  }
+
+  // generate command from remote controller
+  void generatecommand(const recontrolRTdata& _recontrolRTdata) {
+    // _recontrolRTdata.ppm1 = static_cast<int>(_ppm1);
+    // _recontrolRTdata.ppm2 = static_cast<int>(_ppm2);
+    // _recontrolRTdata.ppm3 = static_cast<int>(_ppm3);
+    // _recontrolRTdata.ppm4 = static_cast<int>(_ppm4);
+    // _recontrolRTdata.ppm5 = static_cast<int>(_ppm5);
+    // _recontrolRTdata.ppm6 = static_cast<int>(_ppm6);
+    // _recontrolRTdata.ppm7 = static_cast<int>(_ppm7);
+    // _recontrolRTdata.ppm8 = static_cast<int>(_ppm8);
   }
 
   std::string getserialbuffer() const { return serial_buffer; }

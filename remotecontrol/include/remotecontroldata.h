@@ -16,14 +16,14 @@
 
 // real-time data from remote controller
 struct recontrolRTdata {
-  int ppm1;  // ppm1
-  int ppm2;  // ppm2
-  int ppm3;  // ppm3
-  int ppm4;  // ppm4
-  int ppm5;  // ppm5
-  int ppm6;  // ppm6
-  int ppm7;  // ppm7
-  int ppm8;  // ppm8
+  int right_joystick_LR;  // left and right
+  int right_joystick_UD;  // up and down;
+  int left_joystick_UD;   // up and down;
+  int left_joystick_LR;   // left and right
+  int SA;                 // ppm5
+  int SB;                 // ppm6
+  int SC;                 // ppm7
+  int SD;                 // ppm8
 };
 
 #endif /* _REMOTECONTROLDATA_H_ */
