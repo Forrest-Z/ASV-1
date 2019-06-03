@@ -196,6 +196,7 @@ class threadloop {
     long int sample_time =
         static_cast<long int>(1000 * _controller.getsampletime());
     while (1) {
+      _controller.setcontrolmode(AUTOMATIC);
       _controller.controlleronestep(
           _controllerRTdata, _windcompensation.getwindload(),
           _estimatorRTdata.p_error, _estimatorRTdata.v_error,

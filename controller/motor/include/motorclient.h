@@ -83,6 +83,8 @@ class motorclient {
           break;
         case '6':  // suspend
           break;
+        default:
+          break;
       }
     }
     //******************************  PLC  ******************************

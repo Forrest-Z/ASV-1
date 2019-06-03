@@ -174,23 +174,55 @@ class controller {
   void positionloop(vectornd &_tau, const vectornd &_error) {
     // position control
     vectornd position_error_integral = updatepositionIntegralMatrix(_error);
-
-    if (!comparepositionerror(_error)) {
-      for (int i = 0; i != n; ++i)
-        _tau(i) += position_pids(0, i) * _error(i)  // proportional term
-                   + position_pids(1, i) *
-                         position_error_integral(i);  // integral term
+    switch (controlmode) {  // controller mode
+      case MANUAL:
+        break;
+      case MANEUVERING:
+        _tau(2) += position_pids(0, 2) * _error(2)  // proportional term
+                   + position_pids(1, 2) *
+                         position_error_integral(2);  // integral term
+        break;
+      case DYNAMICPOSITION:
+      case HEADINGONLY:
+        if (!comparepositionerror(_error)) {
+          for (int i = 0; i != n; ++i)
+            _tau(i) += position_pids(0, i) * _error(i)  // proportional term
+                       + position_pids(1, i) *
+                             position_error_integral(i);  // integral term
+        }
+        break;
+      default:
+        break;
     }
+
   }  // positionloop()
 
   void velocityloop(vectornd &_tau, const vectornd &_derror) {
     // velocity control
     vectornd velocity_error_integral = updatevelocityIntegralMatrix(_derror);
-    if (!comparevelocityerror(_derror)) {
-      for (int i = 0; i != n; ++i)
-        _tau(i) += velocity_pids(0, i) * _derror(i)  // proportional term
-                   + velocity_pids(1, i) *
-                         velocity_error_integral(i);  // integral term
+
+    switch (controlmode) {  // controller mode
+      case MANUAL:
+        break;
+      case MANEUVERING:
+        _tau(0) += velocity_pids(0, 0) * _derror(0)  // proportional term
+                   + velocity_pids(1, 0) *
+                         velocity_error_integral(0);  // integral term
+        _tau(2) += velocity_pids(0, 2) * _derror(2)   // proportional term
+                   + velocity_pids(1, 2) *
+                         velocity_error_integral(2);  // integral term
+        break;
+      case DYNAMICPOSITION:
+      case HEADINGONLY:
+        if (!comparevelocityerror(_derror)) {
+          for (int i = 0; i != n; ++i)
+            _tau(i) += velocity_pids(0, i) * _derror(i)  // proportional term
+                       + velocity_pids(1, i) *
+                             velocity_error_integral(i);  // integral term
+        }
+        break;
+      default:
+        break;
     }
   }
   // restrict the desired force to some value
