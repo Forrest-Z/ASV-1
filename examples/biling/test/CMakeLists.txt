@@ -29,11 +29,13 @@ message("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
 	"${PROJECT_SOURCE_DIR}/../../../sensors/gpsimu/include"
 	"${PROJECT_SOURCE_DIR}/../../../controller/include"
+	"${PROJECT_SOURCE_DIR}/../../../controller/motor/include"
 	"${PROJECT_SOURCE_DIR}/../../../estimator/include"
 	"${PROJECT_SOURCE_DIR}/../../../planner/include"
 	"${PROJECT_SOURCE_DIR}/../../../timer/include"
 	"${PROJECT_SOURCE_DIR}/../../../fileIO/include"
 	"${PROJECT_SOURCE_DIR}/../../../property/include"
+	"${PROJECT_SOURCE_DIR}/../../../remotecontrol/include"
 	"${PROJECT_SOURCE_DIR}/../../../logging/include"
 	"${PROJECT_SOURCE_DIR}/../../../GUI_communication/include"
 	"${PROJECT_SOURCE_DIR}/../../../third_party/eigen"

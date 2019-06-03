@@ -21,14 +21,17 @@
 #include "gps.h"
 #include "guiserver.h"
 #include "jsonparse.h"
+#include "motorclient.h"
 #include "planner.h"
+#include "priority.h"
+#include "remotecontrol.h"
 #include "timecounter.h"
 #include "windcompensation.h"
 
-constexpr int num_thruster = 4;
+constexpr int num_thruster = 6;
 constexpr int dim_controlspace = 3;
 constexpr USEKALMAN indicator_kalman = KALMANON;
-constexpr ACTUATION indicator_actuation = UNDERACTUATED;
+constexpr ACTUATION indicator_actuation = FULLYACTUATED;
 
 class threadloop {
  public:
@@ -36,12 +39,15 @@ class threadloop {
       : _jsonparse("./../../properties/property.json"),
         _planner(_jsonparse.getplannerdata()),
         _estimator(_jsonparse.getvessel(), _jsonparse.getestimatordata()),
-        _gpsimu(51, true, 115200),
         _controller(_jsonparse.getcontrollerdata(), _jsonparse.getvessel(),
                     _jsonparse.getpiddata(),
                     _jsonparse.getthrustallocationdata(),
                     _jsonparse.gettunneldata(), _jsonparse.getazimuthdata(),
                     _jsonparse.getmainrudderdata()),
+        _gpsimu(51, true, _jsonparse.getgpsbaudrate(), _jsonparse.getgpsport()),
+        _guiserver(_jsonparse.getguibaudrate(), _jsonparse.getguiport()),
+        _remotecontrol(_jsonparse.getrcbaudrate(),
+                       _jsonparse.getremotecontrolport()),
         _sqlite(_jsonparse.getsqlitedata()) {
     intializethreadloop();
   }
@@ -54,6 +60,7 @@ class threadloop {
     std::thread controller_thread(&threadloop::controllerloop, this);
     std::thread sql_thread(&threadloop::sqlloop, this);
     std::thread guiserver_thread(&threadloop::guicommunicationloop, this);
+    std::thread remotecontrol_thread(&threadloop::remotecontrolloop, this);
 
     gps_thread.detach();
     planner_thread.detach();
@@ -61,6 +68,7 @@ class threadloop {
     estimator_thread.detach();
     sql_thread.detach();
     guiserver_thread.detach();
+    remotecontrol_thread.detach();
   }
 
  private:
@@ -84,6 +92,7 @@ class threadloop {
       Eigen::Matrix<int, num_thruster, 1>::Zero()          // alpha_deg
   };
 
+  motorRTdata<m> testmotorRTdata;
   // realtime parameters of the estimators
   estimatorRTdata _estimatorRTdata{
       Eigen::Matrix3d::Identity(),          // CTB2G
@@ -118,13 +127,45 @@ class threadloop {
       0                 // UTM_y
   };
 
+  // real time remote control data
+  recontrolRTdata _recontrolRTdata{
+      0,                // date
+      0,                // time
+      0,                // heading
+      0,                // pitch
+      0,                // roll
+      0,                // latitude
+      0,                // longitude
+      0,                // altitude
+      0,                // Ve
+      0,                // Vn
+      0,                // Vu
+      0,                // base_line
+      0,                // NSV1
+      0,                // NSV2
+      'a',              // status
+      {'a', 'b', '0'},  // check
+      0,                // UTM_x
+      0                 // UTM_y
+  };
+
+  indicators _indicators{
+      0,                // gui_connection
+      0,                // joystick_connection
+      DYNAMICPOSITION,  // controlmode
+      WINDON,           // windstatus
+  };
+
   planner _planner;
-  guiserver<num_thruster, dim_controlspace> _guiserver;
   estimator<indicator_kalman> _estimator;
-  gpsimu _gpsimu;
   controller<10, num_thruster, indicator_actuation, dim_controlspace>
       _controller;
+
+  gpsimu _gpsimu;
   windcompensation _windcompensation;
+  guiserver<num_thruster, dim_controlspace> _guiserver;
+  remotecontrol _remotecontrol;
+
   database<num_thruster, dim_controlspace> _sqlite;
 
   void intializethreadloop() {
@@ -188,7 +229,6 @@ class threadloop {
   }  // gpsimuloop()
 
   void controllerloop() {
-    _controller.setcontrolmode(AUTOMATIC);
     timecounter timer_controler;
     long int elapsed_time = 0;
     long int sample_time =
@@ -258,12 +298,19 @@ class threadloop {
   void guicommunicationloop() {
     timecounter timer_gui;
     while (1) {
-      _guiserver.guicommunication(_controllerRTdata, _estimatorRTdata,
-                                  _plannerRTdata, gps_data);
+      _guiserver.guicommunication(_indicators, _controllerRTdata,
+                                  _estimatorRTdata, _plannerRTdata, gps_data);
       std::cout << timer_gui.timeelapsed() << std::endl;
       std::cout << _guiserver;
     }
   }  // guicommunicationloop()
+
+  void remotecontrolloop() {
+    while (1) {
+      _remotecontrol.rconestep();
+    }
+
+  }  // remotecontrolloop()
 };
 
 #endif /* _THREADLOOP_H_ */

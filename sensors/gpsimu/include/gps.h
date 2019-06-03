@@ -22,13 +22,6 @@
 #include "gpsdata.h"
 #include "serial/serial.h"
 
-// OS Specific sleep
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
-
 class gpsimu {
   friend std::ostream& operator<<(std::ostream&, const gpsimu&);
 

@@ -26,8 +26,9 @@ class guiserver {
   friend std::ostream &operator<<(std::ostream &, const guiserver<_m, _n> &);
 
  public:
-  guiserver()
-      : my_serial("/dev/ttyUSB1", 19200, serial::Timeout::simpleTimeout(500)),
+  guiserver(unsigned long _rate = 19200,
+            const std::string &_port = "/dev/ttyUSB0")
+      : my_serial(_port, _rate, serial::Timeout::simpleTimeout(500)),
         send_buffer(""),
         recv_buffer(""),
         gui_connetion_failure_count(0) {

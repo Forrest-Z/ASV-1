@@ -1,7 +1,7 @@
 /*
 *****************************************************************************
 * testguicommunication.cc:
-* unit test for timer in milliseconds
+* unit test for gui communication
 * This header file can be read by C++ compilers
 *
 * by Hu.ZH(CrossOcean.ai)

@@ -65,6 +65,12 @@ class jsonparse {
   plannerdata getplannerdata() const noexcept { return plannerdata_input; }
 
   std::string getsqlitedata() const noexcept { return dbpath; }
+  std::string getgpsport() const noexcept { return gps_port; }
+  std::string getguiport() const noexcept { return gui_port; }
+  std::string getremotecontrolport() const noexcept { return rc_port; }
+  unsigned long getgpsbaudrate() const noexcept { return gps_baudrate; }
+  unsigned long getguibaudrate() const noexcept { return gui_baudrate; }
+  unsigned long getrcbaudrate() const noexcept { return rc_baudrate; }
 
   void readjson() {
     parsejson();
@@ -73,6 +79,7 @@ class jsonparse {
     parsecontrollerdata();
     parseestimatordata();
     parsesqlitedata();
+    paresecomcenter();
   }
 
  private:
@@ -82,9 +89,14 @@ class jsonparse {
 
   utilityio _utilityio;
 
-  bool index_actuation;  // 1: fully-actuated; 0: underactuated
-  std::string dbpath;    // directory for database file
+  std::string dbpath;  // directory for database file
 
+  unsigned long gps_baudrate;
+  std::string gps_port;
+  unsigned long gui_baudrate;
+  std::string gui_port;
+  unsigned long rc_baudrate;
+  std::string rc_port;
   // vessel property
   vessel vesseldata_input{
       Eigen::Matrix3d::Zero(),  // Mass
@@ -400,6 +412,17 @@ class jsonparse {
              file["dbpath"].get<std::string>();
 
   }  // parsesqlitedata
+
+  void paresecomcenter() {
+    gps_port = file["comcenter"]["GPS"]["port"];
+    gps_baudrate = file["comcenter"]["GPS"]["baudrate"].get<unsigned long>();
+    gui_port = file["comcenter"]["GUI_server"]["port"];
+    gui_baudrate =
+        file["comcenter"]["GUI_server"]["baudrate"].get<unsigned long>();
+    rc_port = file["comcenter"]["remotecontrol"]["port"];
+    rc_baudrate =
+        file["comcenter"]["remotecontrol"]["baudrate"].get<unsigned long>();
+  }
 };
 
 template <int _m, int _n>
@@ -479,6 +502,11 @@ std::ostream& operator<<(std::ostream& os, const jsonparse<_m, _n>& _jp) {
   os << _jp.vesseldata_input.sway_v << std::endl;
   os << _jp.vesseldata_input.yaw_v << std::endl;
   os << _jp.vesseldata_input.roll_v << std::endl;
+
+  os << "comcenter:\n";
+  os << _jp.gps_port << " " << _jp.gps_baudrate << std::endl;
+  os << _jp.gui_port << " " << _jp.gui_baudrate << std::endl;
+  os << _jp.rc_port << " " << _jp.rc_baudrate << std::endl;
 
   return os;
 }

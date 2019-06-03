@@ -108,6 +108,20 @@
       "capture_radius_co":0.7
     }
   },
+  "comcenter":{
+    "GPS":{
+      "port":"/dev/ttyUSB0",
+      "baudrate":115200
+    },
+    "GUI_server":{
+      "port":"/dev/ttyUSB1",
+      "baudrate":19200
+    },
+    "remotecontrol":{
+      "port":"/dev/ttyUSB2",
+      "baudrate":115200
+    }
+  },
   "nothing": null,
   "list": [1, 0, 2],
   "object": {
