@@ -33,9 +33,7 @@ constexpr ACTUATION indicator_actuation = UNDERACTUATED;
 class threadloop {
  public:
   threadloop()
-      : _jsonparse(
-            "/home/scar1et/Coding/ASV/examples/biling/properties/"
-            "property.json"),
+      : _jsonparse("./../../properties/property.json"),
         _planner(_jsonparse.getplannerdata()),
         _estimator(_jsonparse.getvessel(), _jsonparse.getestimatordata()),
         _gpsimu(51, true, 115200),
