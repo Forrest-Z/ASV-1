@@ -20,10 +20,10 @@ struct recontrolRTdata {
   int right_joystick_UD;  // up and down;
   int left_joystick_UD;   // up and down;
   int left_joystick_LR;   // left and right
-  int SA;                 // ppm5
-  int SB;                 // ppm6
-  int SC;                 // ppm7
-  int SD;                 // ppm8
+  int SA;                 // SA
+  int SB;                 // SB
+  int SC;                 // SC
+  int SD;                 // SD
 };
 
 #endif /* _REMOTECONTROLDATA_H_ */
