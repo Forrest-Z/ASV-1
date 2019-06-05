@@ -30,8 +30,11 @@ class motorclient {
   }
 
   void PLCcommunication(motorRTdata<6> &_motorRTdata) {
-    commandPLC(_motorRTdata.command_alpha, _motorRTdata.command_rotation);
-    readPLC(_motorRTdata);
+    if (commandPLC(_motorRTdata.command_alpha, _motorRTdata.command_rotation) ==
+        1)
+      socketconnection();
+
+    if (readPLC(_motorRTdata) == 1) socketconnection();
   }
 
   void TerminalPLC() {
@@ -91,42 +94,43 @@ class motorclient {
   }
 
   void startup_socket_client(motorRTdata<6> &_motorRTdata) {
-    struct addrinfo hints, *servinfo, *p;
-    int rv;
-    char s[INET6_ADDRSTRLEN];
+    socketconnection();
+    // struct addrinfo hints, *servinfo, *p;
+    // int rv;
+    // char s[INET6_ADDRSTRLEN];
 
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
+    // memset(&hints, 0, sizeof hints);
+    // hints.ai_family = AF_UNSPEC;
+    // hints.ai_socktype = SOCK_STREAM;
 
-    if ((rv = getaddrinfo("192.168.1.1", "10001", &hints, &servinfo)) != 0) {
-      fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-    }
+    // if ((rv = getaddrinfo("192.168.1.1", "10001", &hints, &servinfo)) != 0) {
+    //   fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+    // }
 
-    // 用循环取得全部的结果，并先连接到能成功连接的
-    for (p = servinfo; p != NULL; p = p->ai_next) {
-      if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) ==
-          -1) {
-        perror("client: socket");
-        continue;
-      }
+    // // 用循环取得全部的结果，并先连接到能成功连接的
+    // for (p = servinfo; p != NULL; p = p->ai_next) {
+    //   if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) ==
+    //       -1) {
+    //     perror("client: socket");
+    //     continue;
+    //   }
 
-      if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-        close(sockfd);
-        perror("client: connect");
-        continue;
-      }
-      break;
-    }
+    //   if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+    //     close(sockfd);
+    //     perror("client: connect");
+    //     continue;
+    //   }
+    //   break;
+    // }
 
-    if (p == NULL) {
-      fprintf(stderr, "client: failed to connect\n");
-    }
+    // if (p == NULL) {
+    //   fprintf(stderr, "client: failed to connect\n");
+    // }
 
-    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s,
-              sizeof s);
-    printf("client: connecting to %s\n", s);
-    freeaddrinfo(servinfo);  // 全部皆以这个 structure 完成
+    // inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s,
+    //           sizeof s);
+    // printf("client: connecting to %s\n", s);
+    // freeaddrinfo(servinfo);  // 全部皆以这个 structure 完成
 
     //******************************  PLC  ******************************
 
@@ -141,8 +145,14 @@ class motorclient {
       std::this_thread::sleep_for(std::chrono::milliseconds(5000));
       readPLC(_motorRTdata);
       if (_motorRTdata.feedback_allinfo == 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        readPLC(_motorRTdata);
         // successful
-        break;
+        if (_motorRTdata.feedback_allinfo == 0) break;
+      } else if (_motorRTdata.feedback_allinfo == 2) {
+        printf("reset\n");
+      } else {
+        printf("error\n");
       }
     }
     runPLC();
@@ -457,9 +467,11 @@ class motorclient {
     if ((rbuf[18] != 0x79) || (rbuf[19] != 0x00)) return (-8);  // 非 240 bytes
 
     // 读取寄存器数据 rbuf[20] 以后
-    for (int i = 0; i < 241; i++) {
+    for (int i = 0; i < 240; i++) {
       _read_data.b[i] = rbuf[i + 20];
     }
+    //总的报警 / 复位信息
+    _motorRTdata.feedback_allinfo = rbuf[260];
 
     for (int i = 0; i < 6; i++) {
       _motorRTdata.feedback_alpha[i] =
@@ -472,8 +484,7 @@ class motorclient {
       _motorRTdata.feedback_torque[i] = _read_data.a[i + 12];
     for (int i = 0; i < 36; i++)
       _motorRTdata.feedback_info[i] = _read_data.a[i + 24];
-    //总的报警 / 复位信息
-    _motorRTdata.feedback_allinfo = _read_data.a[60];
+
     return 0;
   }
 
@@ -583,7 +594,7 @@ class motorclient {
     }
   }
 
-  void commandPLC(float *alpha, float *rotation) {
+  int commandPLC(float *alpha, float *rotation) {
     for (int i = 0; i != 6; ++i) _command_data.a[2 * i] = alpha[i];
     min_position();
     for (int i = 0; i != 6; ++i) _command_data.a[2 * i + 1] = rotation[i];
@@ -594,6 +605,7 @@ class motorclient {
     {
       close(sockfd);
       printf("Error: Send !! -> %d\n", slen);
+      return 1;
     }
     printf("before recv\n");
     int rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
@@ -603,7 +615,9 @@ class motorclient {
       close(sockfd);
       printf("Error: Recv !! -> %d\n", rlen);
       perror("recv");
+      return 1;
     }
+    return 0;
   }
 
   void commandPLC() {
@@ -640,7 +654,7 @@ class motorclient {
     }
   }
 
-  void readPLC(motorRTdata<6> &_motorRTdata) {
+  int readPLC(motorRTdata<6> &_motorRTdata) {
     // 发送命令数据
     // 主控制器不能发送数据时，该处理不会结束。
     int slen = send(sockfd, read_buf, 22, 0);  //发送命令(22字节)
@@ -649,6 +663,7 @@ class motorclient {
     {
       close(sockfd);
       printf("Error: Send !! -> %d\n", slen);
+      return 1;
     }
 
     // 接收响应数据
@@ -658,7 +673,7 @@ class motorclient {
     {
       close(sockfd);
       printf("Error: Recv !! -> %d\n", rlen);
-      perror("recv");
+      return 1;
     }
 
     // 响应数据的检查
@@ -666,9 +681,13 @@ class motorclient {
     if (rc != 0)  //接收数据异常
     {
       close(sockfd);
+      return 1;
     }
     read_buf[1]++;  // 增加 218 标题的串行编号
+    return 0;
+ 
   }
+
 
   void stopPLC() {
     for (int i = 0; i < 24; i++) {
@@ -709,6 +728,47 @@ class motorclient {
       printf("Error: Recv !! -> %d\n", rlen);
       perror("recv");
     }
+  }
+
+  void socketconnection(){
+
+    struct addrinfo hints, *servinfo, *p;
+    int rv;
+    char s[INET6_ADDRSTRLEN];
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((rv = getaddrinfo("192.168.1.1", "10001", &hints, &servinfo)) != 0) {
+      fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+    }
+
+    // 用循环取得全部的结果，并先连接到能成功连接的
+    for (p = servinfo; p != NULL; p = p->ai_next) {
+      if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) ==
+          -1) {
+        perror("client: socket");
+        continue;
+      }
+
+      if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+        close(sockfd);
+        perror("client: connect");
+        continue;
+      }
+      break;
+    }
+
+    if (p == NULL) {
+      fprintf(stderr, "client: failed to connect\n");
+    }
+
+    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s,
+              sizeof s);
+    printf("client: connecting to %s\n", s);
+    freeaddrinfo(servinfo);  // 全部皆以这个 structure 完成
+
   }
 
 

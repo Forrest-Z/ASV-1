@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
 	"${PROJECT_SOURCE_DIR}/../../third_party/eigen"
 	"${PROJECT_SOURCE_DIR}/../../third_party/serial/include"
+	"${PROJECT_SOURCE_DIR}/../../property/include"
     "../include/")
 
 set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY} 

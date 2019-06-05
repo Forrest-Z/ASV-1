@@ -21,14 +21,20 @@ int main() {
       static int i = 0;
       _remotecontrol.readserialdata(_recontrolRTdata);
       std::cout << ++i << std::endl;
-      std::cout << "ppm1=    " << _recontrolRTdata.ppm1 << std::endl;
-      std::cout << "ppm2=    " << _recontrolRTdata.ppm2 << std::endl;
-      std::cout << "ppm3=    " << _recontrolRTdata.ppm3 << std::endl;
-      std::cout << "ppm4=    " << _recontrolRTdata.ppm4 << std::endl;
-      std::cout << "ppm5=    " << _recontrolRTdata.ppm5 << std::endl;
-      std::cout << "ppm6=    " << _recontrolRTdata.ppm6 << std::endl;
-      std::cout << "ppm7=    " << _recontrolRTdata.ppm7 << std::endl;
-      std::cout << "ppm8=    " << _recontrolRTdata.ppm8 << std::endl;
+      std::cout << "connection:" << _remotecontrol.checkrcconnection()
+                << std::endl;
+      std::cout << "right_joystick_LR=    "
+                << _recontrolRTdata.right_joystick_LR << std::endl;
+      std::cout << "right_joystick_UD=    "
+                << _recontrolRTdata.right_joystick_UD << std::endl;
+      std::cout << "left_joystick_UD=    " << _recontrolRTdata.left_joystick_UD
+                << std::endl;
+      std::cout << "left_joystick_LR=    " << _recontrolRTdata.left_joystick_LR
+                << std::endl;
+      std::cout << "SA=    " << _recontrolRTdata.SA << std::endl;
+      std::cout << "SB=    " << _recontrolRTdata.SB << std::endl;
+      std::cout << "SC=    " << _recontrolRTdata.SC << std::endl;
+      std::cout << "SD=    " << _recontrolRTdata.SD << std::endl;
     }
 
   } catch (std::exception& e) {

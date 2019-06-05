@@ -92,7 +92,7 @@ class threadloop {
       Eigen::Matrix<int, num_thruster, 1>::Zero()          // alpha_deg
   };
 
-  motorRTdata<m> testmotorRTdata;
+  motorRTdata<num_thruster> _motorRTdata;
   // realtime parameters of the estimators
   estimatorRTdata _estimatorRTdata{
       Eigen::Matrix3d::Identity(),          // CTB2G
@@ -129,38 +129,30 @@ class threadloop {
 
   // real time remote control data
   recontrolRTdata _recontrolRTdata{
-      0,                // date
-      0,                // time
-      0,                // heading
-      0,                // pitch
-      0,                // roll
-      0,                // latitude
-      0,                // longitude
-      0,                // altitude
-      0,                // Ve
-      0,                // Vn
-      0,                // Vu
-      0,                // base_line
-      0,                // NSV1
-      0,                // NSV2
-      'a',              // status
-      {'a', 'b', '0'},  // check
-      0,                // UTM_x
-      0                 // UTM_y
+      0.0,  // right_joystick_LR
+      0.0,  // right_joystick_UD
+      0.0,  // left_joystick_UD
+      0.0,  // left_joystick_LR
+      0.0,  // SA
+      0.0,  // SB
+      0.0,  // SC
+      0.0   // SD
   };
 
   indicators _indicators{
-      0,                // gui_connection
-      0,                // joystick_connection
-      DYNAMICPOSITION,  // controlmode
-      WINDON,           // windstatus
+      0,  // gui_connection
+      0,  // joystick_connection
+      0,  // indicator_controlmode
+      0,  // indicator_windstatus
   };
 
   planner _planner;
   estimator<indicator_kalman> _estimator;
   controller<10, num_thruster, indicator_actuation, dim_controlspace>
       _controller;
+  motorclient _motorclient;
 
+  // sensors
   gpsimu _gpsimu;
   windcompensation _windcompensation;
   guiserver<num_thruster, dim_controlspace> _guiserver;
@@ -174,39 +166,41 @@ class threadloop {
   }
 
   void plannerloop() {
-    timecounter timer_planner;
-    long int elapsed_time = 0;
-    long int sample_time =
-        static_cast<long int>(1000 * _planner.getsampletime());
+    // timecounter timer_planner;
+    // long int elapsed_time = 0;
+    // long int sample_time =
+    //     static_cast<long int>(1000 * _planner.getsampletime());
 
-    double radius = 2;
-    Eigen::Vector2d startposition = (Eigen::Vector2d() << 2, 0.1).finished();
-    Eigen::Vector2d endposition = (Eigen::Vector2d() << 5, 2).finished();
-    _planner.setconstantspeed(_plannerRTdata, 0.1, 0.06);
+    // double radius = 2;
+    // Eigen::Vector2d startposition = (Eigen::Vector2d() << 2, 0.1).finished();
+    // Eigen::Vector2d endposition = (Eigen::Vector2d() << 5, 2).finished();
+    // _planner.setconstantspeed(_plannerRTdata, 0.1, 0.06);
 
-    auto waypoints = _planner.followcircle(startposition, endposition, radius,
-                                           _estimatorRTdata.State(2),
-                                           _plannerRTdata.v_setpoint(0));
-    _planner.initializewaypoint(_plannerRTdata, waypoints);
+    // auto waypoints = _planner.followcircle(startposition, endposition,
+    // radius,
+    //                                        _estimatorRTdata.State(2),
+    //                                        _plannerRTdata.v_setpoint(0));
+    // _planner.initializewaypoint(_plannerRTdata, waypoints);
 
-    int index_wpt = 2;
-    while (1) {
-      if (_planner.switchwaypoint(_plannerRTdata,
-                                  _estimatorRTdata.State.head(2),
-                                  waypoints.col(index_wpt))) {
-        std::cout << index_wpt << std::endl;
-        ++index_wpt;
-      }
-      if (index_wpt == waypoints.cols()) {
-        CLOG(INFO, "waypoints") << "reach the last waypoint!";
-        break;
-      }
-      _planner.pathfollowLOS(_plannerRTdata, _estimatorRTdata.State.head(2));
+    // int index_wpt = 2;
+    // while (1) {
+    //   if (_planner.switchwaypoint(_plannerRTdata,
+    //                               _estimatorRTdata.State.head(2),
+    //                               waypoints.col(index_wpt))) {
+    //     std::cout << index_wpt << std::endl;
+    //     ++index_wpt;
+    //   }
+    //   if (index_wpt == waypoints.cols()) {
+    //     CLOG(INFO, "waypoints") << "reach the last waypoint!";
+    //     break;
+    //   }
+    //   _planner.pathfollowLOS(_plannerRTdata, _estimatorRTdata.State.head(2));
 
-      elapsed_time = timer_planner.timeelapsed();
-      std::this_thread::sleep_for(
-          std::chrono::milliseconds(sample_time - elapsed_time));
-    }
+    //   elapsed_time = timer_planner.timeelapsed();
+    //   std::this_thread::sleep_for(
+    //       std::chrono::milliseconds(sample_time - elapsed_time));
+    // }
+
   }  // plannerloop
 
   // GPS/IMU
@@ -233,12 +227,23 @@ class threadloop {
     long int elapsed_time = 0;
     long int sample_time =
         static_cast<long int>(1000 * _controller.getsampletime());
+
+    _motorclient.startup_socket_client(_motorRTdata);
+    std::cout << _motorRTdata.feedback_allinfo << std::endl;
+    CLOG(INFO, "PLC") << "Servo and PLC initialation successful!";
+
     while (1) {
-      _controller.setcontrolmode(AUTOMATIC);
+      _controller.setcontrolmode(_indicators.indicator_controlmode);
       _controller.controlleronestep(
           _controllerRTdata, _windcompensation.getwindload(),
           _estimatorRTdata.p_error, _estimatorRTdata.v_error,
           _plannerRTdata.command, _plannerRTdata.v_setpoint);
+
+      _motorclient.commandfromcontroller(
+          _motorRTdata.command_alpha, _motorRTdata.command_rotation,
+          _controllerRTdata.alpha_deg, _controllerRTdata.rotation);
+
+      _motorclient.PLCcommunication(_motorRTdata);
 
       elapsed_time = timer_controler.timeelapsed();
       // std::cout << elapsed_time << std::endl;
@@ -299,15 +304,43 @@ class threadloop {
     timecounter timer_gui;
     while (1) {
       _guiserver.guicommunication(_indicators, _controllerRTdata,
-                                  _estimatorRTdata, _plannerRTdata, gps_data);
-      std::cout << timer_gui.timeelapsed() << std::endl;
-      std::cout << _guiserver;
+                                  _estimatorRTdata, _plannerRTdata, gps_data,
+                                  _motorRTdata);
+      // std::cout << timer_gui.timeelapsed() << std::endl;
+      // std::cout << _guiserver;
     }
   }  // guicommunicationloop()
 
   void remotecontrolloop() {
+    std::vector<pidcontrollerdata> _piddata = _jsonparse.getpiddata();
+    Eigen::Matrix<double, 3, 2> command_limit =
+        Eigen::Matrix<double, 3, 2>::Zero();
+    for (int i = 0; i != 3; ++i) {
+      command_limit(i, 0) = _piddata[i].max_output;
+      command_limit(i, 1) = _piddata[i].min_output;
+    }
+
     while (1) {
-      _remotecontrol.rconestep();
+      _remotecontrol.readserialdata(_recontrolRTdata);
+      _remotecontrol.parsercdata(_indicators, _plannerRTdata.command,
+                                 command_limit, _recontrolRTdata);
+
+      // std::cout << "connection:" << _remotecontrol.checkrcconnection()
+      //           << std::endl;
+      // std::cout << "right_joystick_LR=    "
+      //           << _recontrolRTdata.right_joystick_LR << std::endl;
+      // std::cout << "right_joystick_UD=    "
+      //           << _recontrolRTdata.right_joystick_UD << std::endl;
+      // std::cout << "left_joystick_UD=    " <<
+      // _recontrolRTdata.left_joystick_UD
+      //           << std::endl;
+      // std::cout << "left_joystick_LR=    " <<
+      // _recontrolRTdata.left_joystick_LR
+      //           << std::endl;
+      // std::cout << "SA=    " << _recontrolRTdata.SA << std::endl;
+      // std::cout << "SB=    " << _recontrolRTdata.SB << std::endl;
+      // std::cout << "SC=    " << _recontrolRTdata.SC << std::endl;
+      // std::cout << "SD=    " << _recontrolRTdata.SD << std::endl;
     }
 
   }  // remotecontrolloop()

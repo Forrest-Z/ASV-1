@@ -331,8 +331,8 @@ int chk_rsp_command_data(char *read_buf, char *rbuf, int rlen) {
   for (i = 0; i < 240; i++) {
     _read_data.b[i] = rbuf[i + 20];
   }
-  printf("want=%x\n", rbuf[i + 20]);
-
+  char allinfo = rbuf[260];
+  printf("want=%x\n", allinfo);
   printf("Positon :");
   for (i = 0; i < 6; i++) {
     printf("%f  ", _read_data.a[i] / 1000.0);
@@ -355,6 +355,7 @@ int chk_rsp_command_data(char *read_buf, char *rbuf, int rlen) {
   for (i = 0; i < 36; i++) {
     printf("%d  ", _read_data.a[i + 24]);
   }
+
   printf("\n");
   return (0);
 }

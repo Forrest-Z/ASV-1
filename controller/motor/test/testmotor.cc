@@ -4,10 +4,10 @@ void test1() {
   motorclient _motorclient;
   motorRTdata<6> testmotorRTdata;
   _motorclient.startup_socket_client(testmotorRTdata);
-  for (int i = 0; i != 120; ++i) {
+  while (1) {
     for (int j = 0; j != 6; ++j) {
-      testmotorRTdata.command_alpha[j] = 3 * i;
-      testmotorRTdata.command_rotation[j] = 1000 - 10 * i;
+      testmotorRTdata.command_alpha[j] = 10;
+      testmotorRTdata.command_rotation[j] = 200;
     }
     _motorclient.PLCcommunication(testmotorRTdata);
 

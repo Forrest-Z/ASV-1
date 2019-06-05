@@ -11,11 +11,11 @@
 #ifndef _PRIORITY_H_
 #define _PRIORITY_H_
 
-#include "controllerdata.h"
-#include "estimatordata.h"
-#include "gpsdata.h"
-#include "motorclientdata.h"
-#include "plannerdata.h"
+// #include "controllerdata.h"
+// #include "estimatordata.h"
+// #include "gpsdata.h"
+// #include "motorclientdata.h"
+// #include "plannerdata.h"
 
 struct indicators {
   // indicator for gui connection: 0 --> disconnect, 1 -->connect

@@ -280,14 +280,15 @@ class jsonparse {
             file[str_thruster]["min_rotation"].get<int>();
 
         // alpha
+        double deg2rad = M_PI / 180.0;
         _thrusterdata_input.max_delta_alpha =
-            controllerdata_input.sample_time *
+            controllerdata_input.sample_time * deg2rad *
             file[str_thruster]["max_delta_alpha"].get<double>();
 
         _thrusterdata_input.max_alpha =
-            file[str_thruster]["max_alpha"].get<double>();
+            deg2rad * file[str_thruster]["max_alpha"].get<double>();
         _thrusterdata_input.min_alpha =
-            file[str_thruster]["min_alpha"].get<double>();
+            deg2rad * file[str_thruster]["min_alpha"].get<double>();
         // thrust
         _thrusterdata_input.max_thrust =
             _thrusterdata_input.K *

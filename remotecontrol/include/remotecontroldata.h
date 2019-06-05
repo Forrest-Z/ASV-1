@@ -16,14 +16,14 @@
 
 // real-time data from remote controller
 struct recontrolRTdata {
-  int right_joystick_LR;  // left and right
-  int right_joystick_UD;  // up and down;
-  int left_joystick_UD;   // up and down;
-  int left_joystick_LR;   // left and right
-  int SA;                 // SA
-  int SB;                 // SB
-  int SC;                 // SC
-  int SD;                 // SD
+  float right_joystick_LR;  // left and right
+  float right_joystick_UD;  // up and down;
+  float left_joystick_UD;   // up and down;
+  float left_joystick_LR;   // left and right
+  float SA;                 // SA
+  float SB;                 // SB
+  float SC;                 // SC
+  float SD;                 // SD
 };
 
 #endif /* _REMOTECONTROLDATA_H_ */

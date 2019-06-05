@@ -51,7 +51,7 @@ set(LIBRARY_DIRECTORY ${LIBRARY_DIRECTORY}
     
 # 指定生成目标
 set(SOURCE_FILES ${SOURCE_FILES} 
-	"$${PROJECT_SOURCE_DIR}/../../../logging/src/easylogging++.cc"                            
+	"${PROJECT_SOURCE_DIR}/../../../logging/src/easylogging++.cc"                            
 	"${CMAKE_CURRENT_SOURCE_DIR}/testbiling.cc")
 add_executable (testbiling ${SOURCE_FILES})
 target_include_directories(testbiling PRIVATE ${HEADER_DIRECTORY})

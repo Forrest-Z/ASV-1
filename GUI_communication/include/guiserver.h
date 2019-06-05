@@ -15,7 +15,12 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include "controllerdata.h"
 #include "easylogging++.h"
+#include "estimatordata.h"
+#include "gpsdata.h"
+#include "motorclientdata.h"
+#include "plannerdata.h"
 #include "priority.h"
 #include "serial/serial.h"
 #include "timecounter.h"
@@ -169,11 +174,15 @@ class guiserver {
       recv_buffer = recv_buffer.substr(pos);
       int _controlmode = 0;
       int _windindicator = 0;
-      double test_C = 0.0;
-      sscanf(recv_buffer.c_str(), "$IPAC,%d,%d,%lf",
+      double wp1 = 0.0;
+      double wp2 = 0.0;
+      double wp3 = 0.0;
+      sscanf(recv_buffer.c_str(), "$IPAC,%d,%d,%lf,%lf,%lf",
              &_controlmode,    // date
              &_windindicator,  // time
-             &test_C           // heading
+             &wp1,             // waypoint1
+             &wp2,             // waypoint2
+             &wp3              // waypoint3
       );
       _indicators.indicator_controlmode = _controlmode;
       _indicators.indicator_windstatus = _windindicator;
@@ -191,8 +200,7 @@ class guiserver {
                     const gpsRTdata &_gpsRTdata,
                     const motorRTdata<m> &_motorRTdata) {
     send_buffer.clear();
-    static int i = 0;
-    send_buffer = "$IPAC" + std::to_string(++i);
+    send_buffer = "$IPAC";
     convert2string(_indicators, send_buffer);
     convert2string(_gpsRTdata, send_buffer);
     convert2string(_estimatorRTdata, send_buffer);
@@ -202,6 +210,7 @@ class guiserver {
 
     send_buffer += "\n";
     size_t bytes_wrote = my_serial.write(send_buffer);
+    std::cout << bytes_wrote << std::endl;
   }
 };
 
@@ -210,6 +219,7 @@ std::ostream &operator<<(std::ostream &os,
                          const guiserver<_m, _n> &_guiserver) {
   os << "Buffer sent is: " << _guiserver.send_buffer;
   os << "Buffer recv is: " << _guiserver.recv_buffer << std::endl;
+  return os;
 }
 
 #endif /* _GUISERVER_H_ */
