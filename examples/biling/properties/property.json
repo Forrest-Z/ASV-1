@@ -1,7 +1,7 @@
 {
   "vesselname": "Biling",
   "project_directory":"/home/skloe/Coding/ASV/examples/biling/",
-  "dbpath": "data/dbsave.db",
+  "dbpath": "data/dbsave3.db",
   "property": {
     "L":3.6,
     "B":1.6,
@@ -25,8 +25,8 @@
       "velocity_I": 0,
       "position_allowed_error": 0.01,
       "velocity_allowed_error": 0.001,
-      "min_output": -10,
-      "max_output": 12
+      "min_output": -20,
+      "max_output": 20
     },
     "sway": {
       "position_P": 13,
@@ -35,8 +35,8 @@
       "velocity_I": 1,
       "position_allowed_error": 0.1,
       "velocity_allowed_error": 0.1,
-      "min_output": -5,
-      "max_output": 5
+      "min_output": -10,
+      "max_output": 10
     },
     "yaw": {
       "position_P": 2,
@@ -51,72 +51,72 @@
   },
   "thruster1": {
     "type": "azimuth",
-    "position": [2, 0],
+    "position": [3.6, 0],
     "thrust_constant": 2.8E-6,
-    "max_delta_rotation": 20,
+    "max_delta_rotation": 100,
     "max_rotation": 1500,
     "min_rotation": 5,
     "max_delta_alpha": 7,
-    "max_alpha": 270,
-    "min_alpha": 90
+    "max_alpha": 280,
+    "min_alpha": 80
   },
   "thruster2": {
     "type": "azimuth",
-    "position": [0.63, -0.83],
+    "position": [2.23, -0.83],
     "thrust_constant": 2.8E-6,
-    "max_delta_rotation": 20,
+    "max_delta_rotation": 100,
     "max_rotation": 1500,
     "min_rotation": 5,
     "max_delta_alpha": 7,
-    "max_alpha": 180,
-    "min_alpha": 0
+    "max_alpha": 190,
+    "min_alpha": -10
   },
   "thruster3": {
     "type": "azimuth",
-    "position": [0.63, 0.83],
+    "position": [2.23, 0.83],
     "thrust_constant": 2.8E-6,
-    "max_delta_rotation": 20,
+    "max_delta_rotation": 100,
     "max_rotation": 1500,
     "min_rotation": 5,
     "max_delta_alpha": 7,
-    "max_alpha": 0,
-    "min_alpha": -180
+    "max_alpha": 10,
+    "min_alpha": -190
   },
   "thruster4": {
     "type": "azimuth",
-    "position": [-0.64, -0.83],
+    "position": [0.96, -0.83],
     "thrust_constant": 2.8E-6,
-    "max_delta_rotation": 20,
+    "max_delta_rotation": 100,
     "max_rotation": 1500,
     "min_rotation": 5,
     "max_delta_alpha": 7,
-    "max_alpha": 180,
-    "min_alpha": 0
+    "max_alpha": 190,
+    "min_alpha": -10
   },
   "thruster5": {
     "type": "azimuth",
-    "position": [-0.64, 0.83],
+    "position": [0.96, 0.83],
     "thrust_constant": 2.8E-6,
-    "max_delta_rotation": 20,
+    "max_delta_rotation": 100,
     "max_rotation": 1500,
     "min_rotation": 5,
     "max_delta_alpha": 7,
-    "max_alpha": 0,
-    "min_alpha": -180
+    "max_alpha": 10,
+    "min_alpha": -190
   },
   "thruster6": {
     "type": "azimuth",
-    "position": [-1.72, 0],
+    "position": [-0.12, 0],
     "thrust_constant": 2.8E-6,
-    "max_delta_rotation": 20,
+    "max_delta_rotation": 100,
     "max_rotation": 1500,
     "min_rotation": 5,
     "max_delta_alpha": 7,
-    "max_alpha": 90,
-    "min_alpha": -90
+    "max_alpha": 100,
+    "min_alpha": -100
   },
   "estimator": {
-    "sample_time": 0.1,
+    "sample_time": 0.2,
     "KALMANON": true
   },
   "planner": {
@@ -125,6 +125,9 @@
       "los_radius_co":0.8,
       "capture_radius_co":0.1
     }
+  },
+  "GPS":{
+    "Back_anntena":[0.1, 0]
   },
   "comcenter":{
     "GPS":{

@@ -27,7 +27,8 @@ class estimator {
                             _estimatordata.sample_time),
         _kalmanfilterv(_vessel, _estimatordata.sample_time),
         former_heading(0),
-        sample_time(_estimatordata.sample_time) {}
+        sample_time(_estimatordata.sample_time),
+        cog2anntena_position(_estimatordata.cog2anntena_position) {}
   estimator() = delete;
   ~estimator() {}
 
@@ -36,13 +37,15 @@ class estimator {
                 double gps_z, double gps_roll, double gps_pitch,
                 double gps_heading, double gps_Ve, double gps_Vn) {
     // heading rate
-    former_heading = gps_heading * M_PI / 180;
+    former_heading = restrictheadingangle(gps_heading * M_PI / 180);
     // outlier removal
     roll_outlierremove.setlastvalue(gps_roll);
     surgev_outlierremove.setlastvalue(0);
     swayv_outlierremove.setlastvalue(0);
+
     // low pass
-    x_lowpass.setaveragevector(gps_x);
+    x_lowpass.setaveragevector(
+        gps_x);  // low pass for position of GPS back anntena
     y_lowpass.setaveragevector(gps_y);
     heading_lowpass.setaveragevector(former_heading);
     roll_lowpass.setaveragevector(gps_roll * M_PI / 180);
@@ -50,6 +53,7 @@ class estimator {
     // measurement, position_6dof
     preprocesssGPSdata(_RTdata, gps_x, gps_y, gps_z, gps_roll, gps_pitch,
                        gps_heading, gps_Ve, gps_Vn);
+
     _RTdata.State = _RTdata.Measurement;
     // Kalman filtering
     _kalmanfilterv.setState(_RTdata.State);
@@ -71,6 +75,9 @@ class estimator {
     // calculate the coordinate transform matrix
     calculateCoordinateTransform(_RTdata.CTG2B, _RTdata.CTB2G,
                                  _RTdata.Measurement(2), _desiredheading);
+
+    //
+    correctvesselposition(_RTdata);
 
     if constexpr (indicator_kalman == KALMANON)
       _RTdata.State =
@@ -126,6 +133,7 @@ class estimator {
 
   double former_heading;  // heading rate estimation
   double sample_time;
+  Eigen::Vector2d cog2anntena_position;
 
   // calculate the real time coordinate transform matrix
   void calculateCoordinateTransform(Eigen::Matrix3d& _CTG2B,
@@ -154,13 +162,30 @@ class estimator {
     _CTB2G(1, 0) = svalue;
   }
 
+  // calculate the real time coordinate transform matrix
+  void calculateCoordinateTransform(Eigen::Matrix3d& _CTG2B,
+                                    Eigen::Matrix3d& _CTB2G,
+                                    double _rtheading) {
+    double cvalue = std::cos(_rtheading);
+    double svalue = std::sin(_rtheading);
+
+    _CTG2B(0, 0) = cvalue;
+    _CTG2B(1, 1) = cvalue;
+    _CTG2B(0, 1) = svalue;
+    _CTG2B(1, 0) = -svalue;
+    _CTB2G(0, 0) = cvalue;
+    _CTB2G(1, 1) = cvalue;
+    _CTB2G(0, 1) = -svalue;
+    _CTB2G(1, 0) = svalue;
+  }
+
   // outlier removal, unit converstion, low pass filtering
   void preprocesssGPSdata(estimatorRTdata& _RTdata, double gps_x, double gps_y,
                           double gps_z, double gps_roll, double gps_pitch,
                           double gps_heading, double gps_Ve, double gps_Vn) {
     // change direction, convert rad to deg, outlier removal or ....
-    double _gps_x = gps_x;
-    double _gps_y = gps_y;
+    double _gps_x = gps_x;  // x of back anntena
+    double _gps_y = gps_y;  // y of back anntena
     double _gps_z = -gps_z;
     double _gps_roll = roll_outlierremove.removeoutlier(gps_roll * M_PI / 180);
     double _gps_pitch = gps_pitch * M_PI / 180;
@@ -200,6 +225,13 @@ class estimator {
     else
       heading = _heading;
     return heading;
+  }
+
+  // convert the location of back anntena of GPS into CoG
+  void correctvesselposition(estimatorRTdata& _RTdata) {
+    _RTdata.Measurement.head(2) =
+        _RTdata.CTB2G.block<2, 2>(0, 0) * cog2anntena_position +
+        _RTdata.Measurement.head(2);
   }
 };
 

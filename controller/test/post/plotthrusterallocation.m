@@ -1,7 +1,7 @@
 clear;
 close all;
 
-index_actuation=1; % underactuated=1
+index_actuation=0; % underactuated=1
 
 path = '../data/';
 Balpha = csvread(strcat(path, 'Balpha.csv'),1,0);

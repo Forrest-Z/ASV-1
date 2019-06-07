@@ -48,6 +48,7 @@ struct estimatorRTdata {
 /********************* constant ***********************************/
 struct estimatordata {
   double sample_time;  // sample time of estimator((unit: second)),
+  Eigen::Vector2d cog2anntena_position;  // location of CoG relative to anntena
 };
 
 #endif /*_ESTIMATORDATA_H_*/

@@ -42,17 +42,15 @@ class guiserver {
   ~guiserver() {}
 
   void guicommunication(indicators &_indicators,
-                        const controllerRTdata<m, n> &_controllerRTdata,
                         const estimatorRTdata &_estimatorRTdata,
                         const plannerRTdata &_plannerRTdata,
                         const gpsRTdata &_gpsRTdata,
                         const motorRTdata<m> &_motorRTdata) {
-    timecounter _timer;
     checkguiconnection(_indicators);
-    senddata2gui(_indicators, _controllerRTdata, _estimatorRTdata,
-                 _plannerRTdata, _gpsRTdata, _motorRTdata);
-    std::this_thread::sleep_for(
-        std::chrono::milliseconds(500 - _timer.timeelapsed()));
+    // senddata2gui(_indicators, _controllerRTdata, _estimatorRTdata,
+    //              _plannerRTdata, _gpsRTdata, _motorRTdata);
+    senddata2gui(_indicators, _estimatorRTdata, _plannerRTdata, _gpsRTdata,
+                 _motorRTdata);
     parsedatafromgui(_indicators);
   }
 
@@ -101,9 +99,9 @@ class guiserver {
   // convert real time GPS data to sql string
   void convert2string(const gpsRTdata &_gpsRTdata, std::string &_str) {
     _str += ",";
-    _str += boost::lexical_cast<std::string>(_gpsRTdata.latitude);
+    _str += std::to_string(_gpsRTdata.latitude);
     _str += ",";
-    _str += boost::lexical_cast<std::string>(_gpsRTdata.longitude);
+    _str += std::to_string(_gpsRTdata.longitude);
   }
 
   // convert real time motor data to sql string
@@ -119,10 +117,6 @@ class guiserver {
     for (int i = 0; i != (2 * m); ++i) {
       _str += ",";
       _str += std::to_string(_motorRTdata.feedback_torque[i]);
-    }
-    for (int i = 0; i != (6 * m); ++i) {
-      _str += ",";
-      _str += std::to_string(_motorRTdata.feedback_info[i]);
     }
     _str += ",";
     _str += std::to_string(_motorRTdata.feedback_allinfo);
@@ -205,6 +199,24 @@ class guiserver {
     convert2string(_gpsRTdata, send_buffer);
     convert2string(_estimatorRTdata, send_buffer);
     convert2string(_controllerRTdata, send_buffer);
+    convert2string(_motorRTdata, send_buffer);
+    convert2string(_plannerRTdata, send_buffer);
+
+    send_buffer += "\n";
+    size_t bytes_wrote = my_serial.write(send_buffer);
+    std::cout << bytes_wrote << std::endl;
+  }
+
+  void senddata2gui(const indicators &_indicators,
+                    const estimatorRTdata &_estimatorRTdata,
+                    const plannerRTdata &_plannerRTdata,
+                    const gpsRTdata &_gpsRTdata,
+                    const motorRTdata<m> &_motorRTdata) {
+    send_buffer.clear();
+    send_buffer = "$IPAC";
+    convert2string(_indicators, send_buffer);
+    convert2string(_gpsRTdata, send_buffer);
+    convert2string(_estimatorRTdata, send_buffer);
     convert2string(_motorRTdata, send_buffer);
     convert2string(_plannerRTdata, send_buffer);
 

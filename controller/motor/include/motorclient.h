@@ -95,43 +95,6 @@ class motorclient {
 
   void startup_socket_client(motorRTdata<6> &_motorRTdata) {
     socketconnection();
-    // struct addrinfo hints, *servinfo, *p;
-    // int rv;
-    // char s[INET6_ADDRSTRLEN];
-
-    // memset(&hints, 0, sizeof hints);
-    // hints.ai_family = AF_UNSPEC;
-    // hints.ai_socktype = SOCK_STREAM;
-
-    // if ((rv = getaddrinfo("192.168.1.1", "10001", &hints, &servinfo)) != 0) {
-    //   fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-    // }
-
-    // // 用循环取得全部的结果，并先连接到能成功连接的
-    // for (p = servinfo; p != NULL; p = p->ai_next) {
-    //   if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) ==
-    //       -1) {
-    //     perror("client: socket");
-    //     continue;
-    //   }
-
-    //   if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-    //     close(sockfd);
-    //     perror("client: connect");
-    //     continue;
-    //   }
-    //   break;
-    // }
-
-    // if (p == NULL) {
-    //   fprintf(stderr, "client: failed to connect\n");
-    // }
-
-    // inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s,
-    //           sizeof s);
-    // printf("client: connecting to %s\n", s);
-    // freeaddrinfo(servinfo);  // 全部皆以这个 structure 完成
-
     //******************************  PLC  ******************************
 
     mk_read_command_data(read_buf);
@@ -481,7 +444,7 @@ class motorclient {
     }
 
     for (int i = 0; i < 12; i++)
-      _motorRTdata.feedback_torque[i] = _read_data.a[i + 12];
+      _motorRTdata.feedback_torque[i] = std::abs(_read_data.a[i + 12]);
     for (int i = 0; i < 36; i++)
       _motorRTdata.feedback_info[i] = _read_data.a[i + 24];
 
@@ -607,9 +570,7 @@ class motorclient {
       printf("Error: Send !! -> %d\n", slen);
       return 1;
     }
-    printf("before recv\n");
     int rlen = recv(sockfd, rbuf, sizeof(rbuf), 0);  // 接收发自对方的响应数据
-    printf("rlen=%d\n", rlen);
     if (rlen <= 0)  // 如果接收错误则返回 0 以下
     {
       close(sockfd);

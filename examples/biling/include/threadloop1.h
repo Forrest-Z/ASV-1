@@ -31,7 +31,7 @@
 
 constexpr int num_thruster = 6;
 constexpr int dim_controlspace = 3;
-constexpr USEKALMAN indicator_kalman = KALMANOFF;
+constexpr USEKALMAN indicator_kalman = KALMANON;
 constexpr ACTUATION indicator_actuation = FULLYACTUATED;
 
 class threadloop {
@@ -338,9 +338,11 @@ class threadloop {
   void guicommunicationloop() {
     timecounter timer_gui;
     while (1) {
-      _guiserver.guicommunication(_indicators, _estimatorRTdata, _plannerRTdata,
-                                  gps_data, _motorRTdata);
+      _guiserver.guicommunication(_indicators, _controllerRTdata,
+                                  _estimatorRTdata, _plannerRTdata, gps_data,
+                                  _motorRTdata);
       std::cout << timer_gui.timeelapsed() << std::endl;
+      std::cout << _guiserver;
     }
   }  // guicommunicationloop()
 

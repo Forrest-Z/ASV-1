@@ -26,7 +26,8 @@ class database {
  public:
   explicit database(const std::string &_savepath)
       : db(_savepath),
-        clientset({"controller", "estimator", "planner", "GPS", "wind"}) {}
+        clientset(
+            {"controller", "estimator", "planner", "GPS", "wind", "motor"}) {}
 
   ~database() {}
 

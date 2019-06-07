@@ -142,7 +142,8 @@ class jsonparse {
 
   // estimatordata
   estimatordata estimatordata_input{
-      0.1,  // sample_time
+      0.1,                     // sample_time
+      Eigen::Vector2d::Zero()  // cog2anntena_position
   };
 
   void parsejson() {
@@ -231,8 +232,8 @@ class jsonparse {
 
         // position
         std::vector<double> _position = file[str_thruster]["position"];
-        _thrusterdata_input.lx = _position[0];
-        _thrusterdata_input.ly = _position[1];
+        _thrusterdata_input.lx = _position[0] - vesseldata_input.cog(0);
+        _thrusterdata_input.ly = _position[1] - vesseldata_input.cog(1);
         // thrust_constant
         std::vector<double> _thrustconstant =
             file[str_thruster]["thrust_constant"];
@@ -264,8 +265,8 @@ class jsonparse {
 
         // position
         std::vector<double> _position = file[str_thruster]["position"];
-        _thrusterdata_input.lx = _position[0];
-        _thrusterdata_input.ly = _position[1];
+        _thrusterdata_input.lx = _position[0] - vesseldata_input.cog(0);
+        _thrusterdata_input.ly = _position[1] - vesseldata_input.cog(1);
         // thrust_constant
         _thrusterdata_input.K =
             file[str_thruster]["thrust_constant"].get<double>();
@@ -307,8 +308,8 @@ class jsonparse {
 
         // position
         std::vector<double> _position = file[str_thruster]["position"];
-        _thrusterdata_input.lx = _position[0];
-        _thrusterdata_input.ly = _position[1];
+        _thrusterdata_input.lx = _position[0] - vesseldata_input.cog(0);
+        _thrusterdata_input.ly = _position[1] - vesseldata_input.cog(1);
         // thrust_constant
         _thrusterdata_input.K =
             file[str_thruster]["thrust_constant"].get<double>();
@@ -353,6 +354,11 @@ class jsonparse {
   void parseestimatordata() {
     estimatordata_input.sample_time =
         file["estimator"]["sample_time"].get<double>();
+
+    estimatordata_input.cog2anntena_position =
+        vesseldata_input.cog -
+        _utilityio.convertstdvector2EigenMat<double, 2, 1>(
+            file["GPS"]["Back_anntena"].get<std::vector<double>>());
     // bool kalman_on = file["estimator"]["KALMANON"];
     // if (kalman_on)
     //   estimatordata_input.kalman_use = KALMANON;
@@ -424,6 +430,8 @@ class jsonparse {
     rc_baudrate =
         file["comcenter"]["remotecontrol"]["baudrate"].get<unsigned long>();
   }
+
+  void parsegps() {}
 };
 
 template <int _m, int _n>

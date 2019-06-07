@@ -97,11 +97,15 @@ class remotecontrol {
           -_command_limit(2, 1) * _recontrolRTdata.left_joystick_LR / 100.0;
 
     if (_recontrolRTdata.SA > 90) {
-      _indicators.indicator_controlmode = 0;
+      _indicators.indicator_controlmode = 0;  // manual
     } else if (_recontrolRTdata.SA < -90) {
-      _indicators.indicator_controlmode = 1;
+      if (_recontrolRTdata.SB > 90)
+        _indicators.indicator_controlmode = 2;  // manuveuring
+      else if (_recontrolRTdata.SB < -90)
+        _indicators.indicator_controlmode = 3;  // DP
+      else
+        _indicators.indicator_controlmode = 1;  // autopilot
     } else {
-      _indicators.indicator_controlmode = 2;
     }
   }
 
