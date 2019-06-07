@@ -16,6 +16,7 @@
 #include <thread>
 #include <vector>
 #include "controllerdata.h"
+#include "crc.h"
 #include "easylogging++.h"
 #include "estimatordata.h"
 #include "gpsdata.h"
@@ -24,7 +25,6 @@
 #include "priority.h"
 #include "serial/serial.h"
 #include "timecounter.h"
-
 template <int m, int n = 3>
 class guiserver {
   template <int _m, int _n>
@@ -36,7 +36,8 @@ class guiserver {
       : my_serial(_port, _rate, serial::Timeout::simpleTimeout(500)),
         send_buffer(""),
         recv_buffer(""),
-        gui_connetion_failure_count(0) {
+        gui_connetion_failure_count(0),
+        _crc16(CRC16::eCCITT_FALSE) {
     judgeserialstatus();
   }
   ~guiserver() {}
@@ -46,11 +47,15 @@ class guiserver {
                         const plannerRTdata &_plannerRTdata,
                         const gpsRTdata &_gpsRTdata,
                         const motorRTdata<m> &_motorRTdata) {
+    timecounter _gui_timer;
     checkguiconnection(_indicators);
     // senddata2gui(_indicators, _controllerRTdata, _estimatorRTdata,
     //              _plannerRTdata, _gpsRTdata, _motorRTdata);
     senddata2gui(_indicators, _estimatorRTdata, _plannerRTdata, _gpsRTdata,
                  _motorRTdata);
+
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(300 - _gui_timer.timeelapsed()));
     parsedatafromgui(_indicators);
   }
 
@@ -60,6 +65,9 @@ class guiserver {
   std::string recv_buffer;
 
   int gui_connetion_failure_count;
+
+  CRC16 _crc16;
+
   void enumerate_ports() {
     std::vector<serial::PortInfo> devices_found = serial::list_ports();
 
@@ -153,11 +161,6 @@ class guiserver {
       _str += ",";
       _str += std::to_string(_RTdata.setpoint(i));
     }
-    // v_setpoint
-    for (int i = 0; i != 3; ++i) {
-      _str += ",";
-      _str += std::to_string(_RTdata.v_setpoint(i));
-    }
   }
 
   void parsedatafromgui(indicators &_indicators) {
@@ -203,8 +206,7 @@ class guiserver {
     convert2string(_plannerRTdata, send_buffer);
 
     send_buffer += "\n";
-    size_t bytes_wrote = my_serial.write(send_buffer);
-    std::cout << bytes_wrote << std::endl;
+    my_serial.write(send_buffer);
   }
 
   void senddata2gui(const indicators &_indicators,
@@ -219,10 +221,11 @@ class guiserver {
     convert2string(_estimatorRTdata, send_buffer);
     convert2string(_motorRTdata, send_buffer);
     convert2string(_plannerRTdata, send_buffer);
-
+    // unsigned short crc =
+    //     _crc16.crcCompute(send_buffer.c_str(), send_buffer.length());
+    // send_buffer += "," + std::to_string(crc) + "\n";
     send_buffer += "\n";
-    size_t bytes_wrote = my_serial.write(send_buffer);
-    std::cout << bytes_wrote << std::endl;
+    my_serial.write(send_buffer);
   }
 };
 

@@ -8,9 +8,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 # 添加 include 子目录
 
-set(PROJECT_DIRECTORY ${PROJECT_DIRECTORY} "/home/scar1et/Coding/ASV")
-
-
 set(HEADER_DIRECTORY ${HEADER_DIRECTORY} 
 	"${PROJECT_SOURCE_DIR}/../../sensors/gpsimu/include"
 	"${PROJECT_SOURCE_DIR}/../../property/include"
@@ -37,3 +34,9 @@ add_executable (testgui ${SOURCE_FILES})
 target_include_directories(testgui PRIVATE ${HEADER_DIRECTORY})
 find_library(SERIAL_LIBRARY serial ${LIBRARY_DIRECTORY})
 target_link_libraries(testgui ${SERIAL_LIBRARY})
+
+
+
+add_executable (testcrc "testcrc.cc")
+target_include_directories(testcrc PRIVATE ${HEADER_DIRECTORY})
+

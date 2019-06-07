@@ -116,7 +116,7 @@
     "min_alpha": -100
   },
   "estimator": {
-    "sample_time": 0.2,
+    "sample_time": 0.5,
     "KALMANON": true
   },
   "planner": {

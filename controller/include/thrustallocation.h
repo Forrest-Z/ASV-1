@@ -122,7 +122,9 @@ class thrustallocation {
     if constexpr (index_actuation == FULLYACTUATED) {
       switch (_cm) {
         case MANUAL:
-          for (int i = 0; i != n; ++i) Q(i, i) = 1000;
+          Q(0, 0) = 600;
+          Q(1, 1) = 600;
+          Q(2, 2) = 1000;
           break;
         case HEADINGONLY:
           Q(0, 0) = 100;

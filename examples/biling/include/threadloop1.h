@@ -56,9 +56,8 @@ class threadloop {
 
   void testthread() {
     sched_param sch;
-    sch.sched_priority = 50;
+    sch.sched_priority = 90;
 
-    std::thread gps_thread(&threadloop::gpsimuloop, this);
     std::thread planner_thread(&threadloop::plannerloop, this);
     std::thread estimator_thread(&threadloop::estimatorloop, this);
     std::thread controller_thread(&threadloop::controllerloop, this);
@@ -66,9 +65,6 @@ class threadloop {
     std::thread guiserver_thread(&threadloop::guicommunicationloop, this);
     std::thread remotecontrol_thread(&threadloop::remotecontrolloop, this);
 
-    if (pthread_setschedparam(gps_thread.native_handle(), SCHED_FIFO, &sch)) {
-      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
-    }
     if (pthread_setschedparam(planner_thread.native_handle(), SCHED_FIFO,
                               &sch)) {
       std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
@@ -81,19 +77,11 @@ class threadloop {
                               &sch)) {
       std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
     }
-    if (pthread_setschedparam(sql_thread.native_handle(), SCHED_FIFO, &sch)) {
-      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
-    }
     if (pthread_setschedparam(guiserver_thread.native_handle(), SCHED_FIFO,
                               &sch)) {
       std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
     }
-    if (pthread_setschedparam(remotecontrol_thread.native_handle(), SCHED_FIFO,
-                              &sch)) {
-      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
-    }
 
-    gps_thread.detach();
     planner_thread.detach();
     controller_thread.detach();
     estimator_thread.detach();
@@ -234,25 +222,6 @@ class threadloop {
 
   }  // plannerloop
 
-  // GPS/IMU
-  void gpsimuloop() {
-    std::string buffer;
-    timecounter gpstimer;
-
-    try {
-      while (1) {
-        gps_data = _gpsimu.gpsonestep().getgpsRTdata();
-        // std::cout << _gpsimu;
-
-        // std::this_thread::sleep_for(
-        //     std::chrono::milliseconds(100));  //串口不能sleep?
-      }
-
-    } catch (std::exception& e) {
-      CLOG(ERROR, "GPS serial") << e.what();
-    }
-  }  // gpsimuloop()
-
   void controllerloop() {
     timecounter timer_controler;
     long int elapsed_time = 0;
@@ -293,6 +262,8 @@ class threadloop {
         static_cast<long int>(1000 * _estimator.getsampletime());
 
     while (1) {
+      gps_data = _gpsimu.gpsonestep().getgpsRTdata();
+
       if ((gps_data.status == 'B') || (gps_data.status == '4')) {
         _estimator.setvalue(_estimatorRTdata, gps_data.UTM_x, gps_data.UTM_y,
                             gps_data.altitude, gps_data.roll, gps_data.pitch,
@@ -305,6 +276,7 @@ class threadloop {
     }
 
     while (1) {
+      gps_data = _gpsimu.gpsonestep().getgpsRTdata();
       _estimator.updateestimatedforce(
           _estimatorRTdata, _controllerRTdata.BalphaU,
           _windcompensation.computewindload(0, 0).getwindload());
@@ -338,11 +310,9 @@ class threadloop {
   void guicommunicationloop() {
     timecounter timer_gui;
     while (1) {
-      _guiserver.guicommunication(_indicators, _controllerRTdata,
-                                  _estimatorRTdata, _plannerRTdata, gps_data,
-                                  _motorRTdata);
+      _guiserver.guicommunication(_indicators, _estimatorRTdata, _plannerRTdata,
+                                  gps_data, _motorRTdata);
       std::cout << timer_gui.timeelapsed() << std::endl;
-      std::cout << _guiserver;
     }
   }  // guicommunicationloop()
 

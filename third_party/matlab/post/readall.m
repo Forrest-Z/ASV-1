@@ -2,8 +2,8 @@ close all;
 clear;
 
 
-timeselect=[10 100]; % second
-Path='20190606/test1/';
+timeselect=[10 350]; % second
+Path='20190606/test2/';
 % read sql file
 controllerdata=csvread(strcat(Path,'controller.csv'),1,0);
 estimatordata=csvread(strcat(Path,'estimator.csv'),1,0);
@@ -39,4 +39,6 @@ gps.roll=gpsdata.roll(index_select);
 gps.u=gpsdata.Ve(index_select);
 gps.v=gpsdata.Vn(index_select);
 gps.x=gpsdata.UTM_x(index_select);
-gps.x=gpsdata.UTM_y(index_select);
+gps.y=gpsdata.UTM_y(index_select);
+
+save(strcat(Path,'data.mat'),'controller','estimator','gps');

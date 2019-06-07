@@ -1,31 +1,8 @@
 clear;
 close all;
 
-timeselect=[300 7900]; % second
 Path='20190606/test1/';
-% read sql file
-controllerdata=csvread(strcat(Path,'controller.csv'),1,0);
-estimatordata=csvread(strcat(Path,'estimator.csv'),1,0);
-plannerdata=csvread(strcat(Path,'planner.csv'),1,0);
-gpsdata = readgps(strcat(Path,'gps.csv'));
-
-% read control file
-path='/home/scar1et/Coding/CPP1X/USV/DPfloatover/QT/build/dataprocess/';
-name_first='First.csv';
-path_first=strcat(path,name_first);
-totaldata_first=csvread(path_first,1,0);
-
-difference_time=(totaldata_first(1,3)-totalloaddata(1,1))*86400.0;
-
-%% generate timestamp in seconds (load)
-timestamp0=min(totaldata_first(1,3),totalloaddata(1,1));
-timestamp_load=(totalloaddata(:,1)-timestamp0)*86400.0;  % seconds
-index_select_load=find(timeselect(1)<=timestamp_load & timestamp_load<= timeselect(2));
-timestamp_load=timestamp_load(index_select_load);
-Loaddata=totalloaddata(index_select_load,2:13);
-
-DMU.timestamp=timestamp_load;
-DMU.Load=Loaddata;
+load(strcat(Path,'controller.csv'));
 
 %% generate timestamp in seconds (I vessel)
 timestamp_first=(totaldata_first(:,3)-timestamp0)*86400.0;  % seconds

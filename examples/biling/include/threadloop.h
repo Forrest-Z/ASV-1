@@ -56,7 +56,7 @@ class threadloop {
 
   void testthread() {
     sched_param sch;
-    sch.sched_priority = 50;
+    sch.sched_priority = 90;
 
     std::thread gps_thread(&threadloop::gpsimuloop, this);
     std::thread planner_thread(&threadloop::plannerloop, this);
@@ -66,9 +66,6 @@ class threadloop {
     std::thread guiserver_thread(&threadloop::guicommunicationloop, this);
     std::thread remotecontrol_thread(&threadloop::remotecontrolloop, this);
 
-    if (pthread_setschedparam(gps_thread.native_handle(), SCHED_FIFO, &sch)) {
-      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
-    }
     if (pthread_setschedparam(planner_thread.native_handle(), SCHED_FIFO,
                               &sch)) {
       std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
@@ -78,17 +75,6 @@ class threadloop {
       std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
     }
     if (pthread_setschedparam(controller_thread.native_handle(), SCHED_FIFO,
-                              &sch)) {
-      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
-    }
-    if (pthread_setschedparam(sql_thread.native_handle(), SCHED_FIFO, &sch)) {
-      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
-    }
-    if (pthread_setschedparam(guiserver_thread.native_handle(), SCHED_FIFO,
-                              &sch)) {
-      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
-    }
-    if (pthread_setschedparam(remotecontrol_thread.native_handle(), SCHED_FIFO,
                               &sch)) {
       std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
     }

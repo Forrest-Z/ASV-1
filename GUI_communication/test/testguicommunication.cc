@@ -77,9 +77,8 @@ int main() {
   motorRTdata<6> testmotorRTdata = {};
   timecounter _timer;
   while (1) {
-    _guiserver.guicommunication(_indicators, _controllerRTdata,
-                                _estimatorRTdata, _plannerRTdata, gps_data,
-                                testmotorRTdata);
+    _guiserver.guicommunication(_indicators, _estimatorRTdata, _plannerRTdata,
+                                gps_data, testmotorRTdata);
     std::cout << _timer.timeelapsed() << std::endl;
     std::cout << _guiserver;
   }
