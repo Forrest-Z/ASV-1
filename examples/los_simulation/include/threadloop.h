@@ -46,10 +46,28 @@ class threadloop {
   ~threadloop() {}
 
   void testthread() {
+    sched_param sch;
+    sch.sched_priority = 99;
+
     std::thread planner_thread(&threadloop::plannerloop, this);
     std::thread estimator_thread(&threadloop::estimatorloop, this);
     std::thread controller_thread(&threadloop::controllerloop, this);
     std::thread sql_thread(&threadloop::sqlloop, this);
+
+    if (pthread_setschedparam(planner_thread.native_handle(), SCHED_RR, &sch)) {
+      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
+    }
+    if (pthread_setschedparam(estimator_thread.native_handle(), SCHED_RR,
+                              &sch)) {
+      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
+    }
+    if (pthread_setschedparam(controller_thread.native_handle(), SCHED_RR,
+                              &sch)) {
+      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
+    }
+    if (pthread_setschedparam(sql_thread.native_handle(), SCHED_RR, &sch)) {
+      std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
+    }
 
     planner_thread.detach();
     controller_thread.detach();
@@ -134,9 +152,14 @@ class threadloop {
       }
       _planner.pathfollowLOS(_plannerRTdata, _estimatorRTdata.State.head(2));
 
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
       elapsed_time = timer_planner.timeelapsed();
-      std::this_thread::sleep_for(
-          std::chrono::milliseconds(sample_time - elapsed_time));
+      if (elapsed_time < sample_time)
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(sample_time - elapsed_time - 1));
+      else
+        CLOG(INFO, "planner") << "Too much time!";
     }
   }
   // plannerloop
@@ -152,11 +175,16 @@ class threadloop {
           _controllerRTdata, _windcompensation.getwindload(),
           _estimatorRTdata.p_error, _estimatorRTdata.v_error,
           _plannerRTdata.command, _plannerRTdata.v_setpoint);
-
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
       elapsed_time = timer_controler.timeelapsed();
-      // std::cout << elapsed_time << std::endl;
-      std::this_thread::sleep_for(
-          std::chrono::milliseconds(sample_time - elapsed_time));
+
+      if (elapsed_time > sample_time) {
+        CLOG(INFO, "controller") << "Too much time!";
+        // continue;
+      } else {
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(sample_time - elapsed_time - 1));
+      }
     }
   }  // controllerloop
 
@@ -177,11 +205,15 @@ class threadloop {
       _estimator.estimatestate(_estimatorRTdata, _plannerRTdata.setpoint(2));
       _estimator.estimateerror(_estimatorRTdata, _plannerRTdata.setpoint,
                                _plannerRTdata.v_setpoint);
-      // std::cout << _estimatorRTdata.Measurement << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
       elapsed_time = timer_estimator.timeelapsed();
-      // std::cout << elapsed_time << std::endl;
-      std::this_thread::sleep_for(
-          std::chrono::milliseconds(sample_time - elapsed_time));
+      if (elapsed_time > sample_time) {
+        CLOG(INFO, "estimator") << "Too much time!";
+        // continue;
+      } else {
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(sample_time - elapsed_time - 1));
+      }
     }
   }  // estimatorloop()
 
@@ -191,7 +223,7 @@ class threadloop {
       _sqlite.update_planner_table(_plannerRTdata);
       _sqlite.update_estimator_table(_estimatorRTdata);
       _sqlite.update_controller_table(_controllerRTdata);
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      // std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   }  // sqlloop()
 };

@@ -84,7 +84,7 @@ class controller {
     // restrict desired force
     restrictdesiredforce(d_tau);
 
-    std::cout << d_tau << std::endl;
+    // std::cout << d_tau << std::endl;
     // thrust allocation
     _controllerdata.tau = d_tau;
     _thrustallocation.onestepthrustallocation(_controllerdata);

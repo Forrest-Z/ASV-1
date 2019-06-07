@@ -72,6 +72,9 @@
       "capture_radius_co":0.1
     }
   },
+  "GPS":{
+    "Back_anntena":[0.1, 0]
+  },
   "comcenter":{
     "GPS":{
       "port":"/dev/ttyUSB0",

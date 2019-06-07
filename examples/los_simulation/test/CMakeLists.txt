@@ -13,9 +13,9 @@ elseif(WIN32)
     message("This is a Windows System")
 endif()
 
-set(CMAKE_BUILD_TYPE "Debug") # "Debug" or "Release" mode
+set(CMAKE_BUILD_TYPE "Release") # "Debug" or "Release" mode
 set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -Wextra -g -ggdb -pedantic")
-set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall -march=native -mavx")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 

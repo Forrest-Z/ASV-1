@@ -56,7 +56,7 @@ class threadloop {
 
   void testthread() {
     sched_param sch;
-    sch.sched_priority = 90;
+    sch.sched_priority = 99;
 
     std::thread gps_thread(&threadloop::gpsimuloop, this);
     std::thread planner_thread(&threadloop::plannerloop, this);
@@ -261,11 +261,14 @@ class threadloop {
 
       _motorclient.PLCcommunication(_motorRTdata);
 
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(1));  // 执行太快，elapsed time可能为0
+
       elapsed_time = timer_controler.timeelapsed();
       // std::cout << elapsed_time << std::endl;
       if (elapsed_time < sample_time)
         std::this_thread::sleep_for(
-            std::chrono::milliseconds(sample_time - elapsed_time));
+            std::chrono::milliseconds(sample_time - elapsed_time - 1));
       else
         CLOG(INFO, "controller") << "Too much time!";
     }
@@ -301,11 +304,14 @@ class threadloop {
       _estimator.estimateerror(_estimatorRTdata, _plannerRTdata.setpoint,
                                _plannerRTdata.v_setpoint);
 
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(1));  // 执行太快，elapsed time可能为0
+
       elapsed_time = timer_estimator.timeelapsed();
 
       if (elapsed_time < sample_time)
         std::this_thread::sleep_for(
-            std::chrono::milliseconds(sample_time - elapsed_time));
+            std::chrono::milliseconds(sample_time - elapsed_time - 1));
       else
         CLOG(INFO, "estimator") << "Too much time!";
     }
