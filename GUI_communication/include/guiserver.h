@@ -31,7 +31,7 @@ class guiserver {
   friend std::ostream &operator<<(std::ostream &, const guiserver<_m, _n> &);
 
  public:
-  guiserver(unsigned long _rate = 19200,
+  guiserver(unsigned long _rate = 115200,
             const std::string &_port = "/dev/ttyUSB0")
       : my_serial(_port, _rate, serial::Timeout::simpleTimeout(500)),
         send_buffer(""),
@@ -54,8 +54,9 @@ class guiserver {
     senddata2gui(_indicators, _estimatorRTdata, _plannerRTdata, _gpsRTdata,
                  _motorRTdata);
 
-    std::this_thread::sleep_for(
-        std::chrono::milliseconds(300 - _gui_timer.timeelapsed()));
+    long int time_elapsed = _gui_timer.timeelapsed();
+    std::cout << time_elapsed << std::endl;
+
     parsedatafromgui(_indicators);
   }
 
@@ -168,22 +169,32 @@ class guiserver {
 
     std::size_t pos = recv_buffer.find("$IPAC");
     if (pos != std::string::npos) {
-      recv_buffer = recv_buffer.substr(pos);
-      int _controlmode = 0;
-      int _windindicator = 0;
-      double wp1 = 0.0;
-      double wp2 = 0.0;
-      double wp3 = 0.0;
-      sscanf(recv_buffer.c_str(), "$IPAC,%d,%d,%lf,%lf,%lf",
-             &_controlmode,    // date
-             &_windindicator,  // time
-             &wp1,             // waypoint1
-             &wp2,             // waypoint2
-             &wp3              // waypoint3
-      );
-      _indicators.indicator_controlmode = _controlmode;
-      _indicators.indicator_windstatus = _windindicator;
-      gui_connetion_failure_count = 0;
+      // crc check
+      std::size_t rpos = recv_buffer.rfind(",");
+      if (rpos != std::string::npos) {
+        std::string crcstring = recv_buffer.substr(0, rpos);
+        unsigned short crc =
+            _crc16.crcCompute(crcstring.c_str(), crcstring.length());
+        if (std::to_string(crc) == recv_buffer.substr(rpos + 1)) {
+          recv_buffer = recv_buffer.substr(pos);
+          int _controlmode = 0;
+          int _windindicator = 0;
+          double wp1 = 0.0;
+          double wp2 = 0.0;
+          double wp3 = 0.0;
+          sscanf(recv_buffer.c_str(), "$IPAC,%d,%d,%lf,%lf,%lf",
+                 &_controlmode,    // date
+                 &_windindicator,  // time
+                 &wp1,             // waypoint1
+                 &wp2,             // waypoint2
+                 &wp3              // waypoint3
+          );
+          _indicators.indicator_controlmode = _controlmode;
+          _indicators.indicator_windstatus = _windindicator;
+          gui_connetion_failure_count = 0;
+        }
+      }
+
     } else {
       recv_buffer = "error";
       ++gui_connetion_failure_count;
@@ -221,10 +232,9 @@ class guiserver {
     convert2string(_estimatorRTdata, send_buffer);
     convert2string(_motorRTdata, send_buffer);
     convert2string(_plannerRTdata, send_buffer);
-    // unsigned short crc =
-    //     _crc16.crcCompute(send_buffer.c_str(), send_buffer.length());
-    // send_buffer += "," + std::to_string(crc) + "\n";
-    send_buffer += "\n";
+    unsigned short crc =
+        _crc16.crcCompute(send_buffer.c_str(), send_buffer.length());
+    send_buffer += "," + std::to_string(crc);
     my_serial.write(send_buffer);
   }
 };

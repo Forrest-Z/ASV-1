@@ -26,25 +26,18 @@ int main() {
       Eigen::Vector3d::Zero()   // command
   };
 
-  controllerRTdata<num_thruster, dim_controlspace> _controllerRTdata{
-      Eigen::Matrix<double, dim_controlspace, 1>::Zero(),  // tau
-      Eigen::Matrix<double, dim_controlspace, 1>::Zero(),  // BalphaU
-      Eigen::Matrix<double, num_thruster, 1>::Zero(),      // u
-      Eigen::Matrix<int, num_thruster, 1>::Zero(),         // rotation
-      Eigen::Matrix<double, num_thruster, 1>::Zero(),      // alpha
-      Eigen::Matrix<int, num_thruster, 1>::Zero()          // alpha_deg
-  };
-
   // realtime parameters of the estimators
   estimatorRTdata _estimatorRTdata{
       Eigen::Matrix3d::Identity(),          // CTB2G
       Eigen::Matrix3d::Identity(),          // CTG2B
       Eigen::Matrix<double, 6, 1>::Zero(),  // Measurement
-      Eigen::Matrix<double, 6, 1>::Zero(),  // State
-      Eigen::Vector3d::Zero(),              // p_error
-      Eigen::Vector3d::Zero(),              // v_error
-      Eigen::Vector3d::Zero(),              // BalphaU
-      Eigen::Matrix<double, 6, 1>::Zero()   // motiondata_6dof
+      (Eigen::Matrix<double, 6, 1>() << 351042.103705, 3433888.98025, 0.626135,
+       0.1, 0, -0.003678)
+          .finished(),
+      Eigen::Vector3d::Zero(),             // p_error
+      Eigen::Vector3d::Zero(),             // v_error
+      Eigen::Vector3d::Zero(),             // BalphaU
+      Eigen::Matrix<double, 6, 1>::Zero()  // motiondata_6dof
   };
 
   gpsRTdata gps_data{
@@ -53,8 +46,8 @@ int main() {
       0,                // heading
       0,                // pitch
       0,                // roll
-      1.23444455,       // latitude
-      0,                // longitude
+      31.028788,        // latitude
+      121.439365,       // longitude
       0,                // altitude
       0,                // Ve
       0,                // Vn
@@ -77,9 +70,20 @@ int main() {
   motorRTdata<6> testmotorRTdata = {};
   timecounter _timer;
   while (1) {
+    static int count = 0;
+    for (int i = 0; i != num_thruster; ++i) {
+      testmotorRTdata.feedback_alpha[i] = 30 + i;
+    }
+    for (int i = 0; i != num_thruster; ++i) {
+      testmotorRTdata.feedback_rotation[i] = 300 + i + count;
+    }
+    for (int i = 0; i != (2 * num_thruster); ++i) {
+      testmotorRTdata.feedback_torque[i] = 3000;
+    }
+    testmotorRTdata.feedback_allinfo = 0;
+    count++;
     _guiserver.guicommunication(_indicators, _estimatorRTdata, _plannerRTdata,
                                 gps_data, testmotorRTdata);
-    std::cout << _timer.timeelapsed() << std::endl;
     std::cout << _guiserver;
   }
 }
