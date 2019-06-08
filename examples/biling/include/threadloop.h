@@ -54,7 +54,7 @@ class threadloop {
   }
   ~threadloop() {}
 
-  void testthread() {
+  void mainloop() {
     sched_param sch;
     sch.sched_priority = 99;
 
@@ -222,16 +222,9 @@ class threadloop {
 
   // GPS/IMU
   void gpsimuloop() {
-    std::string buffer;
-    timecounter gpstimer;
-
     try {
       while (1) {
         gps_data = _gpsimu.gpsonestep().getgpsRTdata();
-        // std::cout << _gpsimu;
-
-        // std::this_thread::sleep_for(
-        //     std::chrono::milliseconds(100));  //串口不能sleep?
       }
 
     } catch (std::exception& e) {
@@ -241,7 +234,8 @@ class threadloop {
 
   void controllerloop() {
     timecounter timer_controler;
-    long int elapsed_time = 0;
+    long int outerloop_elapsed_time = 0;
+    long int innerloop_elapsed_time = 0;
     long int sample_time =
         static_cast<long int>(1000 * _controller.getsampletime());
 
@@ -249,6 +243,7 @@ class threadloop {
     CLOG(INFO, "PLC") << "Servo and PLC initialation successful!";
 
     while (1) {
+      outerloop_elapsed_time = timer_controler.timeelapsed();
       _controller.setcontrolmode(_indicators.indicator_controlmode);
       _controller.controlleronestep(
           _controllerRTdata, _windcompensation.getwindload(),
@@ -261,15 +256,12 @@ class threadloop {
 
       _motorclient.PLCcommunication(_motorRTdata);
 
-      std::this_thread::sleep_for(
-          std::chrono::milliseconds(1));  // 执行太快，elapsed time可能为0
-
-      elapsed_time = timer_controler.timeelapsed();
       // std::cout << elapsed_time << std::endl;
-      if (elapsed_time < sample_time)
-        std::this_thread::sleep_for(
-            std::chrono::milliseconds(sample_time - elapsed_time - 1));
-      else
+      innerloop_elapsed_time = timer_controler.timeelapsed();
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(sample_time - innerloop_elapsed_time));
+
+      if (outerloop_elapsed_time > 1.1 * sample_time)
         CLOG(INFO, "controller") << "Too much time!";
     }
   }  // controllerloop
@@ -277,7 +269,8 @@ class threadloop {
   // loop to give real time state estimation
   void estimatorloop() {
     timecounter timer_estimator;
-    long int elapsed_time = 0;
+    long int outerloop_elapsed_time = 0;
+    long int innerloop_elapsed_time = 0;
     long int sample_time =
         static_cast<long int>(1000 * _estimator.getsampletime());
 
@@ -294,6 +287,8 @@ class threadloop {
     }
 
     while (1) {
+      outerloop_elapsed_time = timer_estimator.timeelapsed();
+
       _estimator.updateestimatedforce(
           _estimatorRTdata, _controllerRTdata.BalphaU,
           _windcompensation.computewindload(0, 0).getwindload());
@@ -304,17 +299,14 @@ class threadloop {
       _estimator.estimateerror(_estimatorRTdata, _plannerRTdata.setpoint,
                                _plannerRTdata.v_setpoint);
 
+      innerloop_elapsed_time = timer_estimator.timeelapsed();
       std::this_thread::sleep_for(
-          std::chrono::milliseconds(1));  // 执行太快，elapsed time可能为0
+          std::chrono::milliseconds(sample_time - innerloop_elapsed_time));
 
-      elapsed_time = timer_estimator.timeelapsed();
-
-      if (elapsed_time < sample_time)
-        std::this_thread::sleep_for(
-            std::chrono::milliseconds(sample_time - elapsed_time - 1));
-      else
+      if (outerloop_elapsed_time > 1.1 * sample_time)
         CLOG(INFO, "estimator") << "Too much time!";
     }
+
   }  // estimatorloop()
 
   // loop to save real time data using sqlite3

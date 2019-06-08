@@ -17,7 +17,7 @@ int main() {
 
   try {
     threadloop _threadloop;
-    _threadloop.testthread();
+    _threadloop.mainloop();
     std::cout << "please input" << std::endl;
     int input = std::getchar();
     throw input;

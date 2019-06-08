@@ -122,7 +122,8 @@ class threadloop {
 
   void plannerloop() {
     timecounter timer_planner;
-    long int elapsed_time = 0;
+    long int outerloop_elapsed_time = 0;
+    long int innerloop_elapsed_time = 0;
     long int sample_time =
         static_cast<long int>(1000 * _planner.getsampletime());
 
@@ -140,6 +141,7 @@ class threadloop {
 
     int index_wpt = 2;
     while (1) {
+      outerloop_elapsed_time = timer_planner.timeelapsed();
       if (_planner.switchwaypoint(_plannerRTdata,
                                   _estimatorRTdata.State.head(2),
                                   waypoints.col(index_wpt))) {
@@ -152,13 +154,11 @@ class threadloop {
       }
       _planner.pathfollowLOS(_plannerRTdata, _estimatorRTdata.State.head(2));
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      innerloop_elapsed_time = timer_planner.timeelapsed();
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(sample_time - innerloop_elapsed_time));
 
-      elapsed_time = timer_planner.timeelapsed();
-      if (elapsed_time < sample_time)
-        std::this_thread::sleep_for(
-            std::chrono::milliseconds(sample_time - elapsed_time - 1));
-      else
+      if (outerloop_elapsed_time > 1.1 * sample_time)
         CLOG(INFO, "planner") << "Too much time!";
     }
   }
